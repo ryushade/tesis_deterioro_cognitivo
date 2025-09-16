@@ -7,8 +7,67 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
-        display: ['Poppins', 'system-ui', 'sans-serif'],
+        sans: [
+          'Inter',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'Roboto',
+          'Oxygen',
+          'Ubuntu',
+          'Cantarell',
+          'sans-serif'
+        ],
+        mono: [
+          'JetBrains Mono',
+          'Fira Code',
+          'SF Mono',
+          'Consolas',
+          'Liberation Mono',
+          'Menlo',
+          'monospace'
+        ],
+        heading: [
+          'Inter',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Segoe UI',
+          'sans-serif'
+        ],
+        display: [
+          'Inter',
+          'system-ui',
+          'sans-serif'
+        ],
+      },
+      fontSize: {
+        'xs': ['0.75rem', { lineHeight: '1.5', fontWeight: '400' }],
+        'sm': ['0.875rem', { lineHeight: '1.5', fontWeight: '400' }],
+        'base': ['1rem', { lineHeight: '1.6', fontWeight: '400' }],
+        'lg': ['1.125rem', { lineHeight: '1.6', fontWeight: '500' }],
+        'xl': ['1.25rem', { lineHeight: '1.5', fontWeight: '600' }],
+        '2xl': ['1.5rem', { lineHeight: '1.4', fontWeight: '600' }],
+        '3xl': ['1.875rem', { lineHeight: '1.3', fontWeight: '700' }],
+        '4xl': ['2.25rem', { lineHeight: '1.2', fontWeight: '800' }],
+        '5xl': ['3rem', { lineHeight: '1.1', fontWeight: '900' }],
+        '6xl': ['3.75rem', { lineHeight: '1', fontWeight: '900' }],
+      },
+      fontWeight: {
+        light: '300',
+        normal: '400',
+        medium: '500',
+        semibold: '600',
+        bold: '700',
+        extrabold: '800',
+        black: '900',
+      },
+      letterSpacing: {
+        tighter: '-0.05em',
+        tight: '-0.025em',
+        normal: '0',
+        wide: '0.025em',
+        wider: '0.05em',
+        widest: '0.1em',
       },
       borderRadius: {
         lg: "var(--radius)",

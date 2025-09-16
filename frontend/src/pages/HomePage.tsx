@@ -1,44 +1,15 @@
-import { useState } from 'react';
-import { Button } from "@/components/ui/button";
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
-import { UserList } from '@/components/common/UserList';
-import { UserForm } from '../components/common/UserForm';
-import { useHealthCheck } from '../hooks/useUsers';
+import SidebarErrorBoundary from "@/components/SidebarErrorBoundary";
 import { authService } from '@/services/auth';
-import type { User } from '../types';
 
 export function HomePage() {
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [showForm, setShowForm] = useState(false);
-  const { data: healthData } = useHealthCheck();
-
   // Get user data from localStorage
   const currentUser = authService.getUserFromStorage();
   
   const sidebarUser = {
     name: currentUser?.username || 'Usuario',
     email: currentUser?.role?.name || 'Rol no definido'
-  };
-
-  const handleEditUser = (user: User) => {
-    setSelectedUser(user);
-    setShowForm(true);
-  };
-
-  const handleCreateUser = () => {
-    setSelectedUser(null);
-    setShowForm(true);
-  };
-
-  const handleFormSuccess = () => {
-    setShowForm(false);
-    setSelectedUser(null);
-  };
-
-  const handleFormCancel = () => {
-    setShowForm(false);
-    setSelectedUser(null);
   };
 
   const handleLogout = async () => {
@@ -48,49 +19,39 @@ export function HomePage() {
 
   return (
     <SidebarProvider>
-      <AppSidebar 
-        user={sidebarUser} 
-        onLogout={handleLogout}
-      />
+      <SidebarErrorBoundary>
+        <AppSidebar 
+          user={sidebarUser} 
+          onLogout={handleLogout} 
+        />
+      </SidebarErrorBoundary>
       <SidebarInset>
-        <div className="container mx-auto py-6">
-          <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Dashboard Principal
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Gestión de usuarios del sistema de análisis de deterioro cognitivo
-              </p>
-            </div>
-            <div className="flex items-center gap-4 mt-4 sm:mt-0">
-              <Button onClick={handleCreateUser}>
-                Nuevo Usuario
-              </Button>
-              {healthData && (
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 border border-green-200 rounded-lg text-green-800 text-sm">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  API Conectada
-                </div>
-              )}
-            </div>
-          </header>
+        <main className="flex-1 p-6">
+          <div className="mb-8">
+           <h1 className="text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-900 via-blue-600 to-indigo-600 mb-3">
+              Dashboard Principal
+           </h1>
+            <p className="text-lg font-medium text-gray-600 leading-relaxed">
+              Visualiza el panel general del sistema y accede a las funcionalidades principales.
+            </p>
+          </div>
 
-          <div className="grid gap-6">
-            <div className="rounded-lg border p-6">
-              {showForm ? (
-                <UserForm
-                  user={selectedUser || undefined}
-                  onSuccess={handleFormSuccess}
-                  onCancel={handleFormCancel}
-                />
-              ) : (
-                <UserList onEditUser={handleEditUser} />
-              )}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Usuarios Activos</h3>
+              <p className="text-4xl font-black text-blue-600">0</p>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Pacientes Registrados</h3>
+              <p className="text-4xl font-black text-green-600">0</p>
+            </div>
+            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Evaluaciones Realizadas</h3>
+              <p className="text-4xl font-black text-purple-600">0</p>
             </div>
           </div>
-        </div>
+        </main>
       </SidebarInset>
     </SidebarProvider>
-  )
+  );
 }

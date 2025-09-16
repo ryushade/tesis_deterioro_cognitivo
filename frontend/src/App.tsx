@@ -29,12 +29,21 @@ function App() {
       if (token && isAuthStored) {
         try {
           // Simple JWT expiration check (JWT format: header.payload.signature)
-          const payload = JSON.parse(atob(token.split('.')[1]));
-          const isExpired = Date.now() >= payload.exp * 1000;
-          setIsAuthenticated(!isExpired);
-          
-          if (isExpired) {
-            // Clean up expired token
+          if (token.split('.').length === 3) {
+            const payload = JSON.parse(atob(token.split('.')[1]));
+            const isExpired = Date.now() >= payload.exp * 1000;
+            setIsAuthenticated(!isExpired);
+            
+            if (isExpired) {
+              // Clean up expired token
+              localStorage.removeItem('authToken');
+              localStorage.removeItem('isAuthenticated');
+              localStorage.removeItem('user');
+              setIsAuthenticated(false);
+            }
+          } else {
+            // Invalid token format
+            setIsAuthenticated(false);
             localStorage.removeItem('authToken');
             localStorage.removeItem('isAuthenticated');
             localStorage.removeItem('user');
@@ -56,11 +65,15 @@ function App() {
 
     // Listen for login events
     const handleLoginSuccess = () => {
-      checkAuth();
+      setTimeout(() => {
+        checkAuth();
+      }, 100); // Small delay to ensure localStorage is updated
     };
 
     const handleAuthStateChanged = () => {
-      checkAuth();
+      setTimeout(() => {
+        checkAuth();
+      }, 100);
     };
 
     window.addEventListener('loginSuccess', handleLoginSuccess);
@@ -79,6 +92,13 @@ function App() {
       </div>
     );
   }
+
+  // Debug: Check authentication state
+  console.log('Auth state:', { 
+    isAuthenticated, 
+    token: !!localStorage.getItem('authToken'),
+    isAuthStored: localStorage.getItem('isAuthenticated') === 'true'
+  });
 
   return (
     <QueryClientProvider client={queryClient}>

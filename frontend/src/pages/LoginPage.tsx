@@ -1,14 +1,18 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Loader2, Brain, AlertCircle, UserCheck, KeyRound, Shield } from 'lucide-react';
+import { Loader2, Brain, AlertCircle, Shield } from 'lucide-react';
 import { authService } from '@/services/auth';
+import { AuthorizationService } from '@/services/auth.middleware';
 
 export default function LoginPage() {
+  const navigate = useNavigate();
+  
   // Estados para neuropsicólogo
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -34,8 +38,9 @@ export default function LoginPage() {
         // Dispatch event to notify App component
         window.dispatchEvent(new CustomEvent('loginSuccess'));
         
-        // Force redirect to dashboard
-        window.location.href = '/dashboard';
+        // Use React Router navigate instead of window.location.href
+        const defaultRoute = AuthorizationService.getDefaultRoute();
+        navigate(defaultRoute, { replace: true });
       } else {
         setError(response.message);
         
@@ -64,8 +69,8 @@ export default function LoginPage() {
         // Dispatch event to notify App component
         window.dispatchEvent(new CustomEvent('loginSuccess'));
         
-        // Force redirect based on user role (patients go to tests)
-        window.location.href = '/pruebas';
+        // Use React Router navigate for patient redirect
+        navigate('/pruebas', { replace: true });
       } else {
         setError(response.message);
       }
@@ -111,8 +116,10 @@ export default function LoginPage() {
               <Brain className="h-8 w-8 text-indigo-600" />
             </div>
           </div>
-          <CardTitle className="text-2xl text-center">TESIS DETERIORO COGNITIVO</CardTitle>
-          <CardDescription className="text-center">
+          <CardTitle className="text-3xl font-black text-center tracking-tight">
+            SISTEMA DETECCION DETERIORO COGNITIVO
+          </CardTitle>
+          <CardDescription className="text-center font-medium text-base">
             Selecciona tu tipo de acceso al sistema
           </CardDescription>
         </CardHeader>
@@ -126,13 +133,13 @@ export default function LoginPage() {
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="neuropsicologo" className="flex items-center gap-2">
+              <TabsTrigger value="neuropsicologo" className="flex items-center gap-2 font-semibold">
                 Neuropsicólogo
               </TabsTrigger>
-              <TabsTrigger value="administrador" className="flex items-center gap-2">
+              <TabsTrigger value="administrador" className="flex items-center gap-2 font-semibold">
                 Administrador
               </TabsTrigger>
-              <TabsTrigger value="paciente" className="flex items-center gap-2">
+              <TabsTrigger value="paciente" className="flex items-center gap-2 font-semibold">
                 Paciente
               </TabsTrigger>
             </TabsList>
@@ -311,7 +318,7 @@ export default function LoginPage() {
           </Tabs>
 
           <div className="mt-6 text-center text-sm text-gray-600">
-            <p>Sistema inteligente - Deterioro Cognitivo</p>
+            <p>Sistema inteligente - Deterioro cognitivo</p>
             <p className="text-xs mt-1">Versión 1.0</p>
           </div>
         </CardContent>

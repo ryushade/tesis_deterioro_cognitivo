@@ -1,0 +1,78 @@
+/* Fallback styles for sidebar components in case of CSS issues */
+
+.sidebar-fallback {
+  width: 16rem;
+  height: 100vh;
+  background: #ffffff;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-header-fallback {
+  padding: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.sidebar-content-fallback {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+}
+
+.sidebar-footer-fallback {
+  padding: 1rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.sidebar-menu-fallback {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar-menu-item-fallback {
+  margin-bottom: 0.5rem;
+}
+
+.sidebar-menu-button-fallback {
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 0.375rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: background-color 0.2s;
+}
+
+.sidebar-menu-button-fallback:hover {
+  background-color: #f3f4f6;
+}
+
+.sidebar-menu-button-fallback.active {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.dropdown-menu-fallback {
+  position: absolute;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  z-index: 50;
+}
+
+.dropdown-menu-item-fallback {
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.dropdown-menu-item-fallback:hover {
+  background-color: #f3f4f6;
+}

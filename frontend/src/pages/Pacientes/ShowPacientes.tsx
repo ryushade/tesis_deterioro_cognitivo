@@ -2,23 +2,7 @@ import React from 'react';
 import { Eye, Edit, Trash2, Phone, MapPin, Calendar, Heart, Brain } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-
-interface Paciente {
-  id_paciente: number;
-  nombres: string;
-  apellidos: string;
-  cedula: string;
-  fecha_nacimiento: string;
-  edad: number;
-  telefono: string;
-  direccion: string;
-  contacto_emergencia: string;
-  telefono_emergencia: string;
-  estado_cognitivo: string;
-  medicamentos: string;
-  estado_paciente: string;
-  fecha_registro: string;
-}
+import type { Paciente } from '@/services/pacientes.services';
 
 interface ShowPacientesProps {
   pacientes: Paciente[];

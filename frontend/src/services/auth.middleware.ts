@@ -19,10 +19,20 @@ export class AuthorizationService {
   static hasRole(allowedRoles: string[]): boolean {
     try {
       const user = authService.getCurrentUserSync();
-      if (!user || !user.role) return false;
+      console.log('AuthorizationService.hasRole - User from sync:', user);
+      console.log('AuthorizationService.hasRole - Allowed roles:', allowedRoles);
       
-      return allowedRoles.includes(user.role.name);
-    } catch {
+      if (!user || !user.role) {
+        console.log('AuthorizationService.hasRole - No user or role found');
+        return false;
+      }
+      
+      const hasRole = allowedRoles.includes(user.role.name);
+      console.log(`AuthorizationService.hasRole - User role: ${user.role.name}, Has role: ${hasRole}`);
+      
+      return hasRole;
+    } catch (error) {
+      console.error('AuthorizationService.hasRole - Error:', error);
       return false;
     }
   }
@@ -38,7 +48,7 @@ export class AuthorizationService {
    * Verifica si el usuario es neuropsicólogo o administrador
    */
   static isNeuropsicologo(): boolean {
-    return this.hasRole(['Administrador', 'Neuropsicólogo']);
+    return this.hasRole(['Administrador', 'Neuropsicologo']);
   }
 
   /**
@@ -53,14 +63,14 @@ export class AuthorizationService {
    * Verifica si el usuario puede gestionar pacientes
    */
   static canManagePatients(): boolean {
-    return this.hasRole(['Administrador', 'Neuropsicólogo']);
+    return this.hasRole(['Administrador', 'Neuropsicologo']);
   }
 
   /**
    * Verifica si el usuario puede ver estadísticas
    */
   static canViewStatistics(): boolean {
-    return this.hasRole(['Administrador', 'Neuropsicólogo']);
+    return this.hasRole(['Administrador', 'Neuropsicologo']);
   }
 
   /**
@@ -82,7 +92,7 @@ export class AuthorizationService {
    * Verifica si el usuario puede ver resultados de otros pacientes
    */
   static canViewAllResults(): boolean {
-    return this.hasRole(['Administrador', 'Neuropsicólogo']);
+    return this.hasRole(['Administrador', 'Neuropsicologo']);
   }
 
   /**

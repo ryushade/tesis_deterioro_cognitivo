@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from app.models.paciente import Paciente
+from app.models.evaluaciones import Paciente
 from app import db
 from datetime import datetime
 from sqlalchemy import or_, and_

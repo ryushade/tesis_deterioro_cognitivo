@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Users, Brain, Trash2, Edit, Eye, Download } from 'lucide-react';
+import { Plus, Users, Brain, Download } from 'lucide-react';
 import { toast, Toaster } from 'react-hot-toast';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Card, CardContent } from '@/components/ui/card';
 import PacientesForm from './PacientesForm';
 import ShowPacientes from './ShowPacientes';
 import BarraSearch from './BarraSearch';
@@ -26,7 +25,7 @@ function Pacientes() {
     show: false,
     data: null
   });
-  const [editPaciente, setEditPaciente] = useState<{ id: number; data: Paciente } | null>(null);
+  const [editPaciente, setEditPaciente] = useState<{ id_paciente: number; data: Paciente } | null>(null);
   const [deleteModal, setDeleteModal] = useState<{ show: boolean; paciente: Paciente | null }>({
     show: false,
     paciente: null
@@ -111,9 +110,9 @@ function Pacientes() {
     if (!editPaciente) return;
     
     try {
-      const updatedPaciente = await pacientesService.updatePaciente(editPaciente.id, pacienteData);
-      setPacientes(prev => prev.map(p => 
-        p.id_paciente === editPaciente.id ? updatedPaciente : p
+      const updatedPaciente = await pacientesService.updatePaciente(editPaciente.id_paciente, pacienteData);
+      setPacientes(prev => prev.map(p =>
+        p.id_paciente === editPaciente.id_paciente ? updatedPaciente : p
       ));
       setEditPaciente(null);
       toast.success('Paciente actualizado exitosamente');
@@ -291,7 +290,7 @@ function Pacientes() {
         <ShowPacientes
           pacientes={filteredPacientes}
           onView={(paciente) => setShowPaciente({ show: true, data: paciente })}
-          onEdit={(paciente) => setEditPaciente({ id: paciente.id_paciente!, data: paciente })}
+          onEdit={(paciente) => setEditPaciente({ id_paciente: paciente.id_paciente!, data: paciente })}
           onDelete={(paciente) => setDeleteModal({ show: true, paciente })}
         />
       )}
@@ -335,7 +334,7 @@ function Pacientes() {
                   onView={() => {}}
                   onEdit={(paciente) => {
                     setShowPaciente({ show: false, data: null });
-                    setEditPaciente({ id: paciente.id_paciente!, data: paciente });
+                    setEditPaciente({ id_paciente: paciente.id_paciente!, data: paciente });
                   }}
                   onDelete={(paciente) => {
                     setShowPaciente({ show: false, data: null });

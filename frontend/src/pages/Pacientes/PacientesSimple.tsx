@@ -5,23 +5,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { authService } from '@/services/auth';
 import ShowPacientes from './ShowPacientes';
-
-interface Paciente {
-  id_paciente: number;
-  nombres: string;
-  apellidos: string;
-  cedula: string;
-  fecha_nacimiento: string;
-  edad: number;
-  telefono: string;
-  direccion: string;
-  contacto_emergencia: string;
-  telefono_emergencia: string;
-  estado_cognitivo: string;
-  medicamentos: string;
-  estado_paciente: string;
-  fecha_registro: string;
-}
+import type { Paciente } from '@/services/pacientes.services';
 
 function Pacientes() {
   const [pacientes] = useState<Paciente[]>([

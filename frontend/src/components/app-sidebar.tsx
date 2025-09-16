@@ -19,6 +19,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import "./sidebar-fallback.css"
 
 interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
   user: {
@@ -29,20 +30,28 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 }
 
 export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
+  // Debug: Log current user info
+  React.useEffect(() => {
+    const currentUser = AuthorizationService.hasRole(['Administrador', 'Neuropsicólogo', 'Paciente']);
+    console.log('AppSidebar - User prop:', user);
+    console.log('AppSidebar - Has any role:', currentUser);
+    console.log('AppSidebar - User from auth service:', AuthorizationService.isNeuropsicologo());
+  }, [user]);
+
   // Navigation data for cognitive deterioration thesis
   const allNavData = [
     {
       title: "Dashboard",
       url: "/dashboard",
       icon: Home,
-      isActive: true,
-      roles: ['Administrador', 'Neuropsicólogo', 'Paciente'], // Todos pueden ver el dashboard
+      isActive: window.location.pathname === "/dashboard",
+      roles: ['Administrador', 'Neuropsicologo', 'Paciente'], // Todos pueden ver el dashboard
     },
     {
       title: "Pacientes",
       url: "/pacientes",
       icon: Users,
-      roles: ['Administrador', 'Neuropsicólogo'], // Solo admin y neuropsicólogos
+      roles: ['Administrador', 'Neuropsicologo'], // Solo admin y neuropsicólogos
       items: [
         {
           title: "Lista de Pacientes",
@@ -59,10 +68,30 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       ],
     },
     {
+      title: "Informes",
+      url: "/informes",
+      icon: FileText,
+      roles: ['Administrador', 'Neuropsicologo'], // Solo profesionales
+      items: [
+        {
+          title: "Generar Informe",
+          url: "/informes/generar",
+        },
+        {
+          title: "Plantillas",
+          url: "/informes/plantillas",
+        },
+        {
+          title: "Historial",
+          url: "/informes/historial",
+        },
+      ],
+    },
+    {
       title: "Evaluaciones",
       url: "/evaluaciones",
       icon: Brain,
-      roles: ['Administrador', 'Neuropsicólogo', 'Paciente'], // Todos pueden acceder a evaluaciones
+      roles: ['Administrador', 'Neuropsicologo', 'Paciente'], // Todos pueden acceder a evaluaciones
       items: [
         {
           title: "Test Cognitivos",
@@ -82,7 +111,7 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       title: "Análisis",
       url: "/analisis",
       icon: BarChart3,
-      roles: ['Administrador', 'Neuropsicólogo'], // Solo profesionales
+      roles: ['Administrador', 'Neuropsicologo'], // Solo profesionales
       items: [
         {
           title: "Estadísticas",
@@ -119,30 +148,10 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       ],
     },
     {
-      title: "Reportes",
-      url: "/reportes",
-      icon: FileText,
-      roles: ['Administrador', 'Neuropsicólogo'], // Solo profesionales
-      items: [
-        {
-          title: "Generar Reporte",
-          url: "/reportes/generar",
-        },
-        {
-          title: "Plantillas",
-          url: "/reportes/plantillas",
-        },
-        {
-          title: "Historial",
-          url: "/reportes/historial",
-        },
-      ],
-    },
-    {
       title: "Configuración",
       url: "/configuracion",
       icon: Settings,
-      roles: ['Administrador', 'Neuropsicólogo', 'Paciente'], // Todos pueden acceder a su configuración
+      roles: ['Administrador', 'Neuropsicologo', 'Paciente'], // Todos pueden acceder a su configuración
       items: [
         {
           title: "Perfil",
@@ -161,10 +170,19 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
   ];
 
   // Filter navigation based on user roles
-  const navData = allNavData.filter(item => {
-    if (!item.roles) return true; // Show items without role restrictions
-    return AuthorizationService.hasRole(item.roles);
-  });
+  const navData = React.useMemo(() => {
+    const filtered = allNavData.filter(item => {
+      if (!item.roles) return true; // Show items without role restrictions
+      
+      const hasRole = AuthorizationService.hasRole(item.roles);
+      console.log(`Item "${item.title}" - Required roles: ${item.roles.join(', ')} - Has access: ${hasRole}`);
+      
+      return hasRole;
+    });
+    
+    console.log('Filtered navigation items:', filtered.map(item => item.title));
+    return filtered;
+  }, [user]); // Re-compute when user changes
 
   const userWithAvatar = {
     ...user,
@@ -179,8 +197,8 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
             <Brain className="size-4" />
           </div>
           <div className="grid flex-1 text-left text-sm leading-tight">
-            <span className="truncate font-semibold">Deterioro cognitivo</span>
-            <span className="truncate text-xs text-sidebar-foreground/70">Sistema inteligente</span>
+            <span className="truncate font-bold text-base tracking-tight">Deterioro cognitivo</span>
+            <span className="truncate text-xs text-sidebar-foreground/70 font-medium">Sistema inteligente</span>
           </div>
         </div>
       </SidebarHeader>

@@ -109,6 +109,9 @@ class AuthService {
       
       // Trigger auth state change event
       window.dispatchEvent(new CustomEvent('authStateChanged'));
+      
+      // Force reload to ensure clean state
+      window.location.href = '/login';
     }
   }
 
@@ -135,11 +138,18 @@ class AuthService {
   getCurrentUserSync(): User | null {
     try {
       const userStr = localStorage.getItem('user');
+      console.log('getCurrentUserSync - localStorage user:', userStr);
+      
       if (userStr) {
-        return JSON.parse(userStr);
+        const user = JSON.parse(userStr);
+        console.log('getCurrentUserSync - Parsed user:', user);
+        return user;
       }
+      
+      console.log('getCurrentUserSync - Using cached user:', this.currentUser);
       return this.currentUser;
-    } catch {
+    } catch (error) {
+      console.error('getCurrentUserSync - Error:', error);
       return null;
     }
   }
@@ -218,7 +228,36 @@ class AuthService {
 
   // Check if user is authenticated
   isAuthenticated(): boolean {
-    return localStorage.getItem('isAuthenticated') === 'true';
+    const token = localStorage.getItem('authToken');
+    const isAuthStored = localStorage.getItem('isAuthenticated') === 'true';
+    
+    if (!token || !isAuthStored) {
+      return false;
+    }
+    
+    try {
+      // Validate JWT token format and expiration
+      if (token.split('.').length === 3) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const isExpired = Date.now() >= payload.exp * 1000;
+        
+        if (isExpired) {
+          // Clean up expired token
+          this.logout();
+          return false;
+        }
+        
+        return true;
+      } else {
+        // Invalid token format
+        this.logout();
+        return false;
+      }
+    } catch (error) {
+      console.error('Token validation error:', error);
+      this.logout();
+      return false;
+    }
   }
 
   // Get user from localStorage

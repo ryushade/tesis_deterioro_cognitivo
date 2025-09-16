@@ -5,23 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2, Brain, AlertCircle, User, Phone, Heart } from 'lucide-react';
-
-interface Paciente {
-  id_paciente?: number;
-  nombres: string;
-  apellidos: string;
-  cedula: string;
-  fecha_nacimiento: string;
-  edad?: number;
-  telefono: string;
-  direccion: string;
-  contacto_emergencia: string;
-  telefono_emergencia: string;
-  estado_cognitivo: string;
-  medicamentos: string;
-  estado_paciente: string;
-  fecha_registro?: string;
-}
+import type { Paciente } from '@/services/pacientes.services';
 
 interface PacientesFormProps {
   modalTitle: string;
