@@ -100,7 +100,7 @@ class EvaluacionCognitiva(db.Model):
     )
     
     # Relaciones
-    paciente = db.relationship('Paciente', back_populates='evaluaciones')
+    # paciente = db.relationship('Paciente', back_populates='evaluaciones')  # Comentado - usando psycopg2
     codigo_acceso = db.relationship('CodigoAcceso', back_populates='evaluaciones')
     criterios = db.relationship('CriterioEvaluacion', back_populates='evaluacion', cascade='all, delete-orphan')
     

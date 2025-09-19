@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
-from app.services.auth_service import AuthService
+from app.services.auth_service_psycopg2 import auth_service_psycopg2 as auth_service
 from app.services.jwt_service import JWTService
-from app.models.auth import Rol
+# from app.models.auth import Rol  # Comentado - usando psycopg2
 
 auth_bp = Blueprint('auth', __name__)
 
@@ -21,15 +21,15 @@ def login():
         password = data.get('password')
         
         # Authenticate user
-        usuario = AuthService.authenticate_user(username, password)
+        usuario = auth_service.authenticate_user(username, password)
         
         if usuario:
             # Generate JWT token
             token = JWTService.generate_token(
-                user_id=usuario.id_usuario,
-                username=usuario.usua,
-                role_id=usuario.id_rol,
-                role_name=usuario.rol.nom_rol if usuario.rol else None
+                user_id=usuario['id_usuario'],
+                username=usuario['usua'],
+                role_id=usuario['id_rol'],
+                role_name=usuario['nom_rol']
             )
             
             if token:
@@ -38,12 +38,12 @@ def login():
                     'message': 'Login successful',
                     'token': token,
                     'user': {
-                        'id': usuario.id_usuario,
-                        'username': usuario.usua,
+                        'id': usuario['id_usuario'],
+                        'username': usuario['usua'],
                         'role': {
-                            'id': usuario.rol.id_rol,
-                            'name': usuario.rol.nom_rol
-                        } if usuario.rol else None
+                            'id': usuario['id_rol'],
+                            'name': usuario['nom_rol']
+                        }
                     }
                 }), 200
             else:
@@ -83,18 +83,18 @@ def get_current_user():
     """Get current user information from JWT"""
     try:
         user_data = request.current_user
-        usuario = AuthService.get_user_by_id(user_data['user_id'])
+        usuario = auth_service.get_user_by_id(user_data['user_id'])
         
         if usuario:
             return jsonify({
                 'success': True,
                 'user': {
-                    'id': usuario.id_usuario,
-                    'username': usuario.usua,
+                    'id': usuario['id_usuario'],
+                    'username': usuario['usua'],
                     'role': {
-                        'id': usuario.rol.id_rol,
-                        'name': usuario.rol.nom_rol
-                    } if usuario.rol else None
+                        'id': usuario['id_rol'],
+                        'name': usuario['nom_rol']
+                    }
                 }
             }), 200
         else:
@@ -128,19 +128,19 @@ def register():
         role_id = data.get('role_id', 2)  # Default to 'Paciente' role
         
         # Create user
-        usuario, message = AuthService.create_user(username, password, role_id)
+        usuario, message = auth_service.create_user(username, password, role_id)
         
         if usuario:
             return jsonify({
                 'success': True,
                 'message': message,
                 'user': {
-                    'id': usuario.id_usuario,
-                    'username': usuario.usua,
+                    'id': usuario['id_usuario'],
+                    'username': usuario['usua'],
                     'role': {
-                        'id': usuario.rol.id_rol,
-                        'name': usuario.rol.nom_rol
-                    } if usuario.rol else None
+                        'id': usuario['id_rol'],
+                        'name': 'Usuario'  # Nombre temporal, se puede obtener luego
+                    }
                 }
             }), 201
         else:
@@ -160,11 +160,11 @@ def register():
 def get_roles():
     """Get all active roles"""
     try:
-        roles = Rol.query.filter_by(estado_rol=True).all()
+        roles = auth_service.get_all_roles()
         
         return jsonify({
             'success': True,
-            'roles': [role.to_dict() for role in roles]
+            'roles': [{'id_rol': r['id_rol'], 'nom_rol': r['nom_rol'], 'estado_rol': r['estado_rol']} for r in roles]
         }), 200
         
     except Exception as e:
@@ -266,10 +266,10 @@ def init_database():
     """Initialize database with default data"""
     try:
         # Create default roles
-        roles_created = AuthService.create_default_roles()
+        roles_created = auth_service.create_default_roles()
         
         # Create default admin user
-        admin_created, admin_message = AuthService.create_default_admin()
+        admin_created, admin_message = auth_service.create_default_admin()
         
         return jsonify({
             'success': True,

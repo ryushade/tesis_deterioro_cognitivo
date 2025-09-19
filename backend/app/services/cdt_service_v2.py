@@ -27,9 +27,10 @@ def convertir_numpy_tipos(obj):
 
 from app import db
 from app.models.evaluaciones import (
-    Paciente, CodigoAcceso, EvaluacionCognitiva, CriterioEvaluacion,
+    CodigoAcceso, EvaluacionCognitiva, CriterioEvaluacion,
     crear_evaluacion_cdt, actualizar_resultados_cdt, generar_codigo_acceso
 )
+# from app.models.evaluaciones import Paciente  # Comentado - usando psycopg2
 from app.services.cdt_analyzer import CDTAnalyzer
 
 
@@ -73,10 +74,10 @@ class CDTServiceV2:
         """
         Crear código de acceso para un paciente
         """
-        # Verificar que el paciente existe
-        paciente = Paciente.query.get(id_paciente)
-        if not paciente:
-            raise ValueError(f"Paciente {id_paciente} no encontrado")
+        # Comentado temporalmente - migrando a psycopg2
+        # paciente = Paciente.query.get(id_paciente)
+        # if not paciente:
+        #     raise ValueError(f"Paciente {id_paciente} no encontrado")
         
         # Generar código único
         codigo = generar_codigo_acceso(prefijo=tipo_evaluacion)
@@ -99,7 +100,7 @@ class CDTServiceV2:
         return {
             'id_codigo': codigo_acceso.id_codigo,
             'codigo': codigo_acceso.codigo,
-            'paciente': paciente.nombre_completo,
+            'paciente': f"Paciente ID: {id_paciente}",  # Temporal - usar servicio psycopg2
             'tipo_evaluacion': tipo_evaluacion,
             'vence_at': vence_at.isoformat(),
             'estado': codigo_acceso.estado

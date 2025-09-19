@@ -11,7 +11,8 @@ from datetime import datetime, timezone
 from typing import Dict, Any
 
 from app.services.cdt_service_v2 import cdt_service_v2 as cdt_service
-from app.models.evaluaciones import Paciente, CodigoAcceso, EvaluacionCognitiva, crear_evaluacion_cdt
+from app.models.evaluaciones import CodigoAcceso, EvaluacionCognitiva, crear_evaluacion_cdt
+# from app.models.evaluaciones import Paciente  # Comentado - usando psycopg2 ahora
 from app.utils.database import db
 from app import db as sqlalchemy_db
 
@@ -380,12 +381,13 @@ def analyze_cdt():
                 'error': 'paciente_id debe ser un UUID válido'
             }), 400
         
-        paciente = Paciente.query.get(paciente_id)
-        if not paciente:
-            return jsonify({
-                'success': False,
-                'error': 'Paciente no encontrado'
-            }), 404
+        # Comentado temporalmente - migrando a psycopg2
+        # paciente = Paciente.query.get(paciente_id)
+        # if not paciente:
+        #     return jsonify({
+        #         'success': False,
+        #         'error': 'Paciente no encontrado'
+        #     }), 404
         
         # Verificar tamaño del archivo
         if file.content_length and file.content_length > 10 * 1024 * 1024:  # 10MB
@@ -431,13 +433,13 @@ def get_patient_evaluations(patient_id: str):
                 'error': 'ID de paciente inválido'
             }), 400
         
-        # Verificar que el paciente existe
-        paciente = Paciente.query.get(patient_id)
-        if not paciente:
-            return jsonify({
-                'success': False,
-                'error': 'Paciente no encontrado'
-            }), 404
+        # Comentado temporalmente - migrando a psycopg2
+        # paciente = Paciente.query.get(patient_id)
+        # if not paciente:
+        #     return jsonify({
+        #         'success': False,
+        #         'error': 'Paciente no encontrado'
+        #     }), 404
         
         # Obtener evaluaciones
         evaluations = cdt_service.get_patient_evaluations(patient_id)

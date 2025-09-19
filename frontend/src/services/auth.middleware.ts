@@ -48,7 +48,7 @@ export class AuthorizationService {
    * Verifica si el usuario es neuropsicólogo o administrador
    */
   static isNeuropsicologo(): boolean {
-    return this.hasRole(['Administrador', 'Neuropsicologo']);
+    return this.hasRole(['Administrador', 'Neuropsicologo']);  // Sin tilde
   }
 
   /**
@@ -92,7 +92,7 @@ export class AuthorizationService {
    * Verifica si el usuario puede ver resultados de otros pacientes
    */
   static canViewAllResults(): boolean {
-    return this.hasRole(['Administrador', 'Neuropsicologo']);
+    return this.hasRole(['Administrador', 'Neuropsicologo']);  // Sin tilde
   }
 
   /**

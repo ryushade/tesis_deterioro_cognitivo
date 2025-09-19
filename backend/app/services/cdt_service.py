@@ -13,7 +13,8 @@ from werkzeug.utils import secure_filename
 from app.utils.database import db
 # Importaciones comentadas para usar nuevo esquema
 # from app.models.cdt import CDTEvaluation, CDTCriterio, CDTTemplate
-from app.models.evaluaciones import EvaluacionCognitiva, CriterioEvaluacion, Paciente
+from app.models.evaluaciones import EvaluacionCognitiva, CriterioEvaluacion
+# from app.models.evaluaciones import Paciente  # Comentado - usando psycopg2
 
 try:
     from app.services.cdt_analyzer import CDTAnalyzer
@@ -95,7 +96,8 @@ class CDTService:
         """
         try:
             # Verificar que el paciente existe
-            from app.models.evaluaciones import Paciente
+            # Comentado temporalmente - migrando a psycopg2
+            # from app.models.evaluaciones import Paciente
             paciente = Paciente.query.get(paciente_id)
             if not paciente:
                 return {

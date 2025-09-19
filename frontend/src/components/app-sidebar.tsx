@@ -33,7 +33,7 @@ interface AppSidebarProps extends React.ComponentProps<typeof Sidebar> {
 export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
   // Debug: Log current user info
   React.useEffect(() => {
-    const currentUser = AuthorizationService.hasRole(['Administrador', 'Neuropsicólogo', 'Paciente']);
+    const currentUser = AuthorizationService.hasRole(['Administrador', 'Neuropsicologo', 'Paciente']);
     console.log('AppSidebar - User prop:', user);
     console.log('AppSidebar - Has any role:', currentUser);
     console.log('AppSidebar - User from auth service:', AuthorizationService.isNeuropsicologo());

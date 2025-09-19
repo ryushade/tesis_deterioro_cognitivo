@@ -127,7 +127,7 @@ function App() {
             <Route
               path="/pacientes"
               element={
-                <ProtectedRoute requiredRoles={['Administrador', 'Neuropsicólogo']}>
+                <ProtectedRoute requiredRoles={['Administrador', 'Neuropsicologo']}>
                   <Pacientes />
                 </ProtectedRoute>
               }
