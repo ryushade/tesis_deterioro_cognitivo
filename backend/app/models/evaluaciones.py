@@ -3,13 +3,12 @@ Modelos SQLAlchemy para el sistema de evaluaciones cognitivas
 Basado en el esquema de BD propuesto con BIGSERIAL y estructura mejorada
 """
 from app import db
-from app.models.paciente import Paciente  # Importar el modelo actualizado
+# from app.models.paciente import Paciente  # Comentado - usando psycopg2 ahora
 from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import text, CheckConstraint
 
-# Nota: El modelo Paciente se encuentra ahora en app.models.paciente
-# para evitar duplicaciones y conflictos
+# Nota: El modelo Paciente ahora usa psycopg2 directo, no SQLAlchemy
 
 
 class CodigoAcceso(db.Model):
@@ -33,7 +32,7 @@ class CodigoAcceso(db.Model):
     )
     
     # Relaciones
-    paciente = db.relationship('Paciente', back_populates='codigos_acceso')
+    # paciente = db.relationship('Paciente', back_populates='codigos_acceso')  # Comentado - usando psycopg2
     evaluaciones = db.relationship('EvaluacionCognitiva', back_populates='codigo_acceso')
     
     def __repr__(self):
