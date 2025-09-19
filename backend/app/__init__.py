@@ -33,7 +33,7 @@ def create_app(config_name=None):
     app.register_blueprint(users_bp, url_prefix='/api')
     app.register_blueprint(users_db_bp, url_prefix='/api')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
-    app.register_blueprint(pacientes_bp, url_prefix='/api')
+    app.register_blueprint(pacientes_bp, url_prefix='/api/pacientes')
     app.register_blueprint(cdt_bp)
     
     return app

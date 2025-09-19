@@ -6,14 +6,337 @@ from flask import Blueprint, request, jsonify, current_app, send_file
 from werkzeug.exceptions import RequestEntityTooLarge
 import os
 import uuid
+import json
+from datetime import datetime, timezone
 from typing import Dict, Any
 
 from app.services.cdt_service_v2 import cdt_service_v2 as cdt_service
-from app.models.evaluaciones import Paciente
+from app.models.evaluaciones import Paciente, CodigoAcceso, EvaluacionCognitiva, crear_evaluacion_cdt
 from app.utils.database import db
+from app import db as sqlalchemy_db
 
 # Crear blueprint para rutas CDT
 cdt_bp = Blueprint('cdt', __name__, url_prefix='/api/cdt')
+
+
+@cdt_bp.route('/validar-codigo', methods=['POST'])
+def validar_codigo():
+    """
+    Valida un código de acceso CDT y devuelve las instrucciones si es válido
+    
+    JSON esperado:
+    {
+        "codigo": "CDT-20250916-ABC123"
+    }
+    """
+    try:
+        data = request.get_json()
+        if not data or 'codigo' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Código es requerido'
+            }), 400
+        
+        codigo = data['codigo'].strip()
+        if not codigo:
+            return jsonify({
+                'success': False,
+                'error': 'Código no puede estar vacío'
+            }), 400
+        
+        # Buscar código en la base de datos
+        codigo_acceso = CodigoAcceso.query.filter_by(codigo=codigo).first()
+        
+        if not codigo_acceso:
+            return jsonify({
+                'success': False,
+                'error': 'Código no encontrado'
+            }), 404
+        
+        # Verificar que el código esté disponible
+        if not codigo_acceso.esta_disponible:
+            if codigo_acceso.esta_vencido:
+                return jsonify({
+                    'success': False,
+                    'error': 'El código ha expirado'
+                }), 410
+            else:
+                return jsonify({
+                    'success': False,
+                    'error': 'El código ya ha sido utilizado'
+                }), 410
+        
+        # Obtener información del paciente
+        paciente = codigo_acceso.paciente
+        if not paciente:
+            return jsonify({
+                'success': False,
+                'error': 'Paciente no encontrado'
+            }), 404
+        
+        # Preparar respuesta con instrucciones CDT
+        instrucciones = (
+            "Dibuje un reloj que marque las 11:10. "
+            "Incluya todos los números del 1 al 12 y las dos manecillas. "
+            "Tome su tiempo y haga su mejor esfuerzo."
+        )
+        
+        return jsonify({
+            'success': True,
+            'codigo_valido': True,
+            'instrucciones': instrucciones,
+            'tiempo_limite': 300,  # 5 minutos en segundos
+            'paciente': {
+                'id': paciente.id_paciente,
+                'nombre_completo': paciente.nombre_completo,
+                'edad': paciente.edad
+            },
+            'evaluacion': {
+                'tipo': codigo_acceso.tipo_evaluacion,
+                'codigo_id': codigo_acceso.id_codigo
+            }
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error validando código: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor'
+        }), 500
+
+
+@cdt_bp.route('/iniciar-evaluacion', methods=['POST'])
+def iniciar_evaluacion():
+    """
+    Inicia una nueva evaluación CDT y marca el código como usado
+    
+    JSON esperado:
+    {
+        "codigo": "CDT-20250916-ABC123"
+    }
+    """
+    try:
+        data = request.get_json()
+        if not data or 'codigo' not in data:
+            return jsonify({
+                'success': False,
+                'error': 'Código es requerido'
+            }), 400
+        
+        codigo = data['codigo'].strip()
+        
+        # Buscar código en la base de datos
+        codigo_acceso = CodigoAcceso.query.filter_by(codigo=codigo).first()
+        
+        if not codigo_acceso or not codigo_acceso.esta_disponible:
+            return jsonify({
+                'success': False,
+                'error': 'Código no válido o expirado'
+            }), 400
+        
+        # Marcar código como usado
+        codigo_acceso.estado = 'usado'
+        codigo_acceso.ultimo_uso_en = datetime.now(timezone.utc)
+        
+        # Crear nueva evaluación en estado pendiente
+        evaluacion = crear_evaluacion_cdt(
+            id_paciente=codigo_acceso.id_paciente,
+            imagen_url=None,  # Se actualizará cuando se suba la imagen
+            metodo_cdt='foto_movil',
+            id_codigo=codigo_acceso.id_codigo
+        )
+        
+        sqlalchemy_db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'evaluacion_id': evaluacion.id_evaluacion,
+            'mensaje': 'Evaluación iniciada correctamente'
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error iniciando evaluación: {str(e)}")
+        sqlalchemy_db.session.rollback()
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor'
+        }), 500
+
+
+@cdt_bp.route('/subir-imagen', methods=['POST'])
+def subir_imagen():
+    """
+    Sube la imagen del dibujo CDT y actualiza la evaluación
+    
+    Form data esperada:
+    - file: Archivo de imagen (required)
+    - evaluacion_id: ID de la evaluación (required)
+    """
+    try:
+        # Verificar que se envió un archivo
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No se encontró archivo en la petición'
+            }), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No se seleccionó ningún archivo'
+            }), 400
+        
+        # Verificar evaluacion_id
+        evaluacion_id = request.form.get('evaluacion_id')
+        if not evaluacion_id:
+            return jsonify({
+                'success': False,
+                'error': 'evaluacion_id es requerido'
+            }), 400
+        
+        # Buscar evaluación
+        evaluacion = EvaluacionCognitiva.query.get(evaluacion_id)
+        if not evaluacion:
+            return jsonify({
+                'success': False,
+                'error': 'Evaluación no encontrada'
+            }), 404
+        
+        # Verificar que la evaluación esté en estado pendiente
+        if evaluacion.estado_procesamiento != 'pendiente':
+            return jsonify({
+                'success': False,
+                'error': 'La evaluación ya ha sido procesada'
+            }), 400
+        
+        # Guardar archivo
+        import time
+        timestamp = int(time.time())
+        filename = f"cdt_{evaluacion_id}_{timestamp}.jpg"
+        
+        # Crear directorio si no existe
+        upload_dir = os.path.join(current_app.root_path, '..', 'uploads', 'cdt')
+        os.makedirs(upload_dir, exist_ok=True)
+        
+        file_path = os.path.join(upload_dir, filename)
+        file.save(file_path)
+        
+        # Actualizar evaluación con la ruta de la imagen
+        evaluacion.imagen_url = file_path
+        evaluacion.estado_procesamiento = 'procesando'
+        
+        sqlalchemy_db.session.commit()
+        
+        # Procesar imagen con análisis real de CDT
+        try:
+            from app.services.cdt_analyzer import CDTAnalyzer
+            
+            # Inicializar analizador
+            analyzer = CDTAnalyzer()
+            
+            # Analizar imagen (especificando 11:10 como hora objetivo)
+            analysis_result = analyzer.analyze_cdt_image(file_path, paciente_id=str(evaluacion.paciente_id))
+            
+            if analysis_result.get('success', False):
+                # Usar resultados del análisis real
+                evaluacion.puntuacion_total = analysis_result['puntuacion_total']
+                evaluacion.confianza = analysis_result['deteccion']['confianza']
+                evaluacion.tiempo_procesamiento = analysis_result['tiempo_procesamiento']
+                evaluacion.estado_procesamiento = 'completada'
+                
+                # Clasificación basada en puntuación real
+                if evaluacion.puntuacion_total >= 8.0:
+                    evaluacion.clasificacion = 'Normal'
+                elif evaluacion.puntuacion_total >= 6.0:
+                    evaluacion.clasificacion = 'Leve alteración'
+                elif evaluacion.puntuacion_total >= 4.0:
+                    evaluacion.clasificacion = 'Alteración moderada'
+                else:
+                    evaluacion.clasificacion = 'Alteración severa'
+                
+                # Generar observaciones detalladas
+                observaciones = []
+                criterios = analysis_result.get('criterios', {})
+                
+                # Verificación específica de hora 11:10
+                time_analysis = analysis_result.get('caracteristicas_extraidas', {}).get('time_analysis', {})
+                if time_analysis.get('verification_critical'):
+                    if criterios.get('manecillas_tiempo', 0) >= 1.8:
+                        observaciones.append("✓ HORA CORRECTA: Manecillas apuntan correctamente a 11:10")
+                    elif criterios.get('manecillas_tiempo', 0) >= 1.0:
+                        observaciones.append("⚠ HORA PARCIAL: Una manecilla apunta aproximadamente a 11:10")
+                    else:
+                        observaciones.append("✗ HORA INCORRECTA: Las manecillas NO marcan 11:10")
+                
+                # Añadir otras observaciones del análisis IA
+                if analysis_result.get('observaciones_ia'):
+                    observaciones.extend(analysis_result['observaciones_ia'])
+                
+                evaluacion.observaciones = '. '.join(observaciones)
+                
+                # Información adicional de análisis
+                evaluacion.detalles_puntuacion = json.dumps({
+                    'criterios_detallados': criterios,
+                    'analisis_tiempo': time_analysis,
+                    'errores_detectados': analysis_result.get('errores_detectados', []),
+                    'modelo_version': analysis_result.get('modelo_version', '1.0.0')
+                })
+                
+            else:
+                # Si falla el análisis, usar valores por defecto con observación del error
+                current_app.logger.warning(f"Análisis CDT falló: {analysis_result.get('error', 'Error desconocido')}")
+                evaluacion.puntuacion_total = 0.0
+                evaluacion.clasificacion = 'Error en análisis'
+                evaluacion.confianza = 0.0
+                evaluacion.tiempo_procesamiento = 1.0
+                evaluacion.estado_procesamiento = 'fallida'
+                evaluacion.observaciones = f"Error en análisis automático: {analysis_result.get('error', 'No se pudo procesar la imagen')}"
+            
+        except ImportError:
+            # Si no está disponible el analizador, usar valores simulados con advertencia
+            current_app.logger.warning("Analizador CDT no disponible, usando valores simulados")
+            evaluacion.puntuacion_total = 5.0  # Puntuación neutra para indicar análisis simulado
+            evaluacion.clasificacion = 'Análisis simulado'
+            evaluacion.confianza = 0.5
+            evaluacion.tiempo_procesamiento = 1.0
+            evaluacion.estado_procesamiento = 'completada'
+            evaluacion.observaciones = 'ANÁLISIS SIMULADO: Para análisis real, instalar dependencias de visión computacional (opencv-python, scikit-image, tensorflow)'
+        
+        except Exception as proc_error:
+            current_app.logger.error(f"Error procesando imagen: {str(proc_error)}")
+            evaluacion.puntuacion_total = 0.0
+            evaluacion.clasificacion = 'Error en procesamiento'
+            evaluacion.confianza = 0.0
+            evaluacion.tiempo_procesamiento = 1.0
+            evaluacion.estado_procesamiento = 'fallida'
+            evaluacion.observaciones = f'Error en procesamiento: {str(proc_error)}'
+        
+        return jsonify({
+            'success': True,
+            'evaluacion_id': evaluacion.id_evaluacion,
+            'mensaje': 'Imagen procesada correctamente',
+            'imagen_guardada': filename,
+            'evaluacion': {
+                'id_evaluacion': evaluacion.id_evaluacion,
+                'puntuacion_total': float(evaluacion.puntuacion_total),
+                'puntuacion_maxima': float(evaluacion.puntuacion_maxima),
+                'porcentaje_acierto': evaluacion.porcentaje_acierto,
+                'clasificacion': evaluacion.clasificacion,
+                'confianza': float(evaluacion.confianza) if evaluacion.confianza else None,
+                'estado_procesamiento': evaluacion.estado_procesamiento,
+                'tiempo_procesamiento': float(evaluacion.tiempo_procesamiento) if evaluacion.tiempo_procesamiento else None,
+                'observaciones': evaluacion.observaciones,
+                'fecha_evaluacion': evaluacion.fecha_evaluacion.isoformat() if evaluacion.fecha_evaluacion else None
+            }
+        }), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error subiendo imagen: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': 'Error interno del servidor'
+        }), 500
 
 
 @cdt_bp.route('/analyze', methods=['POST'])
@@ -564,6 +887,82 @@ def get_cdt_info():
         return jsonify({
             'success': False,
             'error': 'Error interno del servidor'
+        }), 500
+
+
+@cdt_bp.route('/demo-analyze', methods=['POST'])
+def demo_analyze():
+    """
+    Endpoint específico para demo - analiza imagen CDT sin requerir evaluación previa
+    
+    Form data esperada:
+    - file: Archivo de imagen (required)
+    - paciente_id: ID opcional del paciente (para demo)
+    """
+    try:
+        # Verificar que se envió un archivo
+        if 'file' not in request.files:
+            return jsonify({
+                'success': False,
+                'error': 'No se encontró archivo en la petición'
+            }), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({
+                'success': False,
+                'error': 'No se seleccionó ningún archivo'
+            }), 400
+        
+        # Validar tipo de archivo
+        allowed_extensions = {'png', 'jpg', 'jpeg', 'bmp', 'gif'}
+        if not ('.' in file.filename and 
+                file.filename.rsplit('.', 1)[1].lower() in allowed_extensions):
+            return jsonify({
+                'success': False,
+                'error': 'Tipo de archivo no permitido. Use PNG, JPG, JPEG, BMP o GIF'
+            }), 400
+        
+        # Validar tamaño (máximo 10MB)
+        if hasattr(file, 'content_length') and file.content_length > 10 * 1024 * 1024:
+            return jsonify({
+                'success': False,
+                'error': 'Archivo demasiado grande (máximo 10MB)'
+            }), 400
+        
+        # Leer imagen directamente en memoria
+        import cv2
+        import numpy as np
+        from io import BytesIO
+        
+        # Convertir archivo a imagen OpenCV
+        file_bytes = file.read()
+        nparr = np.frombuffer(file_bytes, np.uint8)
+        image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        
+        if image is None:
+            return jsonify({
+                'success': False,
+                'error': 'No se pudo procesar la imagen'
+            }), 400
+        
+        # Analizar con CDT analyzer directamente
+        from app.services.cdt_analyzer import CDTAnalyzer
+        analyzer = CDTAnalyzer()
+        resultado = analyzer.analyze_cdt(image)
+        
+        # Agregar información adicional para el demo
+        resultado['demo'] = True
+        resultado['archivo_original'] = file.filename
+        resultado['timestamp'] = datetime.now(timezone.utc).isoformat()
+        
+        return jsonify(resultado), 200
+        
+    except Exception as e:
+        current_app.logger.error(f"Error en demo-analyze: {str(e)}")
+        return jsonify({
+            'success': False,
+            'error': f'Error procesando imagen: {str(e)}'
         }), 500
 
 

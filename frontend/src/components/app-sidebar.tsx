@@ -7,6 +7,7 @@ import {
   FileText,
   Database,
   Home,
+  Activity,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -52,20 +53,7 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       url: "/pacientes",
       icon: Users,
       roles: ['Administrador', 'Neuropsicologo'], // Solo admin y neuropsicólogos
-      items: [
-        {
-          title: "Lista de Pacientes",
-          url: "/pacientes",
-        },
-        {
-          title: "Nuevo Paciente",
-          url: "/pacientes?new=true",
-        },
-        {
-          title: "Historial Médico",
-          url: "/pacientes/historial",
-        },
-      ],
+     
     },
     {
       title: "Informes",
@@ -106,6 +94,12 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
           url: "/evaluaciones/seguimiento",
         },
       ],
+    },
+    {
+      title: "CDT Test (Demo)",
+      url: "/cdt-test",
+      icon: Activity,
+      // Sin restricción de roles - todos pueden acceder
     },
     {
       title: "Análisis",
@@ -172,7 +166,7 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
   // Filter navigation based on user roles
   const navData = React.useMemo(() => {
     const filtered = allNavData.filter(item => {
-      if (!item.roles) return true; // Show items without role restrictions
+      if (!item.roles || item.roles.length === 0) return true; // Show items without role restrictions
       
       const hasRole = AuthorizationService.hasRole(item.roles);
       console.log(`Item "${item.title}" - Required roles: ${item.roles.join(', ')} - Has access: ${hasRole}`);

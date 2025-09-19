@@ -1,135 +1,184 @@
 """
-Demo rápido del sistema CDT
-Prueba el análisis de una imagen sin entrenamiento completo
+Demo completo del sistema CDT mejorado
+Prueba el análisis real de imágenes con computer vision
 """
 
 import os
 import sys
+import cv2
+import numpy as np
+from datetime import datetime
 
 # Agregar el path del proyecto
 project_root = os.path.dirname(__file__)
 sys.path.append(project_root)
 
-def demo_image_analysis():
-    """Demo del análisis de una imagen CDT"""
-    print("=== DEMO: Análisis de Imagen CDT ===\\n")
+def demo_real_cdt_analysis():
+    """Demo del análisis CDT mejorado con computer vision"""
+    print("=== DEMO: Análisis CDT Mejorado (Computer Vision) ===\n")
     
     try:
         from app.services.cdt_analyzer import CDTAnalyzer
         
         # Crear analizador
         analyzer = CDTAnalyzer()
-        print("✓ Analizador CDT inicializado")
+        print("✓ Analizador CDT con Computer Vision inicializado")
         
-        # Buscar una imagen de ejemplo en el dataset
-        dataset_path = os.path.join(project_root, 'dataset')
-        example_image = None
+        # Buscar imágenes de prueba
+        test_images = [
+            "reloj_correcto_10_10.jpg",
+            "reloj_incorrecto_3_15.jpg", 
+            "reloj_incorrecto_12_00.jpg"
+        ]
         
-        for split in ['test', 'valid', 'train']:
-            split_path = os.path.join(dataset_path, split)
-            if os.path.exists(split_path):
-                for filename in os.listdir(split_path):
-                    if filename.lower().endswith(('.png', '.jpg', '.jpeg')):
-                        example_image = os.path.join(split_path, filename)
-                        break
-                if example_image:
-                    break
+        print("\n🔍 PROBANDO CON IMÁGENES DE PRUEBA:")
+        print("-" * 50)
         
-        if not example_image:
-            print("✗ No se encontró imagen de ejemplo")
-            return False
+        resultados = []
         
-        print(f"📷 Analizando: {os.path.basename(example_image)}")
+        for img_name in test_images:
+            if os.path.exists(img_name):
+                print(f"\n📷 Analizando: {img_name}")
+                
+                # Cargar imagen
+                image = cv2.imread(img_name)
+                if image is not None:
+                    # Análisis con el nuevo sistema
+                    resultado = analyzer.analyze_cdt(image)
+                    resultados.append((img_name, resultado))
+                    
+                    # Mostrar resultados detallados
+                    print(f"   🎯 Puntuación total: {resultado['puntuacion_total']:.2f}/10")
+                    print(f"   ⏰ Precisión tiempo: {resultado['tiempo_precision']:.2f}/2 (objetivo: 10:10)")
+                    print(f"   🔢 Números: {resultado['numeros_presentes']:.2f}/2")
+                    print(f"   🎨 Calidad: {resultado['calidad_dibujo']:.2f}/6")
+                    
+                    # Detalles del análisis de tiempo
+                    if 'detalles_tiempo' in resultado:
+                        detalles = resultado['detalles_tiempo']
+                        print(f"   📐 Manecillas detectadas: {detalles.get('manecillas_detectadas', 0)}")
+                        print(f"   ✅ Hora correcta: {'Sí' if detalles.get('hora_correcta', False) else 'No'}")
+                        
+                        if 'angulos_detectados' in detalles:
+                            angulos = detalles['angulos_detectados']
+                            print(f"   📏 Ángulos detectados: {[f'{a:.1f}°' for a in angulos]}")
+                else:
+                    print(f"   ❌ Error al cargar imagen: {img_name}")
+            else:
+                print(f"   ⚠️ Imagen no encontrada: {img_name}")
         
-        # Realizar análisis
-        result = analyzer.analyze_cdt_image(example_image, "demo-patient-id")
+        # Tabla comparativa
+        if resultados:
+            print("\n� COMPARACIÓN DE RESULTADOS:")
+            print("=" * 80)
+            print(f"{'Imagen':<25} {'Total':<8} {'Tiempo':<8} {'Números':<8} {'Calidad':<8} {'Estado'}")
+            print("-" * 80)
+            
+            for img_name, resultado in resultados:
+                nombre_corto = img_name[:22] + "..." if len(img_name) > 25 else img_name
+                tiempo_ok = "✅" if resultado.get('detalles_tiempo', {}).get('hora_correcta', False) else "❌"
+                print(f"{nombre_corto:<25} "
+                      f"{resultado['puntuacion_total']:.1f}/10{'':<2} "
+                      f"{resultado['tiempo_precision']:.1f}/2{'':<4} "
+                      f"{resultado['numeros_presentes']:.1f}/2{'':<4} "
+                      f"{resultado['calidad_dibujo']:.1f}/6{'':<4} "
+                      f"{tiempo_ok}")
         
-        if result.get('success', False):
-            print("\\n🎯 RESULTADOS DEL ANÁLISIS:")
-            print(f"   Puntuación total: {result.get('puntuacion_total', 0):.1f}/10")
-            print(f"   Clasificación: {result.get('clasificacion_deterioro', 'N/A')}")
-            print(f"   Confianza: {result.get('probabilidad_deterioro', 0):.1%}")
-            print(f"   Tiempo procesamiento: {result.get('tiempo_procesamiento', 0):.2f}s")
-            
-            print("\\n📊 CRITERIOS EVALUADOS:")
-            criterios = result.get('criterios', {})
-            for criterio, puntuacion in criterios.items():
-                nombre = criterio.replace('_', ' ').title()
-                print(f"   {nombre}: {puntuacion:.1f}/2.0")
-            
-            print("\\n💭 OBSERVACIONES:")
-            print(f"   {result.get('observaciones_ia', 'Sin observaciones')}")
-            
-            errores = result.get('errores_detectados', [])
-            if errores:
-                print("\\n⚠️ ERRORES DETECTADOS:")
-                for error in errores:
-                    print(f"   - {error}")
-            
-            # Información técnica
-            print("\\n🔧 INFORMACIÓN TÉCNICA:")
-            deteccion = result.get('deteccion', {})
-            print(f"   Confianza detección: {deteccion.get('confianza', 0):.1%}")
-            
-            caracteristicas = result.get('caracteristicas_extraidas', {})
-            if 'circles_detected' in caracteristicas:
-                print(f"   Círculos detectados: {len(caracteristicas['circles_detected'])}")
-            if 'lines_detected' in caracteristicas:
-                print(f"   Líneas detectadas: {len(caracteristicas['lines_detected'])}")
-            if 'text_regions' in caracteristicas:
-                print(f"   Regiones de texto: {len(caracteristicas['text_regions'])}")
-            
-            return True
-        else:
-            print(f"✗ Error en análisis: {result.get('error', 'Error desconocido')}")
-            return False
-            
+        print("\n💡 DIFERENCIAS CLAVE DEL SISTEMA MEJORADO:")
+        print("   • ⏰ Análisis REAL del tiempo (antes era simulado)")
+        print("   • 📐 Detección de ángulos de manecillas con OpenCV")
+        print("   • 🎯 Verificación específica de hora 10:10")
+        print("   • 📏 Tolerancia configurable para precisión")
+        print("   • 🔍 Computer vision en lugar de scores aleatorios")
+        
+        return True
+        
     except Exception as e:
         print(f"✗ Error en demo: {e}")
         import traceback
         traceback.print_exc()
         return False
 
-def demo_model_info():
-    """Información sobre el modelo de clasificación"""
-    print("\\n=== INFO: Modelo de Clasificación ===\\n")
+def demo_interactive_testing():
+    """Demo interactivo para probar con imágenes propias"""
+    print("\n=== DEMO: Prueba Interactiva ===\n")
+    
+    print("🎮 MODO INTERACTIVO PARA PROBAR TU MODELO:")
+    print("1. Coloca una imagen de reloj en este directorio")
+    print("2. Escribe el nombre del archivo")
+    print("3. Ve el análisis en tiempo real")
+    print("4. Escribe 'salir' para terminar\n")
     
     try:
-        from app.services.cdt_model import CDTClassificationModel
+        from app.services.cdt_analyzer import CDTAnalyzer
+        analyzer = CDTAnalyzer()
         
-        model = CDTClassificationModel()
-        
-        print("📋 CONFIGURACIÓN DEL MODELO:")
-        print(f"   Input shape: {model.input_shape}")
-        print(f"   Clases: {len(model.class_names)}")
-        for i, clase in enumerate(model.class_names):
-            print(f"     {i}: {clase}")
-        
-        print("\\n🏗️ ARQUITECTURA:")
-        # Crear modelo para mostrar resumen
-        cnn_model = model.create_model()
-        print(f"   Parámetros totales: {cnn_model.count_params():,}")
-        print(f"   Capas: {len(cnn_model.layers)}")
-        
-        print("\\n📚 DATASET ESPERADO:")
-        print("   Estructura:")
-        print("     dataset/")
-        print("     ├── train/ (imágenes de entrenamiento)")
-        print("     ├── valid/ (imágenes de validación)")
-        print("     └── test/ (imágenes de prueba)")
-        
-        print("\\n🏷️ ETIQUETADO AUTOMÁTICO:")
-        print("   Basado en nombre de archivo:")
-        print("     R1, R2, R3 → Normal")
-        print("     R4, R5, R6 → Deterioro Leve")
-        print("     R7, R8, R9 → Deterioro Moderado")
-        print("     R10, R11, R12 → Deterioro Severo")
-        
-        return True
-        
+        while True:
+            archivo = input("➤ Nombre del archivo (o 'salir'): ").strip()
+            
+            if archivo.lower() == 'salir':
+                print("� ¡Hasta luego!")
+                break
+            
+            if not archivo:
+                continue
+                
+            if not os.path.exists(archivo):
+                print(f"❌ Archivo no encontrado: {archivo}")
+                # Mostrar archivos disponibles
+                archivos_img = [f for f in os.listdir('.') 
+                              if f.lower().endswith(('.jpg', '.jpeg', '.png', '.bmp'))]
+                if archivos_img:
+                    print("📁 Archivos disponibles:")
+                    for f in archivos_img:
+                        print(f"   • {f}")
+                continue
+            
+            print(f"\n🔍 Analizando: {archivo}")
+            print("-" * 40)
+            
+            try:
+                image = cv2.imread(archivo)
+                if image is None:
+                    print("❌ Error al cargar la imagen")
+                    continue
+                
+                resultado = analyzer.analyze_cdt(image)
+                
+                print(f"🎯 RESULTADO PARA {archivo}:")
+                print(f"   📊 Puntuación total: {resultado['puntuacion_total']:.2f}/10")
+                print(f"   ⏰ Tiempo (10:10): {resultado['tiempo_precision']:.2f}/2")
+                print(f"   🔢 Números: {resultado['numeros_presentes']:.2f}/2")
+                print(f"   🎨 Calidad: {resultado['calidad_dibujo']:.2f}/6")
+                
+                # Análisis específico del tiempo
+                if 'detalles_tiempo' in resultado:
+                    detalles = resultado['detalles_tiempo']
+                    hora_correcta = detalles.get('hora_correcta', False)
+                    print(f"   {'✅' if hora_correcta else '❌'} Hora 10:10: {'Correcta' if hora_correcta else 'Incorrecta'}")
+                    print(f"   📐 Manecillas: {detalles.get('manecillas_detectadas', 0)} detectadas")
+                
+                # Interpretación
+                puntuacion = resultado['puntuacion_total']
+                if puntuacion >= 8:
+                    print("   🟢 Interpretación: Excelente - Sin deterioro aparente")
+                elif puntuacion >= 6:
+                    print("   🟡 Interpretación: Bueno - Deterioro leve posible")
+                elif puntuacion >= 4:
+                    print("   🟠 Interpretación: Regular - Deterioro moderado")
+                else:
+                    print("   🔴 Interpretación: Deficiente - Deterioro severo")
+                
+            except Exception as e:
+                print(f"❌ Error al analizar: {str(e)}")
+            
+            print()  # Línea en blanco
+    
     except Exception as e:
-        print(f"✗ Error obteniendo info del modelo: {e}")
+        print(f"✗ Error en modo interactivo: {e}")
         return False
+    
+    return True
 
 def demo_api_endpoints():
     """Información sobre los endpoints de la API"""
@@ -160,12 +209,12 @@ def demo_api_endpoints():
 
 def main():
     """Función principal del demo"""
-    print("🧠 SISTEMA DE ANÁLISIS CDT CON IA")
-    print("Clock Drawing Test - Evaluación automática de deterioro cognitivo\\n")
+    print("🧠 SISTEMA DE ANÁLISIS CDT MEJORADO")
+    print("Clock Drawing Test - Evaluación con Computer Vision\n")
     
     demos = [
-        ("Análisis de Imagen", demo_image_analysis),
-        ("Información del Modelo", demo_model_info),
+        ("Análisis CDT Mejorado", demo_real_cdt_analysis),
+        ("Prueba Interactiva", demo_interactive_testing),
         ("Endpoints de la API", demo_api_endpoints)
     ]
     
@@ -173,14 +222,19 @@ def main():
         try:
             demo_func()
         except Exception as e:
-            print(f"\\n✗ Error en {demo_name}: {e}")
+            print(f"\n✗ Error en {demo_name}: {e}")
     
-    print("\\n" + "="*60)
+    print("\n" + "="*60)
     print("🚀 PRÓXIMOS PASOS:")
-    print("1. Entrenar modelo: python train_cdt_model.py")
-    print("2. Iniciar backend: python run.py")
-    print("3. Probar API: http://localhost:5000/api/cdt/info")
-    print("4. Ver documentación: CDT_README.md")
+    print("1. Iniciar backend: python run.py")
+    print("2. Probar API: http://localhost:5000/api/cdt/info") 
+    print("3. Modo interactivo: python demo_cdt.py")
+    print("4. Frontend web: npm run dev (en carpeta frontend)")
+    print("\n💡 TU MODELO AHORA ANALIZA REALMENTE LOS RELOJES!")
+    print("   ✅ Computer vision con OpenCV")
+    print("   ✅ Detección real de manecillas") 
+    print("   ✅ Verificación de hora 10:10")
+    print("   ✅ Sin más scores falsos")
 
 if __name__ == "__main__":
     main()

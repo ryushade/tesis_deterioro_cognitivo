@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import LoginPage from './pages/LoginPage';
 import { HomePage } from './pages/HomePage';
 import Pacientes from './pages/Pacientes/PacientesSimple';
+import CDTTestPage from './pages/CDTTestPage';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthorizationService } from './services/auth.middleware';
 import './index.css';
@@ -128,6 +129,14 @@ function App() {
               element={
                 <ProtectedRoute requiredRoles={['Administrador', 'Neuropsicólogo']}>
                   <Pacientes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/cdt-test"
+              element={
+                <ProtectedRoute>
+                  <CDTTestPage />
                 </ProtectedRoute>
               }
             />

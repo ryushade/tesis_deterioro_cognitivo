@@ -3,38 +3,13 @@ Modelos SQLAlchemy para el sistema de evaluaciones cognitivas
 Basado en el esquema de BD propuesto con BIGSERIAL y estructura mejorada
 """
 from app import db
+from app.models.paciente import Paciente  # Importar el modelo actualizado
 from datetime import datetime, timezone
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy import text, CheckConstraint
 
-
-class Paciente(db.Model):
-    """Modelo para la tabla paciente"""
-    __tablename__ = 'paciente'
-    
-    id_paciente = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
-    nombres = db.Column(db.String(120), nullable=False)
-    apellidos = db.Column(db.String(120), nullable=False)
-    fecha_nacimiento = db.Column(db.Date, nullable=False)
-    sexo = db.Column(db.CHAR(1), CheckConstraint("sexo IN ('M','F')"))
-    anos_escolaridad = db.Column(db.SmallInteger)
-    
-    # Relaciones
-    codigos_acceso = db.relationship('CodigoAcceso', back_populates='paciente')
-    evaluaciones = db.relationship('EvaluacionCognitiva', back_populates='paciente')
-    
-    def __repr__(self):
-        return f'<Paciente {self.nombres} {self.apellidos}>'
-    
-    @property
-    def nombre_completo(self):
-        return f"{self.nombres} {self.apellidos}"
-    
-    @property
-    def edad(self):
-        from datetime import date
-        today = date.today()
-        return today.year - self.fecha_nacimiento.year - ((today.month, today.day) < (self.fecha_nacimiento.month, self.fecha_nacimiento.day))
+# Nota: El modelo Paciente se encuentra ahora en app.models.paciente
+# para evitar duplicaciones y conflictos
 
 
 class CodigoAcceso(db.Model):
@@ -217,10 +192,14 @@ def generar_codigo_acceso(prefijo='CDT', longitud=8):
     return f"{prefijo}-{fecha}-{suffix}"
 
 
-def crear_evaluacion_cdt(id_paciente, imagen_url, metodo_cdt='foto_movil', id_codigo=None):
+def crear_evaluacion_cdt(id_paciente, imagen_url=None, metodo_cdt='foto_movil', id_codigo=None):
     """
     Crear una nueva evaluación CDT
     """
+    # Si no se proporciona imagen_url, usar placeholder para cumplir con la restricción
+    if imagen_url is None:
+        imagen_url = 'pendiente_subida'
+    
     evaluacion = EvaluacionCognitiva(
         id_paciente=id_paciente,
         id_codigo=id_codigo,
