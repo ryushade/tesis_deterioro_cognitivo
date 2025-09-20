@@ -28,12 +28,14 @@ def create_app(config_name=None):
     from app.routes.auth import auth_bp
     from app.routes.pacientes import pacientes_bp
     from app.routes.cdt import cdt_bp
+    from app.routes.codigos_acceso import codigos_acceso_bp
     
     app.register_blueprint(health_bp, url_prefix='/api')
     app.register_blueprint(users_bp, url_prefix='/api')
     app.register_blueprint(users_db_bp, url_prefix='/api')
     app.register_blueprint(auth_bp, url_prefix='/api/auth')
     app.register_blueprint(pacientes_bp, url_prefix='/api/pacientes')
+    app.register_blueprint(codigos_acceso_bp, url_prefix='/api/codigos-acceso')
     app.register_blueprint(cdt_bp)
     
     return app

@@ -57,7 +57,7 @@ function Pacientes() {
     <div className="min-h-screen py-8 px-2 sm:px-6">
       <div className="mb-8">
         <h1 className="font-black text-5xl text-blue-900 tracking-tight mb-3">
-          Gestión de Pacientes
+          Gestión de pacientes
         </h1>
         <p className="text-lg font-medium text-blue-700/80 leading-relaxed">
           Administra y visualiza la información de todos los pacientes registrados en el sistema.

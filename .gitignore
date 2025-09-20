@@ -10024,3 +10024,4 @@ frontend/src/pages/components/PaginationControls.tsx
 frontend/src/pages/components/TablaPacientes.tsx
 frontend/src/pages/components/ViewPaciente.tsx
 frontend/src/services/pacientesService.ts
+node_modules

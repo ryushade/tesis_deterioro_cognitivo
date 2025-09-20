@@ -1,47 +1,32 @@
 import { useState } from 'react';
-import { Plus, Users, Brain } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { authService } from '@/services/auth';
-import ShowPacientes from './ShowPacientes';
-import type { Paciente } from '@/services/pacientes.services';
+import { useGetPacientes } from '@/services/pacientesService';
+import TablaPacientesSimple from '../components/TablaPacientesSimple';
+import AddPacienteModal from '../components/AddPatient';
+import EditPacienteModal from '../components/EditPaciente';
+import ViewPacienteModal from '../components/ViewPaciente';
+import ConfirmDialog from '@/components/ui/confirm-dialog';
+import { pacientesService, type Paciente } from '@/services/pacientesService';
+import toast, { Toaster } from 'react-hot-toast';
 
 function Pacientes() {
-  const [pacientes] = useState<Paciente[]>([
-    {
-      id_paciente: 1,
-      nombres: 'María',
-      apellidos: 'González',
-      cedula: '1234567890',
-      fecha_nacimiento: '1950-05-15',
-      edad: 74,
-      telefono: '0999123456',
-      direccion: 'Av. Principal 123',
-      contacto_emergencia: 'Juan González',
-      telefono_emergencia: '0998765432',
-      estado_cognitivo: 'Normal',
-      medicamentos: 'Aspirina 100mg',
-      estado_paciente: '1',
-      fecha_registro: '2024-01-15'
-    },
-    {
-      id_paciente: 2,
-      nombres: 'Carlos',
-      apellidos: 'Rodríguez',
-      cedula: '0987654321',
-      fecha_nacimiento: '1948-12-03',
-      edad: 76,
-      telefono: '0999987654',
-      direccion: 'Calle Secundaria 456',
-      contacto_emergencia: 'Ana Rodríguez',
-      telefono_emergencia: '0998123456',
-      estado_cognitivo: 'Leve',
-      medicamentos: 'Donepezilo 5mg',
-      estado_paciente: '1',
-      fecha_registro: '2024-02-20'
-    }
-  ]);
+  // Estados para los modales
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
+  
+  // Estados para búsqueda y paginación
+  const [searchTerm, setSearchTerm] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  
+  // Hook para obtener pacientes
+  const { pacientes, metadata, loading, error, refetch } = useGetPacientes();
 
   // Get user data from localStorage
   const currentUser = authService.getUserFromStorage();
@@ -56,85 +41,148 @@ function Pacientes() {
     window.location.href = '/login';
   };
 
+  // Handlers para modales
+  const handleAddPaciente = () => {
+    setShowAddModal(true);
+  };
+
+  const handleViewPaciente = (paciente: Paciente) => {
+    setSelectedPaciente(paciente);
+    setShowViewModal(true);
+  };
+
+  const handleEditPaciente = (paciente: Paciente) => {
+    setSelectedPaciente(paciente);
+    setShowEditModal(true);
+  };
+
+  const handleDeletePaciente = (paciente: Paciente) => {
+    setSelectedPaciente(paciente);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (selectedPaciente) {
+      try {
+        const response = await pacientesService.delete(selectedPaciente.id_paciente);
+        if (response.success) {
+          toast.success('Paciente eliminado exitosamente');
+          refetch(currentPage, itemsPerPage, searchTerm);
+        } else {
+          toast.error(response.message || 'Error al eliminar paciente');
+        }
+      } catch (error) {
+        console.error('Error deleting paciente:', error);
+        toast.error('Error de conexión al servidor');
+      }
+    }
+    setShowDeleteDialog(false);
+    setSelectedPaciente(null);
+  };
+
+  // Handler para refrescar datos después de operaciones CRUD
+  const handleRefresh = () => {
+    refetch(currentPage, itemsPerPage, searchTerm);
+  };
+
+  // Handler para búsqueda
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1);
+    refetch(1, itemsPerPage, term);
+  };
+
+  // Handler para cambio de página
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    refetch(page, itemsPerPage, searchTerm);
+  };
+
   return (
     <DashboardLayout 
       user={sidebarUser}
       onLogout={handleLogout}
     >
+      <Toaster position="top-right" />
+      
       <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="bg-blue-100 p-3 rounded-full">
-              <Brain className="h-8 w-8 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Gestión de Pacientes</h1>
-              <p className="text-gray-600">Sistema de seguimiento cognitivo para adultos mayores (65+)</p>
-            </div>
+           <div className="mb-2">
+        <h1 className="font-black text-5xl text-blue-900 tracking-tight mb-3">
+          Gestión de pacientes
+        </h1>
+        <p className="text-lg font-medium text-blue-700/80 leading-relaxed">
+          Administra y visualiza la información de todos los pacientes registrados en el sistema.
+        </p>
+      </div>
           </div>
           
           <Button
+            onClick={handleAddPaciente}
             className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500"
           >
             <Plus className="h-4 w-4" />
-            Nuevo Paciente
+            Agregar paciente
           </Button>
         </div>
 
-        {/* Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Total Pacientes</p>
-                  <p className="text-2xl font-bold text-blue-600">{pacientes.length}</p>
-                </div>
-                <Users className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">Activos</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {pacientes.filter(p => p.estado_paciente === '1').length}
-                  </p>
-                </div>
-                <div className="h-3 w-3 bg-green-500 rounded-full"></div>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-600">En Evaluación</p>
-                  <p className="text-2xl font-bold text-yellow-600">
-                    {pacientes.filter(p => p.estado_cognitivo === 'No evaluado').length}
-                  </p>
-                </div>
-                <div className="h-3 w-3 bg-yellow-500 rounded-full"></div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        
 
-        {/* Lista de pacientes */}
-        <ShowPacientes
+        {/* Tabla de pacientes */}
+        <TablaPacientesSimple
           pacientes={pacientes}
-          onView={(paciente: Paciente) => alert(`Ver paciente: ${paciente.nombres} ${paciente.apellidos}`)}
-          onEdit={(paciente: Paciente) => alert(`Editar paciente: ${paciente.nombres} ${paciente.apellidos}`)}
-          onDelete={(paciente: Paciente) => {
-            if (confirm(`¿Está seguro de eliminar a ${paciente.nombres} ${paciente.apellidos}?`)) {
-              alert('Paciente eliminado (simulación)');
-            }
+          loading={loading}
+          error={error}
+          searchTerm={searchTerm}
+          onSearch={handleSearch}
+          currentPage={currentPage}
+          totalPages={metadata.total_pages}
+          onPageChange={handlePageChange}
+          onView={handleViewPaciente}
+          onEdit={handleEditPaciente}
+          onDelete={handleDeletePaciente}
+        />
+
+        {/* Modales */}
+        <AddPacienteModal
+          open={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => {
+            setShowAddModal(false);
+            handleRefresh();
           }}
+        />
+
+        {showEditModal && selectedPaciente && (
+          <EditPacienteModal
+            open={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            paciente={selectedPaciente}
+            onSuccess={() => {
+              setShowEditModal(false);
+              handleRefresh();
+            }}
+          />
+        )}
+
+        {showViewModal && selectedPaciente && (
+          <ViewPacienteModal
+            open={showViewModal}
+            onClose={() => setShowViewModal(false)}
+            paciente={selectedPaciente}
+          />
+        )}
+
+        <ConfirmDialog
+          open={showDeleteDialog}
+          onClose={() => setShowDeleteDialog(false)}
+          onConfirm={confirmDelete}
+          title="Eliminar Paciente"
+          message={`¿Eliminar a ${selectedPaciente?.nombres} ${selectedPaciente?.apellidos}?`}
+          confirmText="Eliminar"
+          variant="danger"
         />
       </div>
     </DashboardLayout>

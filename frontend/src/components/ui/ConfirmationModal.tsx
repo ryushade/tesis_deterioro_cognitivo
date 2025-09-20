@@ -83,7 +83,14 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   const colors = getColors();
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div 
+      className="fixed inset-0 flex items-center justify-center p-4 z-50"
+      style={{
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        backdropFilter: 'blur(8px) saturate(180%) brightness(0.8)',
+        WebkitBackdropFilter: 'blur(8px) saturate(180%) brightness(0.8)'
+      }}
+    >
       <Card className={`w-full max-w-md ${colors.border} border-2`}>
         <CardHeader className={`${colors.bg} rounded-t-lg`}>
           <div className="flex items-center gap-3">

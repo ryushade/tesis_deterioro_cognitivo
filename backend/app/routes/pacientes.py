@@ -2,12 +2,15 @@
 Rutas para gestión de pacientes usando psycopg2
 """
 from flask import Blueprint, request, jsonify
-from app.services.pacientes_service import pacientes_service
+from app.services.pacientes_service import PacientesService
 import logging
 
 logger = logging.getLogger(__name__)
 
 pacientes_bp = Blueprint('pacientes', __name__)
+
+# Crear instancia del servicio
+pacientes_service = PacientesService()
 
 @pacientes_bp.route('', methods=['GET'])
 def get_pacientes():

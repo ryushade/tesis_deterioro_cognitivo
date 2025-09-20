@@ -8,6 +8,7 @@ import {
   Database,
   Home,
   Activity,
+  Key,
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -56,71 +57,34 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
      
     },
     {
-      title: "Informes",
-      url: "/informes",
-      icon: FileText,
-      roles: ['Administrador', 'Neuropsicologo'], // Solo profesionales
-      items: [
-        {
-          title: "Generar Informe",
-          url: "/informes/generar",
-        },
-        {
-          title: "Plantillas",
-          url: "/informes/plantillas",
-        },
-        {
-          title: "Historial",
-          url: "/informes/historial",
-        },
-      ],
-    },
-    {
       title: "Evaluaciones",
       url: "/evaluaciones",
       icon: Brain,
       roles: ['Administrador', 'Neuropsicologo', 'Paciente'], // Todos pueden acceder a evaluaciones
-      items: [
-        {
-          title: "Test Cognitivos",
-          url: "/evaluaciones/tests",
-        },
-        {
-          title: "Resultados",
-          url: "/evaluaciones/resultados",
-        },
-        {
-          title: "Seguimiento",
-          url: "/evaluaciones/seguimiento",
-        },
-      ],
+      
     },
+    {
+      title: "Códigos de acceso",
+      url: "/codigos-acceso",
+      icon: Key,
+      roles: ['Administrador', 'Neuropsicologo'], // Solo admin y neuropsicólogos
+     
+    },
+    {
+      title: "Informes",
+      url: "/informes",
+      icon: FileText,
+      roles: ['Administrador', 'Neuropsicologo'], // Solo profesionales
+      
+    },
+    
     {
       title: "CDT Test (Demo)",
       url: "/cdt-test",
       icon: Activity,
       // Sin restricción de roles - todos pueden acceder
     },
-    {
-      title: "Análisis",
-      url: "/analisis",
-      icon: BarChart3,
-      roles: ['Administrador', 'Neuropsicologo'], // Solo profesionales
-      items: [
-        {
-          title: "Estadísticas",
-          url: "/analisis/estadisticas",
-        },
-        {
-          title: "Reportes",
-          url: "/analisis/reportes",
-        },
-        {
-          title: "Tendencias",
-          url: "/analisis/tendencias",
-        },
-      ],
-    },
+    
     {
       title: "Gestión de Usuarios",
       url: "/usuarios",
@@ -146,20 +110,7 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       url: "/configuracion",
       icon: Settings,
       roles: ['Administrador', 'Neuropsicologo', 'Paciente'], // Todos pueden acceder a su configuración
-      items: [
-        {
-          title: "Perfil",
-          url: "/configuracion/perfil",
-        },
-        {
-          title: "Sistema",
-          url: "/configuracion/sistema",
-        },
-        {
-          title: "Seguridad",
-          url: "/configuracion/seguridad",
-        },
-      ],
+      
     },
   ];
 

@@ -1,70 +1,36 @@
+
 import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+// Pages
 import LoginPage from './pages/LoginPage';
 import { HomePage } from './pages/HomePage';
 import Pacientes from './pages/Pacientes/PacientesSimple';
+import CodigosAcceso from './pages/CodigosAcceso/Code';
+import Evaluaciones from './pages/Evaluaciones/Evaluaciones';
 import CDTTestPage from './pages/CDTTestPage';
+
+// Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthorizationService } from './services/auth.middleware';
-import './index.css';
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      retry: 1,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+const queryClient = new QueryClient();
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const checkAuth = () => {
+    const token = localStorage.getItem('authToken');
+    const isAuthStored = localStorage.getItem('isAuthenticated') === 'true';
+    setIsAuthenticated(!!token && isAuthStored);
+    setIsLoading(false);
+  };
 
   useEffect(() => {
-    const checkAuth = () => {
-      const token = localStorage.getItem('authToken');
-      const isAuthStored = localStorage.getItem('isAuthenticated') === 'true';
-      
-      if (token && isAuthStored) {
-        try {
-          // Simple JWT expiration check (JWT format: header.payload.signature)
-          if (token.split('.').length === 3) {
-            const payload = JSON.parse(atob(token.split('.')[1]));
-            const isExpired = Date.now() >= payload.exp * 1000;
-            setIsAuthenticated(!isExpired);
-            
-            if (isExpired) {
-              // Clean up expired token
-              localStorage.removeItem('authToken');
-              localStorage.removeItem('isAuthenticated');
-              localStorage.removeItem('user');
-              setIsAuthenticated(false);
-            }
-          } else {
-            // Invalid token format
-            setIsAuthenticated(false);
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('isAuthenticated');
-            localStorage.removeItem('user');
-          }
-        } catch (error: any) {
-          console.error('Token validation error:', error);
-          setIsAuthenticated(false);
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('isAuthenticated');
-          localStorage.removeItem('user');
-        }
-      } else {
-        setIsAuthenticated(false);
-      }
-      setIsLoading(false);
-    };
-
     checkAuth();
 
-    // Listen for login events
     const handleLoginSuccess = () => {
       setTimeout(() => {
         checkAuth();
@@ -79,7 +45,7 @@ function App() {
 
     window.addEventListener('loginSuccess', handleLoginSuccess);
     window.addEventListener('authStateChanged', handleAuthStateChanged);
-    
+
     return () => {
       window.removeEventListener('loginSuccess', handleLoginSuccess);
       window.removeEventListener('authStateChanged', handleAuthStateChanged);
@@ -104,51 +70,68 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100">
           <Routes>
-            <Route
-              path="/login"
-              element={
-                isAuthenticated ? (
-                  <Navigate to="/dashboard" replace />
-                ) : (
-                  <LoginPage />
-                )
-              }
-            />
-            <Route
-              path="/dashboard"
-              element={
-                <ProtectedRoute>
-                  <HomePage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/pacientes"
-              element={
-                <ProtectedRoute requiredRoles={['Administrador', 'Neuropsicologo']}>
-                  <Pacientes />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/cdt-test"
-              element={
-                <ProtectedRoute>
-                  <CDTTestPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/"
-              element={
-                <Navigate to={isAuthenticated ? AuthorizationService.getDefaultRoute() : "/login"} replace />
-              }
-            />
-          </Routes>
-        </div>
-      </Router>
+              <Route
+                path="/login"
+                element={
+                  isAuthenticated ? (
+                    <Navigate to="/dashboard" replace />
+                  ) : (
+                    <LoginPage />
+                  )
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute>
+                    <HomePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pacientes"
+                element={
+                  <ProtectedRoute requiredRoles={["Administrador", "Neuropsicologo"]}>
+                    <Pacientes />
+                  </ProtectedRoute>
+                }
+              />
+
+              <Route
+                path="/evaluaciones"
+                element={
+                  <ProtectedRoute>
+                    <Evaluaciones />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/codigos-acceso"
+                element={
+                  <ProtectedRoute requiredRoles={["Administrador", "Neuropsicologo"]}>
+                    <CodigosAcceso />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/cdt-test"
+                element={
+                  <ProtectedRoute>
+                    <CDTTestPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/"
+                element={
+                  <Navigate to={isAuthenticated ? AuthorizationService.getDefaultRoute() : "/login"} replace />
+                }
+              />
+            </Routes>
+          </div>
+        </Router>
     </QueryClientProvider>
   );
 }
