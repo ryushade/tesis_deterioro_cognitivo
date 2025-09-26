@@ -1,0 +1,176 @@
+import { Button } from '../../../components/ui/button';
+import type { EvaluacionCognitiva } from '../../../types/evaluaciones';
+import { Eye, Edit, Trash2 } from 'lucide-react';
+
+interface EvaluacionesTableProps {
+  evaluaciones: EvaluacionCognitiva[];
+  loading: boolean;
+  onView: (evaluacion: EvaluacionCognitiva) => void;
+  onEdit: (evaluacion: EvaluacionCognitiva) => void;
+  onDelete: (evaluacion: EvaluacionCognitiva) => void;
+}
+
+export function EvaluacionesTable({ 
+  evaluaciones, 
+  loading, 
+  onView, 
+  onEdit, 
+  onDelete 
+}: EvaluacionesTableProps) {
+  const formatFecha = (fecha: string) => {
+    return new Date(fecha).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getEstadoColor = (estado: string) => {
+    switch (estado) {
+      case 'completada': return 'text-green-600 bg-green-100';
+      case 'procesando': return 'text-yellow-600 bg-yellow-100';
+      case 'pendiente': return 'text-blue-600 bg-blue-100';
+      case 'fallida': return 'text-red-600 bg-red-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  const getClasificacionColor = (clasificacion: string) => {
+    switch (clasificacion?.toLowerCase()) {
+      case 'normal': return 'text-green-700 bg-green-100';
+      case 'deterioro leve': return 'text-yellow-700 bg-yellow-100';
+      case 'deterioro moderado': return 'text-orange-700 bg-orange-100';
+      case 'deterioro severo': return 'text-red-700 bg-red-100';
+      default: return 'text-gray-700 bg-gray-100';
+    }
+  };
+
+  return (
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+      {loading ? (
+        <div className="p-8 text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="text-gray-500 mt-2">Cargando evaluaciones...</p>
+        </div>
+      ) : evaluaciones.length === 0 ? (
+        <div className="p-8 text-center">
+          <p className="text-gray-500">No se encontraron evaluaciones cognitivas</p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Paciente
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Tipo Evaluación
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Fecha
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Puntuación
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Clasificación
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Estado
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Acciones
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {evaluaciones.map((evaluacion) => (
+                <tr key={evaluacion.id_evaluacion} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className="text-sm font-medium text-gray-900">
+                      #{evaluacion.id_evaluacion}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div>
+                      <div className="font-medium">{evaluacion.paciente_nombre}</div>
+                      <div className="text-gray-500">ID: {evaluacion.id_paciente}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div>
+                      <div className="font-medium">{evaluacion.tipo_evaluacion_codigo}</div>
+                      <div className="text-gray-500">{evaluacion.tipo_evaluacion_nombre}</div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {formatFecha(evaluacion.fecha_evaluacion)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {evaluacion.estado_procesamiento === 'completada' ? (
+                      <div>
+                        <div className="font-medium">
+                          {evaluacion.puntuacion_total}/{evaluacion.puntuacion_maxima}
+                        </div>
+                        <div className="text-gray-500">
+                          {evaluacion.porcentaje_acierto.toFixed(1)}%
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    {evaluacion.clasificacion ? (
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getClasificacionColor(evaluacion.clasificacion)}`}>
+                        {evaluacion.clasificacion}
+                      </span>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getEstadoColor(evaluacion.estado_procesamiento)}`}>
+                      {evaluacion.estado_procesamiento}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex gap-1">
+                      <Button
+                        onClick={() => onView(evaluacion)}
+                        className="text-blue-600 bg-transparent border-none p-2 rounded hover:bg-blue-50"
+                        title="Ver evaluación"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => onEdit(evaluacion)}
+                        className="text-gray-600 bg-transparent border-none p-2 rounded hover:bg-gray-50"
+                        title="Editar evaluación"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        onClick={() => onDelete(evaluacion)}
+                        className="text-red-600 bg-transparent border-none p-2 rounded hover:bg-red-50"
+                        title="Eliminar evaluación"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}

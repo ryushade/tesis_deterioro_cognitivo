@@ -1,0 +1,241 @@
+participant_id,num_images,evaluations,cognitive_status,notes,age_group,gender,education_level
+2,3,,0,Simulado: Cognitivamente sano,80+,M,Secundaria
+3,2,,0,Simulado: Cognitivamente sano,51-65,F,Secundaria
+4,3,,0,Simulado: Cognitivamente sano,51-65,F,Universitaria
+5,2,,0,Simulado: Cognitivamente sano,66-80,M,Técnica
+7,3,,0,Simulado: Cognitivamente sano,66-80,F,Secundaria
+8,4,,1,Simulado: Deterioro cognitivo leve,66-80,F,Secundaria
+9,1,,2,Simulado: Deterioro cognitivo grave,36-50,M,Secundaria
+10,3,,0,Simulado: Cognitivamente sano,51-65,F,Universitaria
+12,1,,0,Simulado: Cognitivamente sano,66-80,F,Primaria
+13,1,,0,Simulado: Cognitivamente sano,36-50,F,Secundaria
+15,3,,0,Simulado: Cognitivamente sano,36-50,M,Secundaria
+16,2,,2,Simulado: Deterioro cognitivo grave,80+,F,Secundaria
+17,1,,0,Simulado: Cognitivamente sano,51-65,F,Universitaria
+18,2,,1,Simulado: Deterioro cognitivo leve,36-50,F,Primaria
+19,2,,0,Simulado: Cognitivamente sano,80+,F,Universitaria
+20,1,,2,Simulado: Deterioro cognitivo grave,80+,F,Primaria
+21,2,,1,Simulado: Deterioro cognitivo leve,51-65,F,Universitaria
+22,1,,0,Simulado: Cognitivamente sano,66-80,F,Primaria
+23,3,,1,Simulado: Deterioro cognitivo leve,36-50,F,Primaria
+24,3,,0,Simulado: Cognitivamente sano,36-50,M,Técnica
+25,2,,0,Simulado: Cognitivamente sano,66-80,M,Universitaria
+26,2,,0,Simulado: Cognitivamente sano,66-80,M,Universitaria
+27,2,,2,Simulado: Deterioro cognitivo grave,66-80,F,Técnica
+28,2,,0,Simulado: Cognitivamente sano,51-65,M,Universitaria
+29,3,,1,Simulado: Deterioro cognitivo leve,66-80,F,Primaria
+30,3,,1,Simulado: Deterioro cognitivo leve,66-80,M,Universitaria
+31,3,,0,Simulado: Cognitivamente sano,80+,F,Secundaria
+32,1,,1,Simulado: Deterioro cognitivo leve,66-80,F,Técnica
+33,3,,2,Simulado: Deterioro cognitivo grave,66-80,F,Universitaria
+34,3,,1,Simulado: Deterioro cognitivo leve,51-65,M,Técnica
+35,1,,0,Simulado: Cognitivamente sano,51-65,F,Secundaria
+36,1,,2,Simulado: Deterioro cognitivo grave,80+,F,Secundaria
+37,3,,0,Simulado: Cognitivamente sano,80+,M,Universitaria
+38,1,,1,Simulado: Deterioro cognitivo leve,36-50,F,Secundaria
+39,2,,0,Simulado: Cognitivamente sano,36-50,F,Universitaria
+40,2,,0,Simulado: Cognitivamente sano,51-65,M,Técnica
+41,2,,1,Simulado: Deterioro cognitivo leve,51-65,F,Primaria
+42,3,,0,Simulado: Cognitivamente sano,80+,M,Técnica
+101,2,,0,Simulado: Cognitivamente sano,36-50,M,Secundaria
+102,3,,1,Simulado: Deterioro cognitivo leve,18-35,M,Técnica
+103,2,,2,Simulado: Deterioro cognitivo grave,51-65,M,Técnica
+104,3,,0,Simulado: Cognitivamente sano,36-50,M,Primaria
+105,2,,2,Simulado: Deterioro cognitivo grave,51-65,F,Secundaria
+106,2,,0,Simulado: Cognitivamente sano,66-80,F,Universitaria
+107,3,,1,Simulado: Deterioro cognitivo leve,66-80,F,Secundaria
+108,3,,0,Simulado: Cognitivamente sano,36-50,F,Técnica
+109,1,,1,Simulado: Deterioro cognitivo leve,51-65,F,Secundaria
+110,3,,0,Simulado: Cognitivamente sano,51-65,F,Secundaria
+111,4,,0,Simulado: Cognitivamente sano,66-80,M,Secundaria
+112,3,,0,Simulado: Cognitivamente sano,36-50,M,Secundaria
+113,3,,2,Simulado: Deterioro cognitivo grave,51-65,F,Secundaria
+114,1,,1,Simulado: Deterioro cognitivo leve,80+,M,Técnica
+115,3,,2,Simulado: Deterioro cognitivo grave,51-65,F,Primaria
+116,3,,1,Simulado: Deterioro cognitivo leve,80+,M,Primaria
+117,3,,2,Simulado: Deterioro cognitivo grave,51-65,F,Primaria
+119,2,,2,Simulado: Deterioro cognitivo grave,51-65,F,Primaria
+120,1,,0,Simulado: Cognitivamente sano,66-80,F,Secundaria
+121,3,,2,Simulado: Deterioro cognitivo grave,66-80,M,Técnica
+122,3,,0,Simulado: Cognitivamente sano,66-80,M,Técnica
+123,3,,0,Simulado: Cognitivamente sano,36-50,F,Primaria
+124,1,,0,Simulado: Cognitivamente sano,51-65,F,Universitaria
+125,2,,0,Simulado: Cognitivamente sano,51-65,M,Técnica
+126,2,,0,Simulado: Cognitivamente sano,66-80,F,Secundaria
+127,2,,0,Simulado: Cognitivamente sano,18-35,M,Universitaria
+128,2,,0,Simulado: Cognitivamente sano,80+,M,Universitaria
+129,1,,0,Simulado: Cognitivamente sano,51-65,M,Secundaria
+130,1,,0,Simulado: Cognitivamente sano,36-50,M,Secundaria
+131,2,,0,Simulado: Cognitivamente sano,66-80,F,Universitaria
+132,3,,0,Simulado: Cognitivamente sano,66-80,F,Técnica
+133,2,,1,Simulado: Deterioro cognitivo leve,80+,M,Primaria
+134,1,,1,Simulado: Deterioro cognitivo leve,36-50,F,Técnica
+135,2,,0,Simulado: Cognitivamente sano,51-65,F,Universitaria
+137,3,,0,Simulado: Cognitivamente sano,51-65,F,Técnica
+138,1,,0,Simulado: Cognitivamente sano,80+,M,Técnica
+139,3,,0,Simulado: Cognitivamente sano,18-35,M,Universitaria
+140,3,,0,Simulado: Cognitivamente sano,36-50,M,Primaria
+141,3,,0,Simulado: Cognitivamente sano,36-50,M,Secundaria
+142,1,,0,Simulado: Cognitivamente sano,36-50,M,Técnica
+143,2,,1,Simulado: Deterioro cognitivo leve,51-65,F,Universitaria
+201,3,,1,Simulado: Deterioro cognitivo leve,51-65,M,Secundaria
+202,3,,0,Simulado: Cognitivamente sano,51-65,M,Técnica
+203,2,,0,Simulado: Cognitivamente sano,66-80,M,Técnica
+204,1,,2,Simulado: Deterioro cognitivo grave,80+,M,Secundaria
+205,2,,2,Simulado: Deterioro cognitivo grave,18-35,M,Técnica
+206,3,,0,Simulado: Cognitivamente sano,36-50,F,Universitaria
+207,2,,0,Simulado: Cognitivamente sano,66-80,M,Técnica
+208,2,,0,Simulado: Cognitivamente sano,51-65,M,Secundaria
+209,3,,0,Simulado: Cognitivamente sano,36-50,M,Secundaria
+210,2,,0,Simulado: Cognitivamente sano,36-50,F,Técnica
+212,2,,0,Simulado: Cognitivamente sano,36-50,M,Secundaria
+213,3,,2,Simulado: Deterioro cognitivo grave,66-80,M,Secundaria
+216,1,,1,Simulado: Deterioro cognitivo leve,18-35,M,Secundaria
+217,2,,1,Simulado: Deterioro cognitivo leve,66-80,F,Primaria
+218,3,,0,Simulado: Cognitivamente sano,51-65,M,Secundaria
+219,2,,0,Simulado: Cognitivamente sano,36-50,F,Secundaria
+220,4,,1,Simulado: Deterioro cognitivo leve,51-65,F,Secundaria
+221,2,,0,Simulado: Cognitivamente sano,36-50,M,Secundaria
+222,1,,0,Simulado: Cognitivamente sano,66-80,F,Técnica
+223,2,,1,Simulado: Deterioro cognitivo leve,18-35,F,Técnica
+225,2,,1,Simulado: Deterioro cognitivo leve,18-35,M,Primaria
+226,1,,0,Simulado: Cognitivamente sano,66-80,M,Universitaria
+227,2,,0,Simulado: Cognitivamente sano,36-50,F,Secundaria
+228,1,,0,Simulado: Cognitivamente sano,18-35,F,Técnica
+229,2,,2,Simulado: Deterioro cognitivo grave,51-65,F,Técnica
+230,1,,2,Simulado: Deterioro cognitivo grave,18-35,M,Universitaria
+233,2,,2,Simulado: Deterioro cognitivo grave,66-80,F,Técnica
+236,2,,0,Simulado: Cognitivamente sano,18-35,M,Técnica
+237,3,,0,Simulado: Cognitivamente sano,51-65,F,Técnica
+238,3,,0,Simulado: Cognitivamente sano,51-65,F,Primaria
+239,2,,0,Simulado: Cognitivamente sano,66-80,M,Secundaria
+240,1,,0,Simulado: Cognitivamente sano,36-50,M,Técnica
+241,2,,0,Simulado: Cognitivamente sano,36-50,M,Secundaria
+243,2,,0,Simulado: Cognitivamente sano,80+,M,Técnica
+244,3,,1,Simulado: Deterioro cognitivo leve,66-80,M,Primaria
+245,1,,1,Simulado: Deterioro cognitivo leve,66-80,F,Secundaria
+246,2,,0,Simulado: Cognitivamente sano,36-50,F,Secundaria
+247,3,,0,Simulado: Cognitivamente sano,18-35,F,Secundaria
+248,3,,1,Simulado: Deterioro cognitivo leve,36-50,F,Técnica
+249,1,,1,Simulado: Deterioro cognitivo leve,51-65,F,Secundaria
+250,3,,0,Simulado: Cognitivamente sano,36-50,F,Secundaria
+301,3,,0,Simulado: Cognitivamente sano,66-80,F,Secundaria
+302,2,,0,Simulado: Cognitivamente sano,36-50,M,Secundaria
+303,4,,0,Simulado: Cognitivamente sano,80+,M,Técnica
+304,2,,0,Simulado: Cognitivamente sano,51-65,M,Primaria
+305,3,,0,Simulado: Cognitivamente sano,66-80,M,Técnica
+306,2,,1,Simulado: Deterioro cognitivo leve,36-50,M,Técnica
+307,3,,1,Simulado: Deterioro cognitivo leve,51-65,M,Técnica
+308,2,,0,Simulado: Cognitivamente sano,66-80,F,Técnica
+309,2,,0,Simulado: Cognitivamente sano,18-35,F,Universitaria
+310,3,,2,Simulado: Deterioro cognitivo grave,18-35,M,Universitaria
+312,1,,0,Simulado: Cognitivamente sano,80+,M,Secundaria
+313,2,,1,Simulado: Deterioro cognitivo leve,66-80,M,Secundaria
+314,3,,0,Simulado: Cognitivamente sano,18-35,F,Secundaria
+316,2,,0,Simulado: Cognitivamente sano,51-65,F,Secundaria
+318,3,,0,Simulado: Cognitivamente sano,51-65,F,Técnica
+319,2,,0,Simulado: Cognitivamente sano,66-80,M,Universitaria
+320,3,,1,Simulado: Deterioro cognitivo leve,36-50,F,Primaria
+321,3,,0,Simulado: Cognitivamente sano,36-50,F,Primaria
+322,2,,0,Simulado: Cognitivamente sano,18-35,M,Secundaria
+323,1,,0,Simulado: Cognitivamente sano,51-65,F,Técnica
+324,3,,2,Simulado: Deterioro cognitivo grave,66-80,F,Técnica
+325,3,,1,Simulado: Deterioro cognitivo leve,18-35,F,Primaria
+326,3,,0,Simulado: Cognitivamente sano,80+,M,Universitaria
+327,3,,1,Simulado: Deterioro cognitivo leve,51-65,F,Técnica
+328,1,,0,Simulado: Cognitivamente sano,36-50,F,Primaria
+329,2,,0,Simulado: Cognitivamente sano,18-35,F,Técnica
+330,1,,1,Simulado: Deterioro cognitivo leve,36-50,F,Técnica
+331,3,,0,Simulado: Cognitivamente sano,80+,F,Secundaria
+332,3,,0,Simulado: Cognitivamente sano,66-80,F,Primaria
+333,3,,0,Simulado: Cognitivamente sano,51-65,F,Primaria
+334,1,,1,Simulado: Deterioro cognitivo leve,66-80,F,Primaria
+335,2,,1,Simulado: Deterioro cognitivo leve,51-65,F,Universitaria
+336,3,,0,Simulado: Cognitivamente sano,66-80,M,Universitaria
+338,2,,0,Simulado: Cognitivamente sano,18-35,F,Primaria
+339,2,,1,Simulado: Deterioro cognitivo leve,51-65,F,Secundaria
+340,1,,0,Simulado: Cognitivamente sano,36-50,F,Primaria
+341,2,,0,Simulado: Cognitivamente sano,18-35,F,Primaria
+342,1,,1,Simulado: Deterioro cognitivo leve,36-50,M,Universitaria
+343,1,,0,Simulado: Cognitivamente sano,18-35,F,Secundaria
+344,3,,1,Simulado: Deterioro cognitivo leve,18-35,F,Secundaria
+345,1,,2,Simulado: Deterioro cognitivo grave,36-50,F,Secundaria
+346,3,,0,Simulado: Cognitivamente sano,80+,F,Técnica
+347,3,,0,Simulado: Cognitivamente sano,36-50,F,Secundaria
+348,3,,0,Simulado: Cognitivamente sano,18-35,F,Técnica
+350,1,,0,Simulado: Cognitivamente sano,66-80,M,Secundaria
+401,3,,2,Simulado: Deterioro cognitivo grave,66-80,M,Técnica
+402,2,,1,Simulado: Deterioro cognitivo leve,36-50,F,Técnica
+403,2,,2,Simulado: Deterioro cognitivo grave,51-65,M,Primaria
+404,1,,0,Simulado: Cognitivamente sano,66-80,M,Secundaria
+405,2,,1,Simulado: Deterioro cognitivo leve,18-35,F,Universitaria
+406,1,,0,Simulado: Cognitivamente sano,80+,M,Universitaria
+407,2,,0,Simulado: Cognitivamente sano,66-80,F,Secundaria
+408,3,,0,Simulado: Cognitivamente sano,36-50,F,Secundaria
+409,3,,1,Simulado: Deterioro cognitivo leve,18-35,F,Universitaria
+410,1,,0,Simulado: Cognitivamente sano,80+,M,Técnica
+411,3,,0,Simulado: Cognitivamente sano,51-65,F,Primaria
+412,1,,0,Simulado: Cognitivamente sano,51-65,M,Universitaria
+413,3,,2,Simulado: Deterioro cognitivo grave,66-80,F,Secundaria
+414,3,,2,Simulado: Deterioro cognitivo grave,66-80,M,Técnica
+415,2,,0,Simulado: Cognitivamente sano,80+,F,Primaria
+416,3,,0,Simulado: Cognitivamente sano,80+,F,Primaria
+417,3,,0,Simulado: Cognitivamente sano,66-80,F,Secundaria
+418,2,,0,Simulado: Cognitivamente sano,66-80,F,Técnica
+419,1,,2,Simulado: Deterioro cognitivo grave,66-80,M,Secundaria
+420,2,,0,Simulado: Cognitivamente sano,66-80,F,Secundaria
+421,2,,0,Simulado: Cognitivamente sano,51-65,M,Secundaria
+422,3,,1,Simulado: Deterioro cognitivo leve,18-35,M,Secundaria
+423,2,,0,Simulado: Cognitivamente sano,66-80,M,Universitaria
+424,3,,2,Simulado: Deterioro cognitivo grave,66-80,F,Secundaria
+425,3,,0,Simulado: Cognitivamente sano,66-80,F,Técnica
+426,1,,1,Simulado: Deterioro cognitivo leve,66-80,M,Universitaria
+427,1,,2,Simulado: Deterioro cognitivo grave,66-80,F,Secundaria
+428,2,,0,Simulado: Cognitivamente sano,36-50,M,Primaria
+429,3,,0,Simulado: Cognitivamente sano,36-50,M,Secundaria
+430,3,,0,Simulado: Cognitivamente sano,36-50,M,Secundaria
+431,2,,0,Simulado: Cognitivamente sano,51-65,M,Secundaria
+432,2,,1,Simulado: Deterioro cognitivo leve,18-35,F,Secundaria
+433,3,,1,Simulado: Deterioro cognitivo leve,66-80,F,Técnica
+434,3,,1,Simulado: Deterioro cognitivo leve,36-50,F,Secundaria
+435,2,,1,Simulado: Deterioro cognitivo leve,66-80,M,Secundaria
+436,2,,2,Simulado: Deterioro cognitivo grave,51-65,M,Técnica
+437,2,,2,Simulado: Deterioro cognitivo grave,66-80,M,Secundaria
+438,2,,1,Simulado: Deterioro cognitivo leve,36-50,F,Universitaria
+440,1,,0,Simulado: Cognitivamente sano,36-50,M,Técnica
+441,1,,0,Simulado: Cognitivamente sano,51-65,F,Secundaria
+443,1,,0,Simulado: Cognitivamente sano,66-80,F,Técnica
+501,3,,0,Simulado: Cognitivamente sano,36-50,F,Secundaria
+502,2,,0,Simulado: Cognitivamente sano,80+,F,Secundaria
+503,3,,1,Simulado: Deterioro cognitivo leve,18-35,M,Secundaria
+504,3,,1,Simulado: Deterioro cognitivo leve,51-65,F,Secundaria
+505,3,,2,Simulado: Deterioro cognitivo grave,80+,F,Técnica
+506,2,,1,Simulado: Deterioro cognitivo leve,51-65,F,Primaria
+507,1,,1,Simulado: Deterioro cognitivo leve,51-65,M,Secundaria
+508,1,,0,Simulado: Cognitivamente sano,51-65,M,Primaria
+509,3,,0,Simulado: Cognitivamente sano,51-65,M,Técnica
+510,2,,1,Simulado: Deterioro cognitivo leve,66-80,F,Secundaria
+512,3,,2,Simulado: Deterioro cognitivo grave,18-35,F,Universitaria
+513,2,,0,Simulado: Cognitivamente sano,36-50,F,Secundaria
+514,3,,0,Simulado: Cognitivamente sano,51-65,M,Universitaria
+515,2,,1,Simulado: Deterioro cognitivo leve,66-80,F,Universitaria
+516,2,,0,Simulado: Cognitivamente sano,51-65,M,Universitaria
+517,2,,1,Simulado: Deterioro cognitivo leve,36-50,M,Universitaria
+518,2,,0,Simulado: Cognitivamente sano,66-80,M,Secundaria
+519,1,,0,Simulado: Cognitivamente sano,66-80,F,Técnica
+520,1,,0,Simulado: Cognitivamente sano,36-50,M,Secundaria
+521,1,,0,Simulado: Cognitivamente sano,51-65,F,Primaria
+522,3,,1,Simulado: Deterioro cognitivo leve,51-65,F,Secundaria
+523,3,,0,Simulado: Cognitivamente sano,51-65,M,Técnica
+524,2,,2,Simulado: Deterioro cognitivo grave,51-65,F,Secundaria
+525,2,,2,Simulado: Deterioro cognitivo grave,36-50,M,Técnica
+526,2,,0,Simulado: Cognitivamente sano,18-35,M,Universitaria
+527,3,,2,Simulado: Deterioro cognitivo grave,18-35,F,Técnica
+528,2,,0,Simulado: Cognitivamente sano,80+,M,Técnica
+529,3,,1,Simulado: Deterioro cognitivo leve,66-80,F,Universitaria
+530,1,,0,Simulado: Cognitivamente sano,51-65,F,Universitaria
+531,2,,0,Simulado: Cognitivamente sano,80+,F,Técnica
+532,2,,0,Simulado: Cognitivamente sano,66-80,F,Universitaria
+533,2,,0,Simulado: Cognitivamente sano,51-65,F,Universitaria
+534,1,,1,Simulado: Deterioro cognitivo leve,51-65,F,Universitaria
+535,2,,0,Simulado: Cognitivamente sano,18-35,F,Primaria
