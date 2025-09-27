@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Brain, AlertCircle, Shield } from 'lucide-react';
 import { authService } from '@/services/auth';
 import { AuthorizationService } from '@/services/auth.middleware';
+import { MetaballsOriginal } from '@/pages/MeatBalls/MeatBalls';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -108,7 +109,9 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-100 p-4">
+    <>
+      <MetaballsOriginal />
+      <div className="relative z-10 min-h-screen flex items-center justify-center bg-transparent p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center justify-center mb-4">
@@ -324,5 +327,6 @@ export default function LoginPage() {
         </CardContent>
       </Card>
     </div>
+    </>
   );
 }

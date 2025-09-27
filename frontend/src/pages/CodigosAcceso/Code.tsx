@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { Plus } from 'lucide-react';
 import { AppSidebar } from '../../components/app-sidebar';
@@ -7,6 +7,15 @@ import { Button } from '../../components/ui/button';
 import { authService } from '../../services/auth';
 import type { CodigoAcceso } from '../../types/codigosAcceso';
 import { Eye, Edit, Trash2 } from 'lucide-react';
+import PaginacionCodigo from './ComponentsCodigo/PaginacionCodigo';
+import TablaCodigo from './ComponentsCodigo/TablaCodigo';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 import AddCodigoModal from './ComponentsCodigo/AddCodigo';
 import EditCodigoModal from './ComponentsCodigo/EditCodigo';
 import ViewCodigoModal from './ComponentsCodigo/ViewCodigo';
@@ -18,9 +27,9 @@ const mockCodigosAcceso: CodigoAcceso[] = [
     id_codigo: 1,
     codigo: 'CDT001',
     id_paciente: 101,
-    nombre_paciente: 'Juan Pérez',
+    nombre_paciente: 'Juan PÃ©rez',
     nombres: 'Juan',
-    apellidos: 'Pérez',
+    apellidos: 'PÃ©rez',
     tipo_evaluacion: 'CDT',
     vence_at: '2025-12-31',
     estado: 'emitido',
@@ -33,9 +42,9 @@ const mockCodigosAcceso: CodigoAcceso[] = [
     id_codigo: 2,
     codigo: 'MMSE002',
     id_paciente: 102,
-    nombre_paciente: 'María García',
-    nombres: 'María',
-    apellidos: 'García',
+    nombre_paciente: 'MarÃ­a GarcÃ­a',
+    nombres: 'MarÃ­a',
+    apellidos: 'GarcÃ­a',
     tipo_evaluacion: 'MMSE',
     vence_at: '2025-06-30',
     estado: 'usado',
@@ -56,6 +65,14 @@ function CodigosAcceso() {
   
   // Mock data
   const codigosAcceso = mockCodigosAcceso;
+  // PaginaciÃ³n
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  const total = codigosAcceso.length;
+  const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(currentPage * itemsPerPage, total);
+  const pageCodigos = codigosAcceso.slice(startIndex, endIndex);
   const loading = false;
   const error = null;
 
@@ -91,7 +108,16 @@ function CodigosAcceso() {
     setShowDeleteDialog(true);
   };
 
-  // Handler para refrescar datos después de operaciones CRUD
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setItemsPerPage(size);
+    setCurrentPage(1);
+  };
+
+  // Handler para refrescar datos despuÃ©s de operaciones CRUD
   const handleRefresh = () => {
     toast.success('Datos actualizados');
   };
@@ -121,7 +147,7 @@ function CodigosAcceso() {
         <SidebarInset>
           <div className="flex-1 p-8">
             <div className="bg-red-50 border border-red-200 rounded-md p-4">
-              <h3 className="text-red-800 font-medium">Error al cargar códigos de acceso</h3>
+              <h3 className="text-red-800 font-medium">Error al cargar cÃ³digos de acceso</h3>
               <p className="text-red-600 mt-1">{error}</p>
               <Button onClick={handleRefresh} className="mt-2">
                 Reintentar
@@ -166,113 +192,66 @@ function CodigosAcceso() {
 
           
 
-          {/* Tabla de Códigos */}
+          {/* Tabla de CÃ³digos */}
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
            
 
             {loading ? (
               <div className="p-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="text-gray-500 mt-2">Cargando códigos...</p>
+                <p className="text-gray-500 mt-2">Cargando cÃ³digos...</p>
               </div>
             ) : codigosAcceso.length === 0 ? (
               <div className="p-8 text-center">
-                <p className="text-gray-500">No se encontraron códigos de acceso</p>
+                <p className="text-gray-500">No se encontraron cÃ³digos de acceso</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Código
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Paciente
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tipo Evaluación
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Estado
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Fecha Vencimiento
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Fecha Creación
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Último Uso
-                      </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {codigosAcceso.map((codigo) => (
-                      <tr key={codigo.id_codigo} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="font-mono text-sm font-medium text-gray-900">
-                            {codigo.codigo}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {codigo.id_paciente}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {codigo.tipo_evaluacion}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 text-xs font-medium rounded-full ${getEstadoColor(codigo.estado)}`}>
-                            {codigo.estado}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatFecha(codigo.vence_at)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatFecha(codigo.creado_en)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {codigo.ultimo_uso_en ? formatFecha(codigo.ultimo_uso_en) : 'Nunca'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <div className="flex gap-1">
-                            <Button
-                              onClick={() => handleViewCodigo(codigo)}
-                              className="text-blue-600 bg-transparent border-none p-2 rounded hover:bg-blue-50"
-                              title="Ver código"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              onClick={() => handleEditCodigo(codigo)}
-                              className="text-gray-600 bg-transparent border-none p-2 rounded hover:bg-gray-50"
-                              title="Editar código"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                           
-                            <Button
-                              onClick={() => handleDeleteCodigo(codigo)}
-                              className="text-red-600 bg-transparent border-none p-2 rounded hover:bg-red-50"
-                              title="Eliminar código"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <TablaCodigo
+                codigos={pageCodigos}
+                onView={handleViewCodigo}
+                onEdit={handleEditCodigo}
+                onDelete={handleDeleteCodigo}
+              />
             )}
-          </div>
 
-          {/* Diálogos simplificados */}
+            {/* Paginacion a la izquierda, resumen centrado y selector a la derecha */}
+           
+          </div>
+           <div className="mt-4 flex w-full items-center justify-between gap-3">
+              {/* Izquierda: paginacion */}
+              <div className="flex items-center">
+                <PaginacionCodigo
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </div>
+
+              {/* Centro: texto */}
+              <div className="flex-1 flex items-center justify-center">
+                <p className="text-sm text-gray-600">
+                  Mostrando {total === 0 ? 0 : startIndex + 1} a {endIndex} de {total} registros
+                </p>
+              </div>
+
+              {/* Derecha: selector de entradas */}
+              <div className="flex items-center gap-3 text-sm text-gray-700">
+                <span className="whitespace-nowrap">Filas por página:</span>
+                <Select value={String(itemsPerPage)} onValueChange={(v) => handlePageSizeChange(Number(v))}>
+                  <SelectTrigger className="w-28">
+                    <SelectValue placeholder="Entradas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="5">5</SelectItem>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="20">20</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+          {/* DiÃ¡logos simplificados */}
           {showDeleteDialog && selectedCodigo && (
             <div 
               className="fixed inset-0 flex items-center justify-center z-50"
@@ -283,9 +262,9 @@ function CodigosAcceso() {
               }}
             >
               <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
+                <h3 className="text-lg font-semibold mb-4">Confirmar EliminaciÃ³n</h3>
                 <p className="text-gray-600 mb-6">
-                  ¿Estás seguro de que deseas eliminar el código <strong>{selectedCodigo.codigo}</strong>?
+                  Â¿EstÃ¡s seguro de que deseas eliminar el cÃ³digo <strong>{selectedCodigo.codigo}</strong>?
                 </p>
                 <div className="flex gap-3 justify-end">
                   <Button
@@ -296,7 +275,7 @@ function CodigosAcceso() {
                   </Button>
                   <Button
                     onClick={() => {
-                      toast.success(`Código ${selectedCodigo.codigo} eliminado`);
+                      toast.success(`CÃ³digo ${selectedCodigo.codigo} eliminado`);
                       setShowDeleteDialog(false);
                       setSelectedCodigo(null);
                       handleRefresh();
@@ -347,3 +326,5 @@ function CodigosAcceso() {
 }
 
 export default CodigosAcceso;
+
+
