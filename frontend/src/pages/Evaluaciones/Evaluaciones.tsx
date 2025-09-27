@@ -7,6 +7,14 @@ import { Button } from '../../components/ui/button';
 import { authService } from '../../services/auth';
 import type { EvaluacionCognitiva } from '../../types/evaluaciones';
 import { Eye, Edit, Trash2, Brain, Clock } from 'lucide-react';
+import PaginacionEvaluacion from './ComponentsEvaluaciones/PaginacionEvaluacion';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 
 // Mock data for testing
 const mockEvaluaciones: EvaluacionCognitiva[] = [
@@ -75,9 +83,17 @@ function Evaluaciones() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedEvaluacion, setSelectedEvaluacion] = useState<EvaluacionCognitiva | null>(null);
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   
   // Mock data
   const evaluaciones = mockEvaluaciones;
+  const total = evaluaciones.length;
+  const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = Math.min(currentPage * itemsPerPage, total);
+  const pageEvaluaciones = evaluaciones.slice(startIndex, endIndex);
   const loading = false;
   const error = null;
 
@@ -111,6 +127,15 @@ function Evaluaciones() {
   const handleDeleteEvaluacion = (evaluacion: EvaluacionCognitiva) => {
     setSelectedEvaluacion(evaluacion);
     setShowDeleteDialog(true);
+  };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setItemsPerPage(size);
+    setCurrentPage(1);
   };
 
   // Handler para refrescar datos después de operaciones CRUD
@@ -241,7 +266,7 @@ function Evaluaciones() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {evaluaciones.map((evaluacion) => (
+                    {pageEvaluaciones.map((evaluacion) => (
                       <tr key={evaluacion.id_evaluacion} className="hover:bg-gray-50">
                         
                         <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -319,6 +344,42 @@ function Evaluaciones() {
             )}
           </div>
 
+          {/* Paginación a la izquierda, resumen centrado y selector a la derecha */}
+          <div className="mt-4 flex w-full items-center justify-between gap-3">
+            {/* Izquierda: paginación */}
+            <div className="flex items-center">
+              <PaginacionEvaluacion
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
+
+            {/* Centro: texto */}
+            <div className="flex-1 flex items-center justify-center">
+              <p className="text-sm text-gray-600">
+                Mostrando {total === 0 ? 0 : startIndex + 1} a {endIndex} de {total} registros
+              </p>
+            </div>
+
+            {/* Derecha: selector de entradas */}
+            <div className="flex items-center gap-3 text-sm text-gray-700">
+              <span className="whitespace-nowrap">Filas por página:</span>
+              <Select value={String(itemsPerPage)} onValueChange={(v) => handlePageSizeChange(Number(v))}>
+                <SelectTrigger className="w-28">
+                  <SelectValue placeholder="Entradas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value="20">20</SelectItem>
+                  <SelectItem value="50">50</SelectItem>
+                  <SelectItem value="1000000000">Todos</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
           {/* Diálogos simplificados */}
           {showDeleteDialog && selectedEvaluacion && (
             <div 
@@ -385,6 +446,8 @@ function Evaluaciones() {
               </div>
             </div>
           )}
+
+          
 
           {showEditModal && selectedEvaluacion && (
             <div className="fixed inset-0 flex items-center justify-center z-50 p-4"
