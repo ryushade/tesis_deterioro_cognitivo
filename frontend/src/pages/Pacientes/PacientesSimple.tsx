@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
@@ -12,6 +12,13 @@ import ConfirmDialog from '@/components/ui/confirm-dialog';
 import { pacientesService, type Paciente } from '@/services/pacientesService';
 import toast, { Toaster } from 'react-hot-toast';
 import PaginacionPacientes from '../components/PaginacionPacientes';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 function Pacientes() {
   // Estados para los modales
@@ -145,7 +152,7 @@ function Pacientes() {
           searchTerm={searchTerm}
           onSearch={handleSearch}
           currentPage={currentPage}
-          totalPages={metadata.total_pages}
+          totalPages={(metadata as any)?.total_pages ?? (metadata as any)?.totalPages ?? 1}
           onPageChange={handlePageChange}
           onView={handleViewPaciente}
           onEdit={handleEditPaciente}
@@ -154,13 +161,41 @@ function Pacientes() {
 
        
 
-        {/* Paginación debajo de la tabla (siempre visible) */}
-        <div className="mt-4 flex justify-left">
-          <PaginacionPacientes
-            currentPage={currentPage}
-            totalPages={metadata.total_pages || 1}
-            onPageChange={handlePageChange}
-          />
+        {/* Paginación a la izquierda y texto centrado */}
+        <div className="mt-2 flex w-full items-center justify-between gap-2">
+          {/* Izquierda: paginación */}
+          <div className="flex items-center">
+            <PaginacionPacientes
+              currentPage={currentPage}
+              totalPages={(metadata as any)?.total_pages ?? (metadata as any)?.totalPages ?? 1}
+              onPageChange={handlePageChange}
+            />
+          </div>
+
+          {/* Centro: texto */}
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-sm text-gray-600">
+              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, (metadata as any)?.total ?? (metadata as any)?.totalItems ?? pacientes.length)} de {(metadata as any)?.total ?? (metadata as any)?.totalItems ?? pacientes.length} registros
+            </p>
+          </div>
+            
+          
+          {/* Derecha: espacio para balancear */}
+          <div className="flex items-center gap-3 text-sm text-gray-700">
+            <span className="whitespace-nowrap">Filas por página:</span>
+            <Select value={String(itemsPerPage)} onValueChange={(value) => handlePageSizeChange(Number(value))}>
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="Entradas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100000000000">Todos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Modales */}

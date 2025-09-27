@@ -4,10 +4,9 @@ import {
   PaginationEllipsis,
   PaginationItem,
   PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
 } from "@/components/ui/pagination";
 import React from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface Props {
   currentPage: number;
@@ -83,23 +82,31 @@ export default function PaginacionPacientes({ currentPage, totalPages, onPageCha
     <Pagination>
       <PaginationContent>
         <PaginationItem>
-          <PaginationPrevious
+          <a
             href="#"
+            aria-label="Anterior"
             onClick={(e) => {
               e.preventDefault();
               if (!disabled && cur > 1) onPageChange(cur - 1);
             }}
-          />
+            className="px-2 text-sm text-gray-700 hover:text-gray-900"
+          >
+            &lt;
+          </a>
         </PaginationItem>
         {buildItems()}
         <PaginationItem>
-          <PaginationNext
+          <a
             href="#"
+            aria-label="Siguiente"
             onClick={(e) => {
               e.preventDefault();
               if (!disabled && cur < total) onPageChange(cur + 1);
             }}
-          />
+            className="px-2 text-sm text-gray-700 hover:text-gray-900"
+          >
+            &gt;
+          </a>
         </PaginationItem>
       </PaginationContent>
     </Pagination>

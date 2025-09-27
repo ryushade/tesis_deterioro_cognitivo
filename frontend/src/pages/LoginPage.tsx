@@ -181,7 +181,7 @@ export default function LoginPage() {
                       Iniciando sesión...
                     </>
                   ) : (
-                    'Iniciar Sesión'
+                    'Iniciar sesión'
                   )}
                 </Button>
               </form>
@@ -250,7 +250,7 @@ export default function LoginPage() {
                   ) : (
                     <>
                       <Shield className="mr-2 h-4 w-4" />
-                      Acceso de Administrador
+                      Iniciar sesión
                     </>
                   )}
                 </Button>
@@ -283,7 +283,9 @@ export default function LoginPage() {
             <TabsContent value="paciente" className="space-y-4 mt-4">
               <form onSubmit={handlePatientLogin} className="space-y-4">
                 <div className="space-y-2">
+                    
                   <Label htmlFor="accessCode">Código de acceso</Label>
+                  
                   <Input
                     id="accessCode"
                     type="text"
@@ -296,9 +298,7 @@ export default function LoginPage() {
                     maxLength={8}
                   />
                 </div>
-                <div className="text-sm text-gray-600 text-center">
-                  <p>Solicita tu código de acceso a tu neuropsicólogo</p>
-                </div>
+                
                 <Button 
                   type="submit" 
                   className="w-full" 
@@ -310,7 +310,7 @@ export default function LoginPage() {
                       Verificando código...
                     </>
                   ) : (
-                    'Acceder con Código'
+                    'Acceder con código'
                   )}
                 </Button>
               </form>

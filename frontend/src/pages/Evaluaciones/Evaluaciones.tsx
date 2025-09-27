@@ -171,7 +171,7 @@ function Evaluaciones() {
     <SidebarProvider>
       <AppSidebar user={sidebarUser} onLogout={handleLogout} />
       <SidebarInset>
-        <div className="flex-1 p-8">
+        <div className="flex-1 p-4">
           <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
@@ -216,9 +216,7 @@ function Evaluaciones() {
                 <table className="w-full">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ID
-                      </th>
+                     
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Paciente
                       </th>
@@ -245,15 +243,10 @@ function Evaluaciones() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {evaluaciones.map((evaluacion) => (
                       <tr key={evaluacion.id_evaluacion} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="text-sm font-medium text-gray-900">
-                            #{evaluacion.id_evaluacion}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
                           <div>
                             <div className="font-medium">{evaluacion.paciente_nombre}</div>
-                            <div className="text-gray-500">ID: {evaluacion.id_paciente}</div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
