@@ -11,6 +11,7 @@ import ViewPacienteModal from '../components/ViewPaciente';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
 import { pacientesService, type Paciente } from '@/services/pacientesService';
 import toast, { Toaster } from 'react-hot-toast';
+import PaginacionPacientes from '../components/PaginacionPacientes';
 
 function Pacientes() {
   // Estados para los modales
@@ -23,7 +24,7 @@ function Pacientes() {
   // Estados para búsqueda y paginación
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
   
   // Hook para obtener pacientes
   const { pacientes, metadata, loading, error, refetch } = useGetPacientes();
@@ -98,6 +99,12 @@ function Pacientes() {
     refetch(page, itemsPerPage, searchTerm);
   };
 
+  const handlePageSizeChange = (size: number) => {
+    setItemsPerPage(size);
+    setCurrentPage(1);
+    refetch(1, size, searchTerm);
+  };
+
   return (
     <DashboardLayout 
       user={sidebarUser}
@@ -144,6 +151,17 @@ function Pacientes() {
           onEdit={handleEditPaciente}
           onDelete={handleDeletePaciente}
         />
+
+       
+
+        {/* Paginación debajo de la tabla (siempre visible) */}
+        <div className="mt-4 flex justify-left">
+          <PaginacionPacientes
+            currentPage={currentPage}
+            totalPages={metadata.total_pages || 1}
+            onPageChange={handlePageChange}
+          />
+        </div>
 
         {/* Modales */}
         <AddPacienteModal

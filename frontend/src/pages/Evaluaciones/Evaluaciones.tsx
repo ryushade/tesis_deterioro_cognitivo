@@ -191,7 +191,7 @@ function Evaluaciones() {
                 className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500"
               >
                 <Plus className="h-4 w-4" />
-                Nueva evaluación
+                Agregar evaluación
               </Button>
             </div>
           

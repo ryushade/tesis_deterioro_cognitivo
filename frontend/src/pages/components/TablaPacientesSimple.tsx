@@ -198,36 +198,7 @@ export default function TablaPacientesSimple({
         </table>
       </div>
 
-      {/* Paginación */}
-      {totalPages > 1 && (
-        <div className="px-4 py-3 border-t">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-700">
-              Página {currentPage} de {totalPages}
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange(currentPage - 1)}
-                disabled={currentPage <= 1}
-              >
-                <ChevronLeft className="h-4 w-4" />
-                Anterior
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onPageChange(currentPage + 1)}
-                disabled={currentPage >= totalPages}
-              >
-                Siguiente
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* La paginación se maneja en la página padre (PacientesSimple) */}
     </div>
   );
 }

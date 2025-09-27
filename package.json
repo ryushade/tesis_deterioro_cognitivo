@@ -1,4 +1,8 @@
 {
+  "scripts": {
+    "dev:all": "python dev_all.py",
+    "start:all": "python dev_all.py"
+  },
   "dependencies": {
     "@nextui-org/react": "^2.6.11"
   }
