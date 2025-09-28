@@ -1,13 +1,14 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { Plus } from 'lucide-react';
 import { AppSidebar } from '../../components/app-sidebar';
 import { SidebarProvider, SidebarInset } from '../../components/ui/sidebar';
 import { Button } from '../../components/ui/button';
 import { authService } from '../../services/auth';
-import type { EvaluacionCognitiva } from '../../types/evaluaciones';
+import type { EvaluacionCognitiva, TipoEvaluacion } from '../../types/evaluaciones';
 import { Eye, Edit, Trash2, Brain, Clock } from 'lucide-react';
 import PaginacionEvaluacion from './ComponentsEvaluaciones/PaginacionEvaluacion';
+import { TiposEvaluacionTab } from './ComponentsEvaluaciones/TiposEvaluacionTab';
 import {
   Select,
   SelectContent,
@@ -32,9 +33,9 @@ const mockEvaluaciones: EvaluacionCognitiva[] = [
     estado_procesamiento: 'completada',
     tiempo_procesamiento: 2.5,
     version_algoritmo: 'v2.1.0',
-    observaciones: 'Evaluación completada sin incidencias',
+    observaciones: 'EvaluaciÃ³n completada sin incidencias',
     actualizado_en: '2024-03-15T10:35:00Z',
-    paciente_nombre: 'Juan Pérez',
+    paciente_nombre: 'Juan PÃ©rez',
     tipo_evaluacion_nombre: 'Clock Drawing Test',
     tipo_evaluacion_codigo: 'CDT',
     codigo_acceso: 'CDT001'
@@ -55,7 +56,7 @@ const mockEvaluaciones: EvaluacionCognitiva[] = [
     version_algoritmo: 'v1.5.2',
     observaciones: 'Se observan dificultades en memoria a corto plazo',
     actualizado_en: '2024-03-20T14:20:00Z',
-    paciente_nombre: 'María García',
+    paciente_nombre: 'MarÃ­a GarcÃ­a',
     tipo_evaluacion_nombre: 'Mini Mental State Examination',
     tipo_evaluacion_codigo: 'MMSE',
     codigo_acceso: 'MMSE002'
@@ -70,10 +71,41 @@ const mockEvaluaciones: EvaluacionCognitiva[] = [
     porcentaje_acierto: 0,
     estado_procesamiento: 'procesando',
     actualizado_en: '2024-03-22T09:45:00Z',
-    paciente_nombre: 'Carlos López',
+    paciente_nombre: 'Carlos LÃ³pez',
     tipo_evaluacion_nombre: 'Clock Drawing Test',
     tipo_evaluacion_codigo: 'CDT'
   }
+];
+
+// Mock tipos de evaluación para poblar el tab
+const mockTiposEvaluacion: TipoEvaluacion[] = [
+  {
+    id_tipo: 1,
+    codigo: 'CDT',
+    nombre: 'Clock Drawing Test',
+    requiere_imagen: true,
+    requiere_metodo: true,
+    activo: true,
+    creado_en: '2024-01-10',
+  },
+  {
+    id_tipo: 2,
+    codigo: 'MMSE',
+    nombre: 'Mini Mental State Examination',
+    requiere_imagen: false,
+    requiere_metodo: false,
+    activo: true,
+    creado_en: '2024-02-05',
+  },
+  {
+    id_tipo: 3,
+    codigo: 'MoCA',
+    nombre: 'Montreal Cognitive Assessment',
+    requiere_imagen: false,
+    requiere_metodo: false,
+    activo: false,
+    creado_en: '2024-03-01',
+  },
 ];
 
 function Evaluaciones() {
@@ -83,7 +115,7 @@ function Evaluaciones() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedEvaluacion, setSelectedEvaluacion] = useState<EvaluacionCognitiva | null>(null);
-  // Paginación
+  // PaginaciÃ³n
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
   
@@ -138,7 +170,7 @@ function Evaluaciones() {
     setCurrentPage(1);
   };
 
-  // Handler para refrescar datos después de operaciones CRUD
+  // Handler para refrescar datos despuÃ©s de operaciones CRUD
   const handleRefresh = () => {
     toast.success('Datos actualizados');
   };
@@ -208,6 +240,10 @@ function Evaluaciones() {
                   <p className="text-lg font-medium text-blue-700/80 leading-relaxed">
                     Administra y visualiza los resultados de las evaluaciones cognitivas realizadas.
                   </p>
+                  <div className="mt-4">
+                    <TiposEvaluacionTab tiposEvaluacion={[]} loading={false} onView={() => {}} onEdit={() => {}} onDelete={() => {}} />
+                  </div>
+                  
                 </div>
               </div>
               
@@ -216,7 +252,7 @@ function Evaluaciones() {
                 className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500"
               >
                 <Plus className="h-4 w-4" />
-                Agregar evaluación
+                Agregar evaluaciÃ³n
               </Button>
             </div>
           
@@ -246,16 +282,16 @@ function Evaluaciones() {
                         Paciente
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Tipo Evaluación
+                        Tipo EvaluaciÃ³n
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Fecha
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Puntuación
+                        PuntuaciÃ³n
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Clasificación
+                        ClasificaciÃ³n
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Estado
@@ -316,21 +352,21 @@ function Evaluaciones() {
                             <Button
                               onClick={() => handleViewEvaluacion(evaluacion)}
                               className="text-blue-600 bg-transparent border-none p-2 rounded hover:bg-blue-50"
-                              title="Ver evaluación"
+                              title="Ver evaluaciÃ³n"
                             >
                               <Eye className="h-4 w-4" />
                             </Button>
                             <Button
                               onClick={() => handleEditEvaluacion(evaluacion)}
                               className="text-gray-600 bg-transparent border-none p-2 rounded hover:bg-gray-50"
-                              title="Editar evaluación"
+                              title="Editar evaluaciÃ³n"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
                             <Button
                               onClick={() => handleDeleteEvaluacion(evaluacion)}
                               className="text-red-600 bg-transparent border-none p-2 rounded hover:bg-red-50"
-                              title="Eliminar evaluación"
+                              title="Eliminar evaluaciÃ³n"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -344,9 +380,9 @@ function Evaluaciones() {
             )}
           </div>
 
-          {/* Paginación a la izquierda, resumen centrado y selector a la derecha */}
+          {/* PaginaciÃ³n a la izquierda, resumen centrado y selector a la derecha */}
           <div className="mt-4 flex w-full items-center justify-between gap-3">
-            {/* Izquierda: paginación */}
+            {/* Izquierda: paginaciÃ³n */}
             <div className="flex items-center">
               <PaginacionEvaluacion
                 currentPage={currentPage}
@@ -364,7 +400,7 @@ function Evaluaciones() {
 
             {/* Derecha: selector de entradas */}
             <div className="flex items-center gap-3 text-sm text-gray-700">
-              <span className="whitespace-nowrap">Filas por página:</span>
+              <span className="whitespace-nowrap">Filas por pÃ¡gina:</span>
               <Select value={String(itemsPerPage)} onValueChange={(v) => handlePageSizeChange(Number(v))}>
                 <SelectTrigger className="w-28">
                   <SelectValue placeholder="Entradas" />
@@ -380,7 +416,7 @@ function Evaluaciones() {
             </div>
           </div>
 
-          {/* Diálogos simplificados */}
+          {/* DiÃ¡logos simplificados */}
           {showDeleteDialog && selectedEvaluacion && (
             <div 
               className="fixed inset-0 flex items-center justify-center z-50"
@@ -391,9 +427,9 @@ function Evaluaciones() {
               }}
             >
               <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-                <h3 className="text-lg font-semibold mb-4">Confirmar Eliminación</h3>
+                <h3 className="text-lg font-semibold mb-4">Confirmar EliminaciÃ³n</h3>
                 <p className="text-gray-600 mb-6">
-                  ¿Estás seguro de que deseas eliminar la evaluación <strong>#{selectedEvaluacion.id_evaluacion}</strong>?
+                  Â¿EstÃ¡s seguro de que deseas eliminar la evaluaciÃ³n <strong>#{selectedEvaluacion.id_evaluacion}</strong>?
                   <br />
                   <span className="text-sm text-gray-500 mt-2 block">
                     Paciente: {selectedEvaluacion.paciente_nombre}
@@ -408,7 +444,7 @@ function Evaluaciones() {
                   </Button>
                   <Button
                     onClick={() => {
-                      toast.success(`Evaluación #${selectedEvaluacion.id_evaluacion} eliminada`);
+                      toast.success(`EvaluaciÃ³n #${selectedEvaluacion.id_evaluacion} eliminada`);
                       setShowDeleteDialog(false);
                       setSelectedEvaluacion(null);
                       handleRefresh();
@@ -422,7 +458,7 @@ function Evaluaciones() {
             </div>
           )}
 
-          {/* Modales - TODO: Crear componentes específicos para evaluaciones */}
+          {/* Modales - TODO: Crear componentes especÃ­ficos para evaluaciones */}
           {showAddModal && (
             <div className="fixed inset-0 flex items-center justify-center z-50 p-4"
                  style={{
@@ -431,9 +467,9 @@ function Evaluaciones() {
                    WebkitBackdropFilter: 'blur(8px) saturate(180%) brightness(0.8)'
                  }}>
               <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                <h3 className="text-lg font-semibold mb-4">Nueva Evaluación</h3>
+                <h3 className="text-lg font-semibold mb-4">Nueva EvaluaciÃ³n</h3>
                 <p className="text-gray-600 mb-6">
-                  Modal para crear nueva evaluación cognitiva - En desarrollo
+                  Modal para crear nueva evaluaciÃ³n cognitiva - En desarrollo
                 </p>
                 <div className="flex gap-3 justify-end">
                   <Button
@@ -457,9 +493,9 @@ function Evaluaciones() {
                    WebkitBackdropFilter: 'blur(8px) saturate(180%) brightness(0.8)'
                  }}>
               <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                <h3 className="text-lg font-semibold mb-4">Editar Evaluación #{selectedEvaluacion.id_evaluacion}</h3>
+                <h3 className="text-lg font-semibold mb-4">Editar EvaluaciÃ³n #{selectedEvaluacion.id_evaluacion}</h3>
                 <p className="text-gray-600 mb-6">
-                  Modal para editar evaluación cognitiva - En desarrollo
+                  Modal para editar evaluaciÃ³n cognitiva - En desarrollo
                 </p>
                 <div className="flex gap-3 justify-end">
                   <Button
@@ -481,17 +517,17 @@ function Evaluaciones() {
                    WebkitBackdropFilter: 'blur(8px) saturate(180%) brightness(0.8)'
                  }}>
               <div className="bg-white rounded-lg p-6 max-w-md w-full">
-                <h3 className="text-lg font-semibold mb-4">Detalles Evaluación #{selectedEvaluacion.id_evaluacion}</h3>
+                <h3 className="text-lg font-semibold mb-4">Detalles EvaluaciÃ³n #{selectedEvaluacion.id_evaluacion}</h3>
                 <div className="space-y-3 text-sm">
                   <div><strong>Paciente:</strong> {selectedEvaluacion.paciente_nombre}</div>
                   <div><strong>Tipo:</strong> {selectedEvaluacion.tipo_evaluacion_nombre}</div>
                   <div><strong>Fecha:</strong> {formatFecha(selectedEvaluacion.fecha_evaluacion)}</div>
                   <div><strong>Estado:</strong> {selectedEvaluacion.estado_procesamiento}</div>
                   {selectedEvaluacion.clasificacion && (
-                    <div><strong>Clasificación:</strong> {selectedEvaluacion.clasificacion}</div>
+                    <div><strong>ClasificaciÃ³n:</strong> {selectedEvaluacion.clasificacion}</div>
                   )}
                   {selectedEvaluacion.puntuacion_total > 0 && (
-                    <div><strong>Puntuación:</strong> {selectedEvaluacion.puntuacion_total}/{selectedEvaluacion.puntuacion_maxima} ({selectedEvaluacion.porcentaje_acierto.toFixed(1)}%)</div>
+                    <div><strong>PuntuaciÃ³n:</strong> {selectedEvaluacion.puntuacion_total}/{selectedEvaluacion.puntuacion_maxima} ({selectedEvaluacion.porcentaje_acierto.toFixed(1)}%)</div>
                   )}
                 </div>
                 <div className="flex gap-3 justify-end mt-6">
@@ -513,3 +549,5 @@ function Evaluaciones() {
 }
 
 export default Evaluaciones;
+
+
