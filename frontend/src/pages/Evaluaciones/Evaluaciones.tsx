@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast';
 import { Plus } from 'lucide-react';
 import { AppSidebar } from '../../components/app-sidebar';
 import { SidebarProvider, SidebarInset } from '../../components/ui/sidebar';
+import { Tabs, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Button } from '../../components/ui/button';
 import { authService } from '../../services/auth';
 import type { EvaluacionCognitiva, TipoEvaluacion } from '../../types/evaluaciones';
@@ -109,6 +110,7 @@ const mockTiposEvaluacion: TipoEvaluacion[] = [
 ];
 
 function Evaluaciones() {
+  const [activeSection, setActiveSection] = useState<'evaluaciones'|'tipos'>('evaluaciones');
   // Estados para los modales
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -241,7 +243,7 @@ function Evaluaciones() {
                     Administra y visualiza los resultados de las evaluaciones cognitivas realizadas.
                   </p>
                   <div className="mt-4">
-                    <TiposEvaluacionTab tiposEvaluacion={[]} loading={false} onView={() => {}} onEdit={() => {}} onDelete={() => {}} />
+                    <Tabs defaultValue="evaluaciones" className="w-full"><TabsList><TabsTrigger value="evaluaciones">Evaluaciones</TabsTrigger><TabsTrigger value="tipos">Tipos de evaluación</TabsTrigger></TabsList></Tabs>
                   </div>
                   
                 </div>
@@ -549,5 +551,9 @@ function Evaluaciones() {
 }
 
 export default Evaluaciones;
+
+
+
+
 
 

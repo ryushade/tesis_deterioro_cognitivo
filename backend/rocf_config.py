@@ -1,12 +1,12 @@
-# Configuración del Clasificador ROCF
+﻿# Configuración del Clasificador ROCF`nimport os
 
 # Rutas
 DATASET_PATH = "rocfd528_binary_images"
 LABELS_PATH = "rocf_labeling_template.csv"
-MODEL_PATH = "best_rocf_model.h5"
+MODEL_PATH = "best_rocf_model_real.h5"
 LOGS_PATH = "logs"
 
-# Parámetros del modelo
+# ParÃ¡metros del modelo
 IMAGE_SIZE = 384
 NUM_CLASSES = 3
 BATCH_SIZE = 32
@@ -23,3 +23,6 @@ CLASS_NAMES = {
     1: "Deterioro Cognitivo Leve", 
     2: "Deterioro Cognitivo Grave"
 }
+
+
+
