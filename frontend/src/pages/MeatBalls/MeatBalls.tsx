@@ -29,24 +29,26 @@ export const MetaballsOriginal: React.FC = () => {
       isMobile ? 1.5 : 2
     );
 
-    // Preset original - usando "holographic"
+    // Preset con paleta médica (fondos blancos/azules) acorde al login
     const settings = {
       sphereCount: isMobile ? 4 : 6,
-      ambientIntensity: 0.12,
-      diffuseIntensity: 1.2,
-      specularIntensity: 2.5,
-      specularPower: 3,
-      fresnelPower: 0.8,
-      backgroundColor: new THREE.Color(0x0a0a15),
-      sphereColor: new THREE.Color(0x050510),
-      lightColor: new THREE.Color(0xccaaff),
+      ambientIntensity: 0.14,
+      diffuseIntensity: 1.15,
+      specularIntensity: 2.2,
+      specularPower: 3.2,
+      fresnelPower: 0.85,
+      // Fondo claro (blanco azulado) para una estética más limpia sobre el login
+      backgroundColor: new THREE.Color(0xf0f6ff),    // light blue-white
+      // Esferas en azul medio para buen contraste sobre fondo claro
+      sphereColor: new THREE.Color(0x60a5fa),        // tailwind blue-400
+      lightColor: new THREE.Color(0x22d3ee),         // cian (tailwind cyan-400)
       lightPosition: new THREE.Vector3(0.9, 0.9, 1.2),
       smoothness: 0.8,
       contrast: 1.6,
-      fogDensity: 0.06,
-      cursorGlowIntensity: 1.2,
-      cursorGlowRadius: 2.2,
-      cursorGlowColor: new THREE.Color(0xaa77ff),
+      fogDensity: 0.035,
+      cursorGlowIntensity: 1.15,
+      cursorGlowRadius: 2.0,
+      cursorGlowColor: new THREE.Color(0x2563eb),    // azul (tailwind blue-600)
       fixedTopLeftRadius: 0.8,
       fixedBottomRightRadius: 0.9,
       smallTopLeftRadius: 0.3,
@@ -572,7 +574,7 @@ export const MetaballsOriginal: React.FC = () => {
         height: '100vh',
         zIndex: -1,
         pointerEvents: 'none',
-        background: '#050505', // Fallback
+        background: '#f0f6ff', // Fallback claro en tonalidad azulada
       }}
     />
   );
