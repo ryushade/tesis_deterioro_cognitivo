@@ -1,61 +1,129 @@
-import { useEffect, useState } from 'react';
-import PacientesForm from './PacientesForm';
-import { FaPlus } from "react-icons/fa";
-import ShowPacientes from '@/pages/Pacientes/ShowPacientes';
+﻿import { useState } from 'react';
+import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import BarraSearch from './BarraSearch';
-import { type Paciente, pacientesService } from '@/services/pacientes.services';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { authService } from '@/services/auth';
+import { useGetPacientes } from '@/services/pacientesService';
+import TablaPacientesSimple from './ComponentsPacientes/TablaPacientesSimple';
+import AddPacienteModal from './ComponentsPacientes/AddPaciente';
+import EditPacienteModal from './ComponentsPacientes/EditPaciente';
+import ViewPacienteModal from './ComponentsPacientes/ViewPaciente';
+import ConfirmDialog from '@/components/ui/confirm-dialog';
+import { pacientesService, type Paciente } from '@/services/pacientesService';
+import toast, { Toaster } from 'react-hot-toast';
+import PaginacionPacientes from './ComponentsPacientes/PaginacionPacientes';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 function Pacientes() {
-  const [pacientes, setPacientes] = useState<Paciente[]>([]);
-  const [activeAdd, setModalOpen] = useState(false);
-
-  // Input de búsqueda de pacientes
+  // Estados para los modales
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [selectedPaciente, setSelectedPaciente] = useState<Paciente | null>(null);
+  
+  // Estados para búsqueda y paginación
   const [searchTerm, setSearchTerm] = useState('');
-  const handleSearch = (term: string) => setSearchTerm(term);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  
+  // Hook para obtener pacientes
+  const { pacientes, metadata, loading, error, refetch } = useGetPacientes();
 
-  useEffect(() => {
-    const fetchPacientes = async () => {
-      const data = await pacientesService.getAllPacientes();
-      setPacientes(data);
-    };
-    fetchPacientes();
-  }, []);
+  // Get user data from localStorage
+  const currentUser = authService.getUserFromStorage();
+  
+  const sidebarUser = {
+    name: currentUser?.username || 'Usuario',
+    email: currentUser?.role?.name || 'Rol no definido'
+  };
 
-  // Utilidad para transformar estado del paciente dinámicamente
-  const transformPaciente = (paciente: Paciente): Paciente => ({
-    ...paciente,
-    estado_paciente: paciente.estado_paciente === 1 || paciente.estado_paciente === "1" ? "Activo" : "Inactivo",
-    // Calcular edad si no viene calculada
-    edad: paciente.edad || calculateAge(paciente.fecha_nacimiento)
-  });
+  const handleLogout = async () => {
+    await authService.logout();
+    window.location.href = '/login';
+  };
 
-  // Calcular edad basada en fecha de nacimiento
-  const calculateAge = (fechaNacimiento: string | null | undefined): number | undefined => {
-    if (!fechaNacimiento) return undefined;
-    const birth = new Date(fechaNacimiento);
-    const today = new Date();
-    let age = today.getFullYear() - birth.getFullYear();
-    const monthDiff = today.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--;
+  // Handlers para modales
+  const handleAddPaciente = () => {
+    setShowAddModal(true);
+  };
+
+  const handleViewPaciente = (paciente: Paciente) => {
+    setSelectedPaciente(paciente);
+    setShowViewModal(true);
+  };
+
+  const handleEditPaciente = (paciente: Paciente) => {
+    setSelectedPaciente(paciente);
+    setShowEditModal(true);
+  };
+
+  const handleDeletePaciente = (paciente: Paciente) => {
+    setSelectedPaciente(paciente);
+    setShowDeleteDialog(true);
+  };
+
+  const confirmDelete = async () => {
+    if (selectedPaciente) {
+      try {
+        const response = await pacientesService.delete(selectedPaciente.id_paciente);
+        if (response.success) {
+          toast.success('Paciente eliminado exitosamente');
+          refetch(currentPage, itemsPerPage, searchTerm);
+        } else {
+          toast.error(response.message || 'Error al eliminar paciente');
+        }
+      } catch (error) {
+        console.error('Error deleting paciente:', error);
+        toast.error('Error de conexión al servidor');
+      }
     }
-    return age;
+    setShowDeleteDialog(false);
+    setSelectedPaciente(null);
   };
 
-  // Al agregar paciente
-  const addPaciente = (nuevoPaciente: Paciente) => {
-    setPacientes(prev => [transformPaciente(nuevoPaciente), ...prev]);
+  // Handler para refrescar datos después de operaciones CRUD
+  const handleRefresh = () => {
+    refetch(currentPage, itemsPerPage, searchTerm);
   };
 
-  // Eliminar paciente del array local
-  const removePaciente = (id_paciente: number) => {
-    setPacientes(prev => prev.filter(p => p.id_paciente !== id_paciente));
+  // Handler para búsqueda
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1);
+    refetch(1, itemsPerPage, term);
+  };
+
+  // Handler para cambio de página
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    refetch(page, itemsPerPage, searchTerm);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setItemsPerPage(size);
+    setCurrentPage(1);
+    refetch(1, size, searchTerm);
   };
 
   return (
-    <div className="min-h-screen py-8 px-2 sm:px-6">
-      <div className="mb-8">
+    <DashboardLayout 
+      user={sidebarUser}
+      onLogout={handleLogout}
+    >
+      <Toaster position="top-right" />
+      
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-3">
+           <div className="mb-2">
         <h1 className="font-black text-5xl text-blue-900 tracking-tight mb-3">
           Gestión de pacientes
         </h1>
@@ -63,39 +131,114 @@ function Pacientes() {
           Administra y visualiza la información de todos los pacientes registrados en el sistema.
         </p>
       </div>
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-6">
-        <BarraSearch
-          placeholder="Buscar paciente por nombre o cédula"
-          className="h-10 text-sm w-full md:w-72 font-medium"
-          onSearch={handleSearch}
-        />
-        <Button
-          onClick={() => setModalOpen(true)}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold shadow-lg hover:shadow-xl transition-all duration-200 px-6 py-3"
-        >
-          <FaPlus className="mr-2 text-lg" />
-          Agregar Paciente
-        </Button>
-      </div>
-      <ShowPacientes
-        pacientes={pacientes.filter(p => 
-          p.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.apellidos.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          p.cedula.includes(searchTerm)
-        )}
-        onView={(paciente) => console.log('Ver paciente:', paciente)}
-        onEdit={(paciente) => console.log('Editar paciente:', paciente)}
-        onDelete={(paciente) => removePaciente(paciente.id_paciente!)}
-      />
-      {activeAdd && (
-        <PacientesForm
-          modalTitle="Nuevo Paciente"
-          onClose={() => setModalOpen(false)}
-          onSuccess={addPaciente}
+          </div>
+          
+          <Button
+            onClick={handleAddPaciente}
+            className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500"
+          >
+            <Plus className="h-4 w-4" />
+            Agregar paciente
+          </Button>
+        </div>
+
+        
+
+        {/* Tabla de pacientes */}
+        <TablaPacientesSimple
           pacientes={pacientes}
+          loading={loading}
+          error={error}
+          searchTerm={searchTerm}
+          onSearch={handleSearch}
+          currentPage={currentPage}
+          totalPages={(metadata as any)?.total_pages ?? (metadata as any)?.totalPages ?? 1}
+          onPageChange={handlePageChange}
+          onView={handleViewPaciente}
+          onEdit={handleEditPaciente}
+          onDelete={handleDeletePaciente}
         />
-      )}
-    </div>
+
+       
+
+        {/* Paginación a la izquierda y texto centrado */}
+        <div className="mt-2 flex w-full items-center justify-between gap-2">
+          {/* Izquierda: paginación */}
+          <div className="flex items-center">
+            <PaginacionPacientes
+              currentPage={currentPage}
+              totalPages={(metadata as any)?.total_pages ?? (metadata as any)?.totalPages ?? 1}
+              onPageChange={handlePageChange}
+            />
+          </div>
+
+          {/* Centro: texto */}
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-sm text-gray-600">
+              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, (metadata as any)?.total ?? (metadata as any)?.totalItems ?? pacientes.length)} de {(metadata as any)?.total ?? (metadata as any)?.totalItems ?? pacientes.length} registros
+            </p>
+          </div>
+            
+          
+          {/* Derecha: espacio para balancear */}
+          <div className="flex items-center gap-3 text-sm text-gray-700">
+            <span className="whitespace-nowrap">Filas por página:</span>
+            <Select value={String(itemsPerPage)} onValueChange={(value) => handlePageSizeChange(Number(value))}>
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="Entradas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100000000000">Todos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        {/* Modales */}
+        <AddPacienteModal
+          open={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => {
+            setShowAddModal(false);
+            handleRefresh();
+          }}
+        />
+
+        {showEditModal && selectedPaciente && (
+          <EditPacienteModal
+            open={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            paciente={selectedPaciente}
+            onSuccess={() => {
+              setShowEditModal(false);
+              handleRefresh();
+            }}
+          />
+        )}
+
+        {showViewModal && selectedPaciente && (
+          <ViewPacienteModal
+            open={showViewModal}
+            onClose={() => setShowViewModal(false)}
+            paciente={selectedPaciente}
+          />
+        )}
+
+        <ConfirmDialog
+          open={showDeleteDialog}
+          onClose={() => setShowDeleteDialog(false)}
+          onConfirm={confirmDelete}
+          title="Eliminar Paciente"
+          message={`¿Eliminar a ${selectedPaciente?.nombres} ${selectedPaciente?.apellidos}?`}
+          confirmText="Eliminar"
+          variant="danger"
+        />
+      </div>
+    </DashboardLayout>
   );
 }
 

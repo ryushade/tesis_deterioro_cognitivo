@@ -55,7 +55,8 @@ class CodigosAccesoService:
                 params.append(estado)
             
             if tipo_evaluacion:
-                where_conditions.append("ca.tipo_evaluacion = %s")
+                # Filtrar por código de prueba (CDT/MMSE/MOCA/ACE)
+                where_conditions.append("pr.codigo = %s")
                 params.append(tipo_evaluacion)
             
             if id_paciente:
@@ -73,7 +74,7 @@ class CodigosAccesoService:
                     CONCAT(p.nombres, ' ', p.apellidos) as nombre_paciente,
                     p.nombres,
                     p.apellidos,
-                    ca.tipo_evaluacion,
+                    pr.codigo AS tipo_evaluacion,
                     ca.vence_at,
                     ca.estado,
                     ca.creado_en,
@@ -85,6 +86,7 @@ class CodigosAccesoService:
                     EXTRACT(EPOCH FROM (ca.vence_at - NOW()))/3600 as horas_restantes
                 FROM codigo_acceso ca
                 JOIN paciente p ON ca.id_paciente = p.id_paciente
+                JOIN prueba_cognitiva pr ON ca.id_prueba = pr.id_prueba
                 {where_clause}
                 ORDER BY ca.creado_en DESC
                 LIMIT %s OFFSET %s
@@ -121,6 +123,7 @@ class CodigosAccesoService:
                     SELECT COUNT(*) as count
                     FROM codigo_acceso ca
                     JOIN paciente p ON ca.id_paciente = p.id_paciente
+                    JOIN prueba_cognitiva pr ON ca.id_prueba = pr.id_prueba
                     {where_clause}
                 """
                 
@@ -173,7 +176,7 @@ class CodigosAccesoService:
                     CONCAT(p.nombres, ' ', p.apellidos) as nombre_paciente,
                     p.nombres,
                     p.apellidos,
-                    ca.tipo_evaluacion,
+                    pr.codigo AS tipo_evaluacion,
                     ca.vence_at,
                     ca.estado,
                     ca.creado_en,
@@ -185,6 +188,7 @@ class CodigosAccesoService:
                     EXTRACT(EPOCH FROM (ca.vence_at - NOW()))/3600 as horas_restantes
                 FROM codigo_acceso ca
                 JOIN paciente p ON ca.id_paciente = p.id_paciente
+                JOIN prueba_cognitiva pr ON ca.id_prueba = pr.id_prueba
                 WHERE ca.id_codigo = %s
             """
             
@@ -247,6 +251,17 @@ class CodigosAccesoService:
                     'message': f'Tipo de evaluación debe ser uno de: {", ".join(self.TIPOS_EVALUACION_VALIDOS)}'
                 }
             
+            # Mapear tipo_evaluacion (código) a id_prueba activo
+            with self.db_service.get_cursor() as cursor:
+                cursor.execute("SELECT id_prueba FROM prueba_cognitiva WHERE codigo = %s AND activo = true", (codigo_data['tipo_evaluacion'],))
+                _pr = cursor.fetchone()
+                if not _pr:
+                    return {
+                        'success': False,
+                        'message': 'Tipo de evaluación inválido: prueba no encontrada'
+                    }
+                id_prueba = _pr['id_prueba']
+
             # Validar que el paciente existe
             paciente_query = "SELECT COUNT(*) as count FROM paciente WHERE id_paciente = %s"
             with self.db_service.get_cursor() as cursor:
@@ -270,7 +285,7 @@ class CodigosAccesoService:
                 vence_at = datetime.fromisoformat(vence_at.replace('Z', '+00:00'))
             
             query = """
-                INSERT INTO codigo_acceso (codigo, id_paciente, tipo_evaluacion, vence_at, estado)
+                INSERT INTO codigo_acceso (codigo, id_paciente, id_prueba, vence_at, estado)
                 VALUES (%s, %s, %s, %s, %s)
                 RETURNING id_codigo
             """
@@ -278,7 +293,7 @@ class CodigosAccesoService:
             params = (
                 codigo,
                 codigo_data['id_paciente'],
-                codigo_data['tipo_evaluacion'],
+                id_prueba,
                 vence_at,
                 codigo_data.get('estado', 'emitido')
             )
@@ -335,8 +350,18 @@ class CodigosAccesoService:
             params = []
             
             if 'tipo_evaluacion' in codigo_data:
-                set_clauses.append("tipo_evaluacion = %s")
-                params.append(codigo_data['tipo_evaluacion'])
+                # Mapear nuevo tipo a id_prueba
+                with self.db_service.get_cursor() as cursor:
+                    cursor.execute("SELECT id_prueba FROM prueba_cognitiva WHERE codigo = %s AND activo = true", (codigo_data['tipo_evaluacion'],))
+                    _pr2 = cursor.fetchone()
+                    if not _pr2:
+                        return {
+                            'success': False,
+                            'message': 'Tipo de evaluación inválido: prueba no encontrada'
+                        }
+                    nuevo_id_prueba = _pr2['id_prueba']
+                set_clauses.append("id_prueba = %s")
+                params.append(nuevo_id_prueba)
             
             if 'vence_at' in codigo_data:
                 set_clauses.append("vence_at = %s")
@@ -475,16 +500,17 @@ class CodigosAccesoService:
             query = """
                 SELECT 
                     COUNT(*) as total,
-                    COUNT(CASE WHEN estado = 'emitido' THEN 1 END) as emitidos,
-                    COUNT(CASE WHEN estado = 'usado' THEN 1 END) as usados,
-                    COUNT(CASE WHEN estado = 'vencido' THEN 1 END) as vencidos,
-                    COUNT(CASE WHEN estado = 'revocado' THEN 1 END) as revocados,
-                    COUNT(CASE WHEN vence_at < NOW() AND estado = 'emitido' THEN 1 END) as vencidos_pendientes,
-                    COUNT(CASE WHEN tipo_evaluacion = 'CDT' THEN 1 END) as cdt,
-                    COUNT(CASE WHEN tipo_evaluacion = 'MMSE' THEN 1 END) as mmse,
-                    COUNT(CASE WHEN tipo_evaluacion = 'MOCA' THEN 1 END) as moca,
-                    COUNT(CASE WHEN tipo_evaluacion = 'ACE' THEN 1 END) as ace
-                FROM codigo_acceso
+                    COUNT(CASE WHEN ca.estado = 'emitido' THEN 1 END) as emitidos,
+                    COUNT(CASE WHEN ca.estado = 'usado' THEN 1 END) as usados,
+                    COUNT(CASE WHEN ca.estado = 'vencido' THEN 1 END) as vencidos,
+                    COUNT(CASE WHEN ca.estado = 'revocado' THEN 1 END) as revocados,
+                    COUNT(CASE WHEN ca.vence_at < NOW() AND ca.estado = 'emitido' THEN 1 END) as vencidos_pendientes,
+                    COUNT(CASE WHEN pr.codigo = 'CDT' THEN 1 END) as cdt,
+                    COUNT(CASE WHEN pr.codigo = 'MMSE' THEN 1 END) as mmse,
+                    COUNT(CASE WHEN pr.codigo = 'MOCA' THEN 1 END) as moca,
+                    COUNT(CASE WHEN pr.codigo = 'ACE' THEN 1 END) as ace
+                FROM codigo_acceso ca
+                JOIN prueba_cognitiva pr ON ca.id_prueba = pr.id_prueba
             """
             
             with self.db_service.get_cursor() as cursor:

@@ -71,8 +71,8 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
      
     },
     {
-      title: "Informes",
-      url: "/informes",
+      title: "Resultados",
+      url: "/resultados",
       icon: FileText,
       roles: ['Administrador', 'Neuropsicologo'], // Solo profesionales
       
@@ -109,7 +109,7 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       title: "Configuración",
       url: "/configuracion",
       icon: Settings,
-      roles: ['Administrador', 'Neuropsicologo', 'Paciente'], // Todos pueden acceder a su configuración
+      roles: ['Administrador'], // Todos pueden acceder a su configuración
       
     },
   ];

@@ -38,15 +38,15 @@ export function HomePage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
             <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Usuarios Activos</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Usuarios activos</h3>
               <p className="text-4xl font-black text-blue-600">0</p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Pacientes Registrados</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Pacientes registrados</h3>
               <p className="text-4xl font-black text-green-600">0</p>
             </div>
             <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-              <h3 className="text-lg font-bold text-gray-900 mb-2">Evaluaciones Realizadas</h3>
+              <h3 className="text-lg font-bold text-gray-900 mb-2">Evaluaciones realizadas</h3>
               <p className="text-4xl font-black text-purple-600">0</p>
             </div>
           </div>

@@ -1,10 +1,14 @@
-import { useState } from 'react';
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState } from 'react';
+import { X, RefreshCw, User, FileText, Calendar, Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import toast from 'react-hot-toast';
-import { User, Calendar, FileText, X } from 'lucide-react';
+import { codigosAccesoService } from '@/services/codigosAccesoService';
+import { pacientesService, type Paciente } from '@/services/pacientesService';
+import { pruebasCognitivasService } from '@/services/pruebasCognitivas.service';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 interface AddCodigoModalProps {
   open: boolean;
@@ -12,172 +16,219 @@ interface AddCodigoModalProps {
   onSuccess: () => void;
 }
 
-interface CodigoFormData {
-  id_paciente: number | undefined;
-  nombre_paciente: string;
-  tipo_evaluacion: string;
-  vence_at: string;
-}
+export default function AddCodigoModal({ open, onClose, onSuccess }: AddCodigoModalProps) {
+  const [codigo, setCodigo] = useState('');
+  const [idPaciente, setIdPaciente] = useState<number | ''>('');
+  const [paciente, setPaciente] = useState<Paciente | null>(null);
+  const [tipoEvaluacion, setTipoEvaluacion] = useState('');
+  const [pruebas, setPruebas] = useState<{ codigo: string; nombre: string; id_prueba: number }[]>([]);
+  const [diasVencimiento, setDiasVencimiento] = useState<number>(7);
+  const [fechaVence, setFechaVence] = useState<string>('');
+  const [submitting, setSubmitting] = useState(false);
+  const [loadingInit, setLoadingInit] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [patientsOpen, setPatientsOpen] = useState(false);
+  const [patientQuery, setPatientQuery] = useState('');
+  const [patientResults, setPatientResults] = useState<Paciente[]>([]);
+  const [loadingPatients, setLoadingPatients] = useState(false);
 
-function AddCodigoModal({ open, onClose, onSuccess }: AddCodigoModalProps) {
-  const [formData, setFormData] = useState<CodigoFormData>({
-    id_paciente: undefined,
-    nombre_paciente: '',
-    tipo_evaluacion: '',
-    vence_at: '',
-  });
-  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    const init = async () => {
+      try {
+        setLoadingInit(true);
+        setError(null);
+        // Generar codigo automaticamente
+        const gen = await codigosAccesoService.generarCodigo(8);
+        if (gen?.success && gen?.data?.codigo) setCodigo(gen.data.codigo);
+        // Cargar pruebas activas
+        const res = await pruebasCognitivasService.getAll({ page: 1, limit: 100, activo: true });
+        const list = (res?.data || []).map(p => ({ codigo: p.codigo, nombre: p.nombre, id_prueba: p.id_prueba }));
+        setPruebas(list);
+      } catch (e: any) {
+        setError(e?.message || 'Error inicializando formulario');
+      } finally {
+        setLoadingInit(false);
+      }
+    };
+    init();
+  }, [open]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.id_paciente || !formData.tipo_evaluacion || !formData.vence_at) {
-      toast.error('Por favor complete todos los campos obligatorios');
-      return;
+  // Buscar pacientes (debounce)
+  useEffect(() => {
+    let timeout: any;
+    if (patientsOpen) {
+      setLoadingPatients(true);
+      timeout = setTimeout(async () => {
+        try {
+          const res = await pacientesService.getAll(1, 10, patientQuery || '');
+          setPatientResults(res.data || []);
+        } catch {
+          setPatientResults([]);
+        } finally {
+          setLoadingPatients(false);
+        }
+      }, 300);
     }
+    return () => clearTimeout(timeout);
+  }, [patientQuery, patientsOpen]);
 
-    setLoading(true);
-
+  const regenerate = async () => {
     try {
-      // Simular API call - reemplazar con servicio real
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      toast.success('Código de acceso creado exitosamente');
-      
-      // Reset form
-      setFormData({
-        id_paciente: undefined,
-        nombre_paciente: '',
-        tipo_evaluacion: '',
-        vence_at: '',
-      });
-      
-      onSuccess();
-    } catch (error) {
-      toast.error('Error al crear código de acceso');
-      console.error('Error creating codigo:', error);
-    } finally {
-      setLoading(false);
+      const gen = await codigosAccesoService.generarCodigo(8);
+      if (gen?.success && gen?.data?.codigo) setCodigo(gen.data.codigo);
+    } catch (e) {
+      toast.error('No se pudo generar codigo');
     }
   };
 
-  const handleChange = (field: keyof CodigoFormData, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!idPaciente || !tipoEvaluacion) {
+      setError('Debe seleccionar paciente y prueba');
+      return;
+    }
+    setSubmitting(true);
+    setError(null);
+    try {
+      const payload: any = {
+        id_paciente: idPaciente,
+        tipo_evaluacion: tipoEvaluacion,
+        codigo,
+      };
+      if (fechaVence) payload.vence_at = new Date(fechaVence).toISOString();
+      else if (diasVencimiento) payload.dias_vencimiento = diasVencimiento;
+
+      const res = await codigosAccesoService.create(payload);
+      if (!res.success) throw new Error(res.message || 'Error al crear codigo');
+      toast.success('Codigo de acceso creado');
+      onSuccess();
+      // reset
+      setCodigo('');
+      setIdPaciente('');
+      setPaciente(null);
+      setTipoEvaluacion('');
+      setDiasVencimiento(7);
+      setFechaVence('');
+    } catch (err: any) {
+      setError(err?.message || 'Error creando codigo de acceso');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (!open) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-      style={{
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        backdropFilter: 'blur(8px) saturate(180%) brightness(0.8)',
-        WebkitBackdropFilter: 'blur(8px) saturate(180%) brightness(0.8)'
-      }}
-      onClick={onClose}
-    >
-      <div className="w-full max-w-md max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-        <Card className="bg-white shadow-2xl border">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between w-full gap-2">
-              <CardTitle className="text-xl font-semibold">Agregar código de acceso</CardTitle>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={onClose}
-                aria-label="Cerrar"
-                className="ml-auto"
-              >
-                <X className="h-4 w-4" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      backdropFilter: 'blur(8px) saturate(180%) brightness(0.9)'
+    }}>
+      <div className="bg-white w-full max-w-xl rounded-lg shadow-lg overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b">
+          <h3 className="text-lg font-semibold">Agregar codigo de acceso</h3>
+          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100" aria-label="Cerrar">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="px-5 py-3 space-y-4">
+          {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>}
+
+          {/* Codigo generado */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2"><FileText className="w-4 h-4"/>Codigo (auto)</Label>
+            <div className="flex gap-2">
+              <Input value={codigo} onChange={(e) => setCodigo(e.target.value.toUpperCase())} placeholder="Auto" className="uppercase" />
+              <Button type="button" variant="outline" onClick={regenerate} title="Regenerar">
+                <RefreshCw className="w-4 h-4" />
               </Button>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <form onSubmit={handleSubmit} className="space-y-4">
-            
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="nombre_paciente" className="flex items-center gap-2">
-                Nombre del paciente
-              </Label>
-              <Input
-                id="nombre_paciente"
-                value={formData.nombre_paciente}
-                onChange={(e) => handleChange('nombre_paciente', e.target.value)}
-                placeholder="Nombre completo del paciente"
-              />
-            </div>
+          {/* Paciente (selector con búsqueda) */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2"><User className="w-4 h-4"/>Paciente</Label>
+            <Popover open={patientsOpen} onOpenChange={setPatientsOpen}>
+              <PopoverTrigger asChild>
+                <Button type="button" variant="outline" className="w-full justify-between">
+                  {paciente ? (
+                    <span>{paciente.nombre_completo} (ID {paciente.id_paciente})</span>
+                  ) : (
+                    <span>Buscar y seleccionar paciente</span>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[420px] p-2">
+                <div className="flex items-center gap-2 mb-2">
+                  <Search className="w-4 h-4 text-gray-400" />
+                  <Input
+                    autoFocus
+                    value={patientQuery}
+                    onChange={(e) => setPatientQuery(e.target.value)}
+                    placeholder="Buscar por nombre o apellidos"
+                  />
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {loadingPatients ? (
+                    <div className="p-2 text-sm text-gray-500">Buscando...</div>
+                  ) : patientResults.length === 0 ? (
+                    <div className="p-2 text-sm text-gray-500">Sin resultados</div>
+                  ) : (
+                    patientResults.map(p => (
+                      <button
+                        key={p.id_paciente}
+                        type="button"
+                        className="w-full text-left px-2 py-2 rounded hover:bg-gray-100"
+                        onClick={() => {
+                          setPaciente(p);
+                          setIdPaciente(p.id_paciente);
+                          setPatientsOpen(false);
+                        }}
+                      >
+                        <div className="text-sm font-medium text-gray-900">{p.nombres} {p.apellidos}</div>
+                        <div className="text-xs text-gray-500">ID {p.id_paciente} • {p.nombre_completo}</div>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </PopoverContent>
+            </Popover>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="tipo_evaluacion" className="flex items-center gap-2">
-                Tipo de evaluación *
-              </Label>
-              <select
-                id="tipo_evaluacion"
-                value={formData.tipo_evaluacion}
-                onChange={(e) => handleChange('tipo_evaluacion', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                required
-              >
-                <option value="">Seleccione el tipo de evaluación</option>
-                <option value="CDT">CDT - Clock Drawing Test</option>
-                <option value="MMSE">MMSE - Mini Mental State Examination</option>
-                <option value="MoCA">MoCA - Montreal Cognitive Assessment</option>
-                <option value="ACE-III">ACE-III - Addenbrooke's Cognitive Examination</option>
-              </select>
-            </div>
+          {/* Prueba cognitiva */}
+          <div className="space-y-2">
+            <Label className="flex items-center gap-2"><FileText className="w-4 h-4"/>Prueba cognitiva</Label>
+            <Select value={tipoEvaluacion} onValueChange={setTipoEvaluacion}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={loadingInit ? 'Cargando...' : 'Seleccione prueba'} />
+              </SelectTrigger>
+              <SelectContent>
+                {pruebas.map(p => (
+                  <SelectItem key={p.id_prueba} value={p.codigo}>{p.codigo} - {p.nombre}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
+          {/* Vencimiento */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="vence_at" className="flex items-center gap-2">
-                Fecha de vencimiento *
-              </Label>
-              <Input
-                id="vence_at"
-                type="date"
-                value={formData.vence_at}
-                onChange={(e) => handleChange('vence_at', e.target.value)}
-                min={new Date().toISOString().split('T')[0]}
-                required
-              />
+              <Label className="flex items-center gap-2"><Calendar className="w-4 h-4"/>Vence en (dias)</Label>
+              <Input type="number" min={1} value={diasVencimiento} onChange={(e) => setDiasVencimiento(Number(e.target.value || 1))} />
             </div>
-          </form>
-        </CardContent>
-        
-        <CardFooter className="flex gap-3 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onClose}
-            className="flex-1"
-            disabled={loading}
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            onClick={handleSubmit}
-            className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-500"
-            disabled={loading}
-          >
-            {loading ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Creando...
-              </div>
-            ) : (
-              'Crear código'
-            )}
-          </Button>
-        </CardFooter>
-        </Card>
+            <div className="space-y-2">
+              <Label className="flex items-center gap-2"><Calendar className="w-4 h-4"/>O fecha especifica</Label>
+              <Input type="datetime-local" value={fechaVence} onChange={(e) => setFechaVence(e.target.value)} />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>Cancelar</Button>
+            <Button type="submit" disabled={submitting || loadingInit}>{submitting ? 'Guardando...' : 'Crear'}</Button>
+          </div>
+        </form>
       </div>
     </div>
   );
 }
-
-export default AddCodigoModal;

@@ -1,11 +1,11 @@
-﻿import { useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { Plus } from 'lucide-react';
 import { AppSidebar } from '../../components/app-sidebar';
 import { SidebarProvider, SidebarInset } from '../../components/ui/sidebar';
 import { Button } from '../../components/ui/button';
 import { authService } from '../../services/auth';
-import type { CodigoAcceso } from '../../types/codigosAcceso';
+import type { CodigoAcceso, CodigoAccesoListResponse } from '../../types/codigosAcceso';
 import { Eye, Edit, Trash2 } from 'lucide-react';
 import PaginacionCodigo from './ComponentsCodigo/PaginacionCodigo';
 import TablaCodigo from './ComponentsCodigo/TablaCodigo';
@@ -20,40 +20,9 @@ import AddCodigoModal from './ComponentsCodigo/AddCodigo';
 import EditCodigoModal from './ComponentsCodigo/EditCodigo';
 import ViewCodigoModal from './ComponentsCodigo/ViewCodigo';
 import './CodigosAcceso.css';
+import { codigosAccesoService } from '@/services/codigosAccesoService';
 
 // Mock data for testing
-const mockCodigosAcceso: CodigoAcceso[] = [
-  {
-    id_codigo: 1,
-    codigo: 'CDT001',
-    id_paciente: 101,
-    nombre_paciente: 'Juan PÃ©rez',
-    nombres: 'Juan',
-    apellidos: 'PÃ©rez',
-    tipo_evaluacion: 'CDT',
-    vence_at: '2025-12-31',
-    estado: 'emitido',
-    creado_en: '2024-01-15',
-    ultimo_uso_en: undefined,
-    esta_vencido: false,
-    horas_restantes: 2400
-  },
-  {
-    id_codigo: 2,
-    codigo: 'MMSE002',
-    id_paciente: 102,
-    nombre_paciente: 'MarÃ­a GarcÃ­a',
-    nombres: 'MarÃ­a',
-    apellidos: 'GarcÃ­a',
-    tipo_evaluacion: 'MMSE',
-    vence_at: '2025-06-30',
-    estado: 'usado',
-    creado_en: '2024-02-20',
-    ultimo_uso_en: '2024-03-15',
-    esta_vencido: false,
-    horas_restantes: 1200
-  }
-];
 
 function CodigosAcceso() {
   // Estados para los modales
@@ -63,18 +32,40 @@ function CodigosAcceso() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [selectedCodigo, setSelectedCodigo] = useState<CodigoAcceso | null>(null);
   
-  // Mock data
-  const codigosAcceso = mockCodigosAcceso;
-  // PaginaciÃ³n
+  // Datos desde backend
+  const [codigosAcceso, setCodigosAcceso] = useState<CodigoAcceso[]>([]);
+  // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
-  const total = codigosAcceso.length;
-  const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = Math.min(currentPage * itemsPerPage, total);
-  const pageCodigos = codigosAcceso.slice(startIndex, endIndex);
-  const loading = false;
-  const error = null;
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+
+  const fetchCodigos = async (page = currentPage, limit = itemsPerPage) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res: CodigoAccesoListResponse = await codigosAccesoService.getAll({ page, limit });
+      if (res.success) {
+        setCodigosAcceso(res.data || []);
+        setTotal(res.metadata?.total || 0);
+        setTotalPages(res.metadata?.total_pages || 1);
+      } else {
+        setError(res.message || 'Error al obtener códigos de acceso');
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Error de conexión');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCodigos(currentPage, itemsPerPage);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, itemsPerPage]);
 
   // Get user data from localStorage
   const currentUser = authService.getUserFromStorage();
@@ -120,7 +111,12 @@ function CodigosAcceso() {
   // Handler para refrescar datos despuÃ©s de operaciones CRUD
   const handleRefresh = () => {
     toast.success('Datos actualizados');
+    fetchCodigos(currentPage, itemsPerPage);
   };
+  
+  // Cálculo de índices para el texto de paginación
+  const startIndex = total === 0 ? 0 : (currentPage - 1) * itemsPerPage;
+  const endIndex = total === 0 ? 0 : Math.min(startIndex + codigosAcceso.length, total);
 
   const formatFecha = (fecha: string) => {
     return new Date(fecha).toLocaleDateString('es-ES', {
@@ -203,11 +199,11 @@ function CodigosAcceso() {
               </div>
             ) : codigosAcceso.length === 0 ? (
               <div className="p-8 text-center">
-                <p className="text-gray-500">No se encontraron cÃ³digos de acceso</p>
+                <p className="text-gray-500">No se encontraron códigos de acceso.</p>
               </div>
             ) : (
               <TablaCodigo
-                codigos={pageCodigos}
+                codigos={codigosAcceso}
                 onView={handleViewCodigo}
                 onEdit={handleEditCodigo}
                 onDelete={handleDeleteCodigo}
@@ -326,5 +322,11 @@ function CodigosAcceso() {
 }
 
 export default CodigosAcceso;
+
+
+
+
+
+
 
 

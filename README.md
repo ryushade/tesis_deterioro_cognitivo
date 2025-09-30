@@ -49,8 +49,6 @@ tesis_deterioro_cognitivo/
 ### Backend
 - Python 3.9+
 - Flask
-- SQLAlchemy
-- Flask-Migrate
 - Flask-CORS
 - psycopg2 (PostgreSQL adapter)
 
@@ -109,9 +107,6 @@ tesis_deterioro_cognitivo/
 
 ### Backend
 - `python run.py` - Servidor de desarrollo
-- `flask db init` - Inicializar migraciones
-- `flask db migrate` - Crear migración
-- `flask db upgrade` - Aplicar migraciones
 
 ## API Endpoints
 

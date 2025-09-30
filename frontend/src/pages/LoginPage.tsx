@@ -10,6 +10,13 @@ import { Loader2, Brain, AlertCircle, Shield } from 'lucide-react';
 import { authService } from '@/services/auth';
 import { AuthorizationService } from '@/services/auth.middleware';
 import { MetaballsOriginal } from '@/pages/MeatBalls/MeatBalls';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSeparator,
+  InputOTPSlot,
+} from "@/components/ui/input-otp"
+import { REGEXP_ONLY_DIGITS_AND_CHARS } from 'input-otp';
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -289,17 +296,26 @@ export default function LoginPage() {
                     
                   <Label htmlFor="accessCode">Código de acceso</Label>
                   
-                  <Input
-                    id="accessCode"
-                    type="text"
-                    placeholder="Ingresa tu código de acceso"
-                    value={accessCode}
-                    onChange={(e) => setAccessCode(e.target.value)}
-                    required
-                    disabled={isLoading}
-                    className="text-center text-lg tracking-widest"
-                    maxLength={8}
-                  />
+                 <InputOTP
+                  maxLength={8}
+                  value={accessCode}
+                  onChange={setAccessCode}
+                  pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                    <InputOTPSlot index={3} />
+                  </InputOTPGroup>
+                  <InputOTPSeparator />
+                  <InputOTPGroup>
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                    <InputOTPSlot index={6} />
+                    <InputOTPSlot index={7} />
+                  </InputOTPGroup>
+                </InputOTP>
                 </div>
                 
                 <Button 

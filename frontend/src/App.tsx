@@ -6,7 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 // Pages
 import LoginPage from './pages/LoginPage';
 import { HomePage } from './pages/HomePage';
-import Pacientes from './pages/Pacientes/PacientesSimple';
+import Pacientes from './pages/Pacientes/Pacientes';
 import CodigosAcceso from './pages/CodigosAcceso/Code';
 import Evaluaciones from './pages/Evaluaciones/Evaluaciones';
 import CDTTestPage from './pages/CDTTestPage';

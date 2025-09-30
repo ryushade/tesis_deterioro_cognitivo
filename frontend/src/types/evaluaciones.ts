@@ -103,3 +103,15 @@ export interface EvaluacionesStats {
   promedio_puntuacion: number;
   evaluaciones_recientes: number;
 }
+
+// Tipos para Pruebas Cognitivas (catálogo)
+export interface PruebaCognitiva {
+  id_prueba: number;
+  codigo: string;
+  nombre: string;
+  puntaje_maximo?: number; // numeric(6,2)
+  modo_aplicacion: 'papel' | 'digital';
+  activo: boolean;
+  creado_en: string; // ISO date
+  actualizado_en: string; // ISO date
+}

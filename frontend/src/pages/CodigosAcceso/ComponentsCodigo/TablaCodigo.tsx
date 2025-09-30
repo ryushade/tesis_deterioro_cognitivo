@@ -1,6 +1,7 @@
-import { Button } from '@/components/ui/button';
+﻿import { Button } from '@/components/ui/button';
 import { Eye, Edit, Trash2 } from 'lucide-react';
 import type { CodigoAcceso } from '@/types/codigosAcceso';
+import { getTipoEvaluacionDescription } from '@/types/codigosAcceso';
 
 interface Props {
   codigos: CodigoAcceso[];
@@ -43,7 +44,7 @@ export default function TablaCodigo({ codigos, onView, onEdit, onDelete }: Props
               Paciente
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Tipo Evaluación
+              PRUEBA COGNITIVA
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Estado
@@ -52,7 +53,7 @@ export default function TablaCodigo({ codigos, onView, onEdit, onDelete }: Props
               Fecha Vencimiento
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Fecha Creación
+              Fecha creación
             </th>
             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
               Último Uso
@@ -74,7 +75,7 @@ export default function TablaCodigo({ codigos, onView, onEdit, onDelete }: Props
                 {codigo.id_paciente}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {codigo.tipo_evaluacion}
+                {getTipoEvaluacionDescription(codigo.tipo_evaluacion as any)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap">
                 <span className={`px-2 py-1 text-xs font-medium rounded-full ${getEstadoColor(codigo.estado)}`}>
@@ -90,30 +91,24 @@ export default function TablaCodigo({ codigos, onView, onEdit, onDelete }: Props
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {codigo.ultimo_uso_en ? formatFecha(codigo.ultimo_uso_en) : 'Nunca'}
               </td>
-              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                <div className="flex gap-1">
-                  <Button
-                    onClick={() => onView(codigo)}
-                    className="text-blue-600 bg-transparent border-none p-2 rounded hover:bg-blue-50"
-                    title="Ver código"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() => onEdit(codigo)}
-                    className="text-gray-600 bg-transparent border-none p-2 rounded hover:bg-gray-50"
-                    title="Editar código"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    onClick={() => onDelete(codigo)}
-                    className="text-red-600 bg-transparent border-none p-2 rounded hover:bg-red-50"
-                    title="Eliminar código"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex items-center gap-4">
+                      <Eye
+                        className="h-4 w-4 cursor-pointer text-blue-600 hover:text-blue-700"
+                        title="Ver"
+                        onClick={() => onView(codigo)}
+                      />
+                      <Edit
+                        className="h-4 w-4 cursor-pointer text-amber-600 hover:text-amber-700"
+                        title="Editar"
+                        onClick={() => onEdit(codigo)}
+                      />
+                      <Trash2
+                        className="h-4 w-4 cursor-pointer text-red-600 hover:text-red-700"
+                        title="Eliminar"
+                        onClick={() => onDelete(codigo)}
+                      />
+                    </div>
               </td>
             </tr>
           ))}
@@ -122,3 +117,4 @@ export default function TablaCodigo({ codigos, onView, onEdit, onDelete }: Props
     </div>
   );
 }
+

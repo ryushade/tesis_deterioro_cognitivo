@@ -4,3 +4,5 @@ export { EvaluacionesTab } from './EvaluacionesTab';
 export { TiposEvaluacionTab } from './TiposEvaluacionTab';
 export { EvaluacionesModals } from './EvaluacionesModals';
 export { TiposEvaluacionModals } from './TiposEvaluacionModals';
+export { PruebasCognitivasTable } from './PruebasCognitivasTable';
+export { AddPrueba } from './AddPrueba';
