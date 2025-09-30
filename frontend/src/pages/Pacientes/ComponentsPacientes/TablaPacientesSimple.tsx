@@ -1,5 +1,4 @@
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { 
   Eye, 
   Edit, 
@@ -152,9 +151,7 @@ export default function TablaPacientesSimple({
                         <div className="text-sm font-medium text-gray-900">
                           {paciente.nombres} {paciente.apellidos}
                         </div>
-                        <div className="text-sm text-gray-500">
-                          {paciente.nombre_completo}
-                        </div>
+                      
                       </div>
                     </div>
                   </td>
@@ -168,9 +165,15 @@ export default function TablaPacientesSimple({
                     <span className="text-sm text-gray-900">{paciente.edad} años</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <Badge variant={paciente.sexo === 'M' ? 'default' : 'secondary'}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
+                      paciente.sexo === 'M'
+                        ? 'text-blue-700 bg-blue-100'
+                        : paciente.sexo === 'F'
+                        ? 'text-purple-700 bg-purple-100'
+                        : 'text-gray-700 bg-gray-100'
+                    }`}>
                       {formatSexo(paciente.sexo)}
-                    </Badge>
+                    </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900">
@@ -179,9 +182,9 @@ export default function TablaPacientesSimple({
                     </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <Badge variant={paciente.estado ? 'default' : 'destructive'}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${paciente.estado ? 'text-green-700 bg-green-100' : 'text-gray-700 bg-gray-100'}`}>
                       {paciente.estado ? 'Activo' : 'Inactivo'}
-                    </Badge>
+                    </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     <div className="flex items-center gap-1">
