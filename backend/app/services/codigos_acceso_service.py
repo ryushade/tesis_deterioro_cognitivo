@@ -244,16 +244,9 @@ class CodigosAccesoService:
                     'message': 'Tipo de evaluación es requerido'
                 }
             
-            # Validar tipo de evaluación
-            if codigo_data['tipo_evaluacion'] not in self.TIPOS_EVALUACION_VALIDOS:
-                return {
-                    'success': False,
-                    'message': f'Tipo de evaluación debe ser uno de: {", ".join(self.TIPOS_EVALUACION_VALIDOS)}'
-                }
-            
             # Mapear tipo_evaluacion (código) a id_prueba activo
             with self.db_service.get_cursor() as cursor:
-                cursor.execute("SELECT id_prueba FROM prueba_cognitiva WHERE codigo = %s AND activo = true", (codigo_data['tipo_evaluacion'],))
+                cursor.execute("SELECT id_prueba FROM prueba_cognitiva WHERE UPPER(codigo) = UPPER(%s) AND activo = true", (codigo_data['tipo_evaluacion'],))
                 _pr = cursor.fetchone()
                 if not _pr:
                     return {
@@ -332,12 +325,7 @@ class CodigosAccesoService:
             if not codigo_existente['success']:
                 return codigo_existente
             
-            # Validar datos si se proporcionan
-            if codigo_data.get('tipo_evaluacion') and codigo_data['tipo_evaluacion'] not in self.TIPOS_EVALUACION_VALIDOS:
-                return {
-                    'success': False,
-                    'message': f'Tipo de evaluación debe ser uno de: {", ".join(self.TIPOS_EVALUACION_VALIDOS)}'
-                }
+            # Validar datos si se proporcionan (tipo_evaluacion se valida contra tabla prueba_cognitiva)
             
             if codigo_data.get('estado') and codigo_data['estado'] not in self.ESTADOS_VALIDOS:
                 return {
@@ -352,7 +340,7 @@ class CodigosAccesoService:
             if 'tipo_evaluacion' in codigo_data:
                 # Mapear nuevo tipo a id_prueba
                 with self.db_service.get_cursor() as cursor:
-                    cursor.execute("SELECT id_prueba FROM prueba_cognitiva WHERE codigo = %s AND activo = true", (codigo_data['tipo_evaluacion'],))
+                    cursor.execute("SELECT id_prueba FROM prueba_cognitiva WHERE UPPER(codigo) = UPPER(%s) AND activo = true", (codigo_data['tipo_evaluacion'],))
                     _pr2 = cursor.fetchone()
                     if not _pr2:
                         return {

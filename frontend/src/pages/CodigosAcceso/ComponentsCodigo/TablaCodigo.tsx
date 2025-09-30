@@ -11,6 +11,12 @@ interface Props {
 }
 
 export default function TablaCodigo({ codigos, onView, onEdit, onDelete }: Props) {
+  const getNombrePaciente = (c: CodigoAcceso) => {
+    const nombre = (c.nombre_paciente || '').trim();
+    if (nombre) return nombre;
+    const compuesto = [c.nombres, c.apellidos].filter(Boolean).join(' ').trim();
+    return compuesto || `ID ${c.id_paciente}`;
+  };
   const formatFecha = (fecha: string | undefined) => {
     if (!fecha) return 'Nunca';
     try {
@@ -72,7 +78,7 @@ export default function TablaCodigo({ codigos, onView, onEdit, onDelete }: Props
                 </span>
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                {codigo.id_paciente}
+                {getNombrePaciente(codigo)}
               </td>
               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                 {getTipoEvaluacionDescription(codigo.tipo_evaluacion as any)}
@@ -117,4 +123,3 @@ export default function TablaCodigo({ codigos, onView, onEdit, onDelete }: Props
     </div>
   );
 }
-

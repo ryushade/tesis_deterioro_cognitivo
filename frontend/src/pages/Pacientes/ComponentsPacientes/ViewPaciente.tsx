@@ -105,7 +105,7 @@ const ViewPacienteModal: React.FC<ViewPacienteModalProps> = ({ open, onClose, pa
           <div className="border-l-4 border-green-500 pl-4">
             <div className="flex items-center gap-2 mb-1">
               <User className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-medium text-gray-700">Nombre Completo</span>
+              <span className="text-sm font-medium text-gray-700">Nombre y apellidos</span>
             </div>
             <p className="text-lg font-semibold text-gray-900">
               {paciente.nombres} {paciente.apellidos}

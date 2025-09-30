@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { codigosAccesoService } from '@/services/codigosAccesoService';
 import { pacientesService, type Paciente } from '@/services/pacientesService';
 import { pruebasCognitivasService } from '@/services/pruebasCognitivas.service';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+// Eliminado Popover; usaremos Select con búsqueda embebida
 
 interface AddCodigoModalProps {
   open: boolean;
@@ -137,7 +137,7 @@ export default function AddCodigoModal({ open, onClose, onSuccess }: AddCodigoMo
 
           {/* Codigo generado */}
           <div className="space-y-2">
-            <Label className="flex items-center gap-2"><FileText className="w-4 h-4"/>Codigo (auto)</Label>
+            <Label className="flex items-center gap-2"><FileText className="w-4 h-4"/>Codigo de acceso</Label>
             <div className="flex gap-2">
               <Input value={codigo} onChange={(e) => setCodigo(e.target.value.toUpperCase())} placeholder="Auto" className="uppercase" />
               <Button type="button" variant="outline" onClick={regenerate} title="Regenerar">
@@ -146,21 +146,34 @@ export default function AddCodigoModal({ open, onClose, onSuccess }: AddCodigoMo
             </div>
           </div>
 
-          {/* Paciente (selector con búsqueda) */}
+          {/* Paciente (Select con búsqueda) */}
           <div className="space-y-2">
             <Label className="flex items-center gap-2"><User className="w-4 h-4"/>Paciente</Label>
-            <Popover open={patientsOpen} onOpenChange={setPatientsOpen}>
-              <PopoverTrigger asChild>
-                <Button type="button" variant="outline" className="w-full justify-between">
-                  {paciente ? (
-                    <span>{paciente.nombre_completo} (ID {paciente.id_paciente})</span>
-                  ) : (
-                    <span>Buscar y seleccionar paciente</span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[420px] p-2">
-                <div className="flex items-center gap-2 mb-2">
+            <Select
+              open={patientsOpen}
+              onOpenChange={(o) => {
+                setPatientsOpen(o);
+                if (o && patientResults.length === 0) {
+                  // cargar inicial
+                  setPatientQuery('');
+                }
+              }}
+              value={idPaciente ? String(idPaciente) : undefined}
+              onValueChange={(v) => {
+                const pid = Number(v);
+                setIdPaciente(pid);
+                const psel = patientResults.find(pr => pr.id_paciente === pid);
+                if (psel) setPaciente(psel);
+                else {
+                  pacientesService.getById(pid).then(r => r.success && r.data && setPaciente(r.data));
+                }
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={paciente ? `${paciente.nombre_completo} (ID ${paciente.id_paciente})` : 'Buscar y seleccionar paciente'} />
+              </SelectTrigger>
+              <SelectContent className="z-[1000]">
+                <div className="p-2 flex items-center gap-2">
                   <Search className="w-4 h-4 text-gray-400" />
                   <Input
                     autoFocus
@@ -169,31 +182,19 @@ export default function AddCodigoModal({ open, onClose, onSuccess }: AddCodigoMo
                     placeholder="Buscar por nombre o apellidos"
                   />
                 </div>
-                <div className="max-h-64 overflow-y-auto">
-                  {loadingPatients ? (
-                    <div className="p-2 text-sm text-gray-500">Buscando...</div>
-                  ) : patientResults.length === 0 ? (
-                    <div className="p-2 text-sm text-gray-500">Sin resultados</div>
-                  ) : (
-                    patientResults.map(p => (
-                      <button
-                        key={p.id_paciente}
-                        type="button"
-                        className="w-full text-left px-2 py-2 rounded hover:bg-gray-100"
-                        onClick={() => {
-                          setPaciente(p);
-                          setIdPaciente(p.id_paciente);
-                          setPatientsOpen(false);
-                        }}
-                      >
-                        <div className="text-sm font-medium text-gray-900">{p.nombres} {p.apellidos}</div>
-                        <div className="text-xs text-gray-500">ID {p.id_paciente} • {p.nombre_completo}</div>
-                      </button>
-                    ))
-                  )}
-                </div>
-              </PopoverContent>
-            </Popover>
+                {loadingPatients && (
+                  <div className="px-3 py-2 text-sm text-gray-500">Buscando...</div>
+                )}
+                {(!loadingPatients && patientResults.length === 0) && (
+                  <div className="px-3 py-2 text-sm text-gray-500">Sin resultados</div>
+                )}
+                {patientResults.map((p) => (
+                  <SelectItem key={p.id_paciente} value={String(p.id_paciente)}>
+                    {p.nombres} {p.apellidos} 
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Prueba cognitiva */}
@@ -225,7 +226,7 @@ export default function AddCodigoModal({ open, onClose, onSuccess }: AddCodigoMo
 
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>Cancelar</Button>
-            <Button type="submit" disabled={submitting || loadingInit}>{submitting ? 'Guardando...' : 'Crear'}</Button>
+            <Button type="submit" disabled={submitting || loadingInit}>{submitting ? 'Guardando...' : 'Guardar'}</Button>
           </div>
         </form>
       </div>
