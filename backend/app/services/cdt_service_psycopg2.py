@@ -4,6 +4,12 @@ Servicio CDT basado en psycopg2 (sin SQLAlchemy)
 import os
 import uuid
 from typing import Dict, Any, Optional, List
+import numpy as np
+try:
+    import cv2  # type: ignore
+    _CV2_AVAILABLE = True
+except Exception:
+    _CV2_AVAILABLE = False
 
 from werkzeug.datastructures import FileStorage
 
@@ -40,10 +46,19 @@ class CDTServicePsycopg2:
         file.save(path)
         return path
 
-    def analyze_cdt_file(self, file: FileStorage, paciente_id: str) -> Dict[str, Any]:
+    def analyze_cdt_file(self, file: FileStorage, paciente_id: Optional[str]) -> Dict[str, Any]:
         path = self.save_uploaded_file(file)
         if not path:
             return {"success": False, "error": "Archivo no permitido o no recibido"}
+
+        # Rechazar imágenes que no parezcan relojes para evitar análisis inválidos
+        if _CV2_AVAILABLE:
+            try:
+                if not self._is_clock_like(path):
+                    return {"success": False, "error": "La imagen no parece un reloj (no se detectó contorno circular)"}
+            except Exception:
+                # Si el chequeo rápido falla, continuamos para no bloquear, pero idealmente loggear
+                pass
 
         # Resultado por defecto (si no hay analizador)
         result: Dict[str, Any] = {
@@ -78,24 +93,67 @@ class CDTServicePsycopg2:
                 # Mantener resultado básico en caso de error
                 pass
 
-        # Persistir evaluación
-        eval_id = self.evals.create_evaluacion_cdt(id_paciente=int(paciente_id), imagen_url=path)
-        if eval_id:
-            # Actualizar con resultados del análisis
-            self.evals.update_evaluacion(
-                eval_id,
-                {
-                    "puntuacion_total": result.get("puntuacion_total", 0.0),
-                    "clasificacion": result.get("clasificacion_deterioro"),
-                    "confianza": result.get("deteccion", {}).get("confianza"),
-                    "estado_procesamiento": "completada",
-                    "tiempo_procesamiento": result.get("tiempo_procesamiento"),
-                    "observaciones": result.get("observaciones_ia"),
-                },
-            )
-            result["evaluation_id"] = eval_id
+        # Persistir evaluación solo si paciente_id válido y existe
+        try:
+            pid: Optional[int] = None
+            if paciente_id is not None:
+                try:
+                    pid = int(paciente_id)
+                except Exception:
+                    pid = None
+            if pid and pid > 0:
+                exists = False
+                with self.db.get_cursor() as cur:
+                    cur.execute("SELECT 1 FROM paciente WHERE id_paciente = %s", (pid,))
+                    exists = cur.fetchone() is not None
+                if exists:
+                    eval_id = self.evals.create_evaluacion_cdt(id_paciente=pid, imagen_url=path)
+                    if eval_id:
+                        # Actualizar con resultados del análisis
+                        self.evals.update_evaluacion(
+                            eval_id,
+                            {
+                                "puntuacion_total": result.get("puntuacion_total", 0.0),
+                                "clasificacion": result.get("clasificacion_deterioro"),
+                                "confianza": result.get("deteccion", {}).get("confianza"),
+                                "estado_procesamiento": "completada",
+                                "tiempo_procesamiento": result.get("tiempo_procesamiento"),
+                                "observaciones": result.get("observaciones_ia"),
+                            },
+                        )
+                        result["evaluation_id"] = eval_id
+                else:
+                    result["warning"] = "Paciente no encontrado; análisis no persistido"
+            else:
+                result["warning"] = "paciente_id no provisto; análisis no persistido"
+        except Exception:
+            # Si falla la persistencia, devolver igualmente el resultado del análisis
+            result["warning"] = "Error al persistir; análisis no almacenado"
 
         return result
+
+    def _is_clock_like(self, image_path: str) -> bool:
+        """Chequeo rápido: detecta presencia de un contorno circular dominante.
+        Evita procesar imágenes no relacionadas (perros, paisajes, etc.).
+        """
+        img = cv2.imread(image_path)
+        if img is None:
+            return False
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        gray = cv2.medianBlur(gray, 5)
+        # HoughCircles parámetros conservadores; ajustables según muestras
+        rows = gray.shape[0]
+        circles = cv2.HoughCircles(
+            gray,
+            cv2.HOUGH_GRADIENT,
+            dp=1.2,
+            minDist=max(40, rows // 8),
+            param1=100,
+            param2=30,
+            minRadius=max(20, rows // 12),
+            maxRadius=rows // 2,
+        )
+        return circles is not None and len(circles[0]) > 0
 
     def get_patient_evaluations(self, paciente_id: str) -> List[Dict[str, Any]]:
         return self.evals.get_evaluaciones_by_paciente(int(paciente_id))
@@ -144,4 +202,3 @@ class CDTServicePsycopg2:
 
 # Instancia global
 cdt_service_psycopg2 = CDTServicePsycopg2()
-

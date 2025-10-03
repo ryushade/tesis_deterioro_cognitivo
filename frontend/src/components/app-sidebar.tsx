@@ -79,7 +79,7 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
     },
     
     {
-      title: "CDT Test (Demo)",
+      title: "CDT Test",
       url: "/cdt-test",
       icon: Activity,
       // Sin restricción de roles - todos pueden acceder

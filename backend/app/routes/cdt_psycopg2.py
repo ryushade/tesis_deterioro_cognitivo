@@ -164,9 +164,8 @@ def analyze_cdt():
         if file.filename == '':
             return jsonify({'success': False, 'error': 'No se seleccionó ningún archivo'}), 400
 
-        paciente_id = request.form.get('paciente_id')
-        if not paciente_id:
-            return jsonify({'success': False, 'error': 'paciente_id es requerido'}), 400
+        # paciente_id opcional para modo demo del analizador
+        paciente_id = request.form.get('paciente_id')  # puede ser None
 
         result = cdt_service.analyze_cdt_file(file, paciente_id)
         return jsonify(result), 200 if result.get('success') else 400
