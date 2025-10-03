@@ -31,7 +31,6 @@ export default function LoginPage() {
   // Estados generales
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
-  const [showInitButton, setShowInitButton] = useState(false);
   const [activeTab, setActiveTab] = useState('neuropsicologo');
 
   const handleNeurologistLogin = async (e: React.FormEvent) => {
@@ -50,16 +49,21 @@ export default function LoginPage() {
         const defaultRoute = AuthorizationService.getDefaultRoute();
         navigate(defaultRoute, { replace: true });
       } else {
-        setError(response.message);
-        
-        // Show init button if it seems like database isn't initialized
-        if (response.message.includes('Invalid credentials')) {
-          setShowInitButton(true);
+        const message = response.message || '';
+        let translatedMessage = 'No se pudo iniciar sesión.';
+
+        if (message.includes('Invalid credentials')) {
+          translatedMessage = message.includes('inactive role')
+            ? 'Tu usuario está inactivo. Contacta a un administrador.'
+            : 'Usuario o contraseña incorrectos.';
+        } else if (message) {
+          translatedMessage = message;
         }
+
+        setError(translatedMessage);
       }
     } catch (error: any) {
       setError('Error de conexión con el servidor');
-      setShowInitButton(true);
     } finally {
       setIsLoading(false);
     }
@@ -84,32 +88,6 @@ export default function LoginPage() {
       }
     } catch (error: any) {
       setError('Error de conexión con el servidor');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleInitDatabase = async () => {
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const result = await authService.initDatabase();
-      
-      if (result.success) {
-        setError(''); // Clear error
-        setShowInitButton(false);
-        // Show success message
-        alert(`${result.message}\nCredenciales por defecto:\nUsuario: admin\nContraseña: admin123`);
-        
-        // Pre-fill admin credentials
-        setUsername('admin');
-        setPassword('admin123');
-      } else {
-        setError(result.message);
-      }
-    } catch (error: any) {
-      setError(error.message || 'Error al inicializar la base de datos');
     } finally {
       setIsLoading(false);
     }
@@ -196,28 +174,6 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              {showInitButton && (
-                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800 mb-3">
-                    ¿Primera vez usando el sistema? Es posible que necesites inicializar la base de datos.
-                  </p>
-                  <Button 
-                    onClick={handleInitDatabase}
-                    variant="outline"
-                    className="w-full"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Inicializando...
-                      </>
-                    ) : (
-                      'Inicializar Base de Datos'
-                    )}
-                  </Button>
-                </div>
-              )}
             </TabsContent>
             
             <TabsContent value="administrador" className="space-y-4 mt-4">
@@ -266,28 +222,6 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              {showInitButton && (
-                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-sm text-yellow-800 mb-3">
-                    ¿Primera vez usando el sistema? Es posible que necesites inicializar la base de datos.
-                  </p>
-                  <Button 
-                    onClick={handleInitDatabase}
-                    variant="outline"
-                    className="w-full"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Inicializando...
-                      </>
-                    ) : (
-                      'Inicializar Base de Datos'
-                    )}
-                  </Button>
-                </div>
-              )}
             </TabsContent>
             
             <TabsContent value="paciente" className="space-y-4 mt-4">

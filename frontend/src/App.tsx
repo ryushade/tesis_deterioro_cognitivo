@@ -14,6 +14,7 @@ import CDTTestPage from './pages/CDTTestPage';
 // Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthorizationService } from './services/auth.middleware';
+import InicioPrueba from './pages/InicioPrueba/InicioPrueba';
 
 const queryClient = new QueryClient();
 
@@ -115,6 +116,15 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+                path="/inicio-prueba"
+                element={
+                  <ProtectedRoute requiredRoles={["Neuropsicologo"]}>
+                    <InicioPrueba />
+                  </ProtectedRoute>
+                }
+              />
+
               <Route
                 path="/cdt-test"
                 element={

@@ -3,6 +3,7 @@ Rutas API CDT usando psycopg2 (sin SQLAlchemy)
 """
 from flask import Blueprint, request, jsonify, current_app
 import os
+from decimal import Decimal
 from datetime import datetime as _dt, timezone
 
 from app.services.database_service import db_service
@@ -11,6 +12,18 @@ from app.services.cdt_service_psycopg2 import cdt_service_psycopg2 as cdt_servic
 
 
 cdt_psycopg2_bp = Blueprint('cdt_psycopg2', __name__, url_prefix='/api/cdt')
+
+
+def _serialize_evaluation_row(row):
+    serialized = {}
+    for key, value in row.items():
+        if isinstance(value, Decimal):
+            serialized[key] = float(value)
+        elif isinstance(value, _dt):
+            serialized[key] = value.isoformat()
+        else:
+            serialized[key] = value
+    return serialized
 
 
 @cdt_psycopg2_bp.route('/validar-codigo', methods=['POST'])
@@ -108,6 +121,18 @@ def iniciar_evaluacion():
     except Exception as e:
         current_app.logger.error(f"Error iniciando evaluación: {str(e)}")
         return jsonify({'success': False, 'error': 'Error interno del servidor'}), 500
+
+
+@cdt_psycopg2_bp.route('/pacientes/<int:id_paciente>/evaluaciones', methods=['GET'])
+def obtener_evaluaciones_paciente(id_paciente):
+    """Listado de evaluaciones CDT para un paciente"""
+    try:
+        evaluations = cdt_service.get_patient_evaluations(str(id_paciente)) or []
+        serialized = [_serialize_evaluation_row(item) for item in evaluations]
+        return jsonify({'success': True, 'data': serialized}), 200
+    except Exception as e:
+        current_app.logger.error(f"Error obteniendo evaluaciones del paciente {id_paciente}: {str(e)}")
+        return jsonify({'success': False, 'message': 'Error al obtener evaluaciones del paciente'}), 500
 
 
 @cdt_psycopg2_bp.route('/subir-imagen', methods=['POST'])

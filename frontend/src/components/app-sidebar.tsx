@@ -70,6 +70,13 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       roles: ['Administrador', 'Neuropsicologo'], // Solo admin y neuropsicólogos
      
     },
+
+    {
+      title: "Pruebas",
+      url: "/inicio-prueba",
+      icon: BarChart3,
+      roles: ['Neuropsicologo'], // Solo neuropsicólogos
+    },
     {
       title: "Resultados",
       url: "/resultados",
