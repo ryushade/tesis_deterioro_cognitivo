@@ -1,21 +1,16 @@
 ﻿import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
-import { Activity, History, Loader2, RefreshCw, Users, ClipboardList } from 'lucide-react';
-
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { authService } from '@/services/auth';
 import { useGetPacientes, type Paciente } from '@/services/pacientesService';
 import { evaluacionesLiveService } from '@/services/evaluacionesLive.service';
 import { pruebasCognitivasService } from '@/services/pruebasCognitivas.service';
 import type { EvaluacionCognitiva, PruebaCognitiva } from '@/types/evaluaciones';
-
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import MMSE from './ComponentsInicioPrueba/MMSE';
+import Reloj from './ComponentsInicioPrueba/Reloj';
+import Rey from './ComponentsInicioPrueba/Rey';
 
 const REFRESH_INTERVAL_MS = 8000;
 const PAGE_SIZES = [5, 10, 20] as const;
@@ -275,9 +270,10 @@ const InicioPrueba = () => {
 
       <div className="space-y-6">
         <header className="flex flex-col gap-2">
-          <h1 className="text-3xl font-black text-blue-900 tracking-tight">Seguimiento de pruebas</h1>
-          <p className="text-sm text-blue-900/70 max-w-2xl">
-            Selecciona un paciente y monitorea en tiempo real el estado de sus evaluaciones cognitivas.
+        <h1 className="font-black text-5xl text-blue-900 tracking-tight mb-2">
+          Seguimiento de pruebas</h1>
+        <p className="text-lg font-medium text-blue-700/80 leading-relaxed">
+            Selecciona una prueba y monitorea en tiempo real el estado cognitivo de los pacientes.
           </p>
         </header>
 
@@ -285,22 +281,25 @@ const InicioPrueba = () => {
           
 
           <div className="space-y-6">
-            <Tabs defaultValue="todas" className="w-xs">
-                    <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="todas">Todas</TabsTrigger>
-                      <TabsTrigger value="digital">Digitales</TabsTrigger>
-                      <TabsTrigger value="papel">Papel</TabsTrigger>
-                    </TabsList>
-                    <TabsContent value="todas" className="mt-4">
-                      {renderPruebas(pruebasPorModo.todas)}
-                    </TabsContent>
-                    <TabsContent value="digital" className="mt-4">
-                      {renderPruebas(pruebasPorModo.digital)}
-                    </TabsContent>
-                    <TabsContent value="papel" className="mt-4">
-                      {renderPruebas(pruebasPorModo.papel)}
-                    </TabsContent>
-                  </Tabs>
+          <div className='flex w-full flex-col gap-6'>
+            <Tabs defaultValue="mmse">
+              <TabsList className="grid w-full grid-cols-3 gap-1">
+                <TabsTrigger value="mmse" className="text-sm py-1.5">MMSE</TabsTrigger>
+                <TabsTrigger value="reloj" className="text-sm py-1.5">Prueba del reloj</TabsTrigger>
+                <TabsTrigger value="rey" className="text-sm py-1.5">Figura completa de rey</TabsTrigger>
+              </TabsList>
+              <TabsContent value="mmse">
+                {/* Tabla de seguimiento MMSE */}
+                <MMSE />
+              </TabsContent>
+              <TabsContent value="reloj">
+                <Reloj />
+              </TabsContent>
+              <TabsContent value="rey">
+                <Rey />
+              </TabsContent>
+            </Tabs>
+          </div>
 
 {/*             
 

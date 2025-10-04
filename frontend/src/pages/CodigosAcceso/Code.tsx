@@ -195,7 +195,7 @@ function CodigosAcceso() {
             {loading ? (
               <div className="p-8 text-center">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-                <p className="text-gray-500 mt-2">Cargando cÃ³digos...</p>
+                <p className="text-gray-500 mt-2">Cargando códigos...</p>
               </div>
             ) : codigosAcceso.length === 0 ? (
               <div className="p-8 text-center">
