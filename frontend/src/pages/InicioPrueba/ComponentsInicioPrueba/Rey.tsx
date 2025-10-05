@@ -55,6 +55,30 @@ const formatScore = (value?: number | null, max?: number | null) => {
   return `${value.toFixed(1)} / ${Number(max).toFixed(1)}`;
 };
 
+const formatEscolaridad = (value?: string | null) => {
+  if (!value) return '—';
+  const normalized = String(value).trim().replace(/_/g, ' ').toLowerCase();
+  if (!normalized) return '—';
+  const title = normalized
+    .split(' ')
+    .filter(Boolean)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ');
+  return title.replace(/Basica\b/g, 'Básica');
+};
+
+const formatSexo = (sexo?: 'M' | 'F' | null, display?: string | null) => {
+  if (sexo === 'M') return 'Masculino';
+  if (sexo === 'F') return 'Femenino';
+  return display || '—';
+};
+
+const sexoBadgeClass = (sexo?: 'M' | 'F' | null) => {
+  if (sexo === 'M') return 'text-blue-700 bg-blue-100';
+  if (sexo === 'F') return 'text-purple-700 bg-purple-100';
+  return 'text-gray-700 bg-gray-100';
+};
+
 type EvalMap = Record<number, EvaluacionCognitiva | null>;
 
 export default function Rey() {
@@ -202,8 +226,12 @@ export default function Rey() {
                   <TableRow key={p.id_paciente}>
                     <TableCell className="font-medium">{p.nombre_completo}</TableCell>
                     <TableCell className="whitespace-nowrap">{p.edad ?? '—'}</TableCell>
-                    <TableCell className="whitespace-nowrap">{p.sexo_display || '—'}</TableCell>
-                    <TableCell className="whitespace-nowrap">{p.escolaridad || '—'}</TableCell>
+                    <TableCell className="whitespace-nowrap">
+                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${sexoBadgeClass(p.sexo as any)}`}>
+                        {formatSexo(p.sexo as any, p.sexo_display as any)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">{formatEscolaridad(p.escolaridad as any)}</TableCell>
                     <TableCell className="whitespace-nowrap">{evalItem ? formatDateTime(evalItem.fecha_evaluacion) : '—'}</TableCell>
                     <TableCell className="whitespace-nowrap">{evalItem ? formatScore(evalItem.puntuacion_total, evalItem.puntuacion_maxima) : '—'}</TableCell>
                     <TableCell className="whitespace-nowrap">
@@ -212,7 +240,7 @@ export default function Rey() {
                           {estadoLabels[evalItem.estado_procesamiento as Estado]}
                         </span>
                       ) : (
-                        <Badge variant="destructive">No realizado</Badge>
+                        <Badge variant="outline">Sin REY</Badge>
                       )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">

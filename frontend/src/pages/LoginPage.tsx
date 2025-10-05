@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Brain, AlertCircle, Shield } from 'lucide-react';
 import { authService } from '@/services/auth';
 import { AuthorizationService } from '@/services/auth.middleware';
+import { codigosAccesoService } from '@/services/codigosAccesoService';
 import { MetaballsOriginal } from '@/pages/MeatBalls/MeatBalls';
 import {
   InputOTP,
@@ -21,7 +22,7 @@ import { REGEXP_ONLY_DIGITS_AND_CHARS } from 'input-otp';
 export default function LoginPage() {
   const navigate = useNavigate();
   
-  // Estados para neuropsicólogo
+  // Estados para neuropsicÃ³logo
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   
@@ -50,12 +51,12 @@ export default function LoginPage() {
         navigate(defaultRoute, { replace: true });
       } else {
         const message = response.message || '';
-        let translatedMessage = 'No se pudo iniciar sesión.';
+        let translatedMessage = 'No se pudo iniciar sesiÃ³n.';
 
         if (message.includes('Invalid credentials')) {
           translatedMessage = message.includes('inactive role')
-            ? 'Tu usuario está inactivo. Contacta a un administrador.'
-            : 'Usuario o contraseña incorrectos.';
+            ? 'Tu usuario estÃ¡ inactivo. Contacta a un administrador.'
+            : 'Usuario o contraseÃ±a incorrectos.';
         } else if (message) {
           translatedMessage = message;
         }
@@ -63,7 +64,7 @@ export default function LoginPage() {
         setError(translatedMessage);
       }
     } catch (error: any) {
-      setError('Error de conexión con el servidor');
+      setError('Error de conexiÃ³n con el servidor');
     } finally {
       setIsLoading(false);
     }
@@ -72,22 +73,38 @@ export default function LoginPage() {
   const handlePatientLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError('');
-
+    setError("");
     try {
       const response = await authService.patientLogin({ access_code: accessCode });
-      
       if (response.success) {
-        // Dispatch event to notify App component
-        window.dispatchEvent(new CustomEvent('loginSuccess'));
-        
-        // Use React Router navigate for patient redirect
-        navigate('/pruebas', { replace: true });
+        window.dispatchEvent(new CustomEvent("loginSuccess"));
+        // Detectar prueba por código de acceso
+        let target = "/pruebas";
+        try {
+          const res = await codigosAccesoService.getAll({ search: accessCode, limit: 1 });
+          const match = (res.data || []).find((c: any) => (c.codigo || "").toUpperCase() === accessCode.toUpperCase());
+          if (match) {
+            localStorage.setItem("accessCode", match.codigo);
+            localStorage.setItem("tipoEvaluacion", match.tipo_evaluacion);
+            switch ((match.tipo_evaluacion || "").toUpperCase()) {
+              case "CDT":
+                target = "/cdt-test";
+                break;
+              case "MMSE":
+                target = "/mmse";
+                break;
+              default:
+                target = "/pruebas";
+                break;
+            }
+          }
+        } catch (e) {}
+        navigate(target, { replace: true });
       } else {
         setError(response.message);
       }
     } catch (error: any) {
-      setError('Error de conexión con el servidor');
+      setError("Error de conexión con el servidor");
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +139,7 @@ export default function LoginPage() {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="neuropsicologo" className="flex items-center gap-2 font-semibold">
-                Neuropsicólogo
+                Neuropsicologo
               </TabsTrigger>
               <TabsTrigger value="administrador" className="flex items-center gap-2 font-semibold">
                 Administrador
@@ -147,11 +164,11 @@ export default function LoginPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña</Label>
+                  <Label htmlFor="password">ContraseÃ±a</Label>
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Ingresa tu contraseña"
+                    placeholder="Ingresa tu contraseÃ±a"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -166,10 +183,10 @@ export default function LoginPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Iniciando sesión...
+                      Iniciando sesion...
                     </>
                   ) : (
-                    'Iniciar sesión'
+                    'Iniciar sesion'
                   )}
                 </Button>
               </form>
@@ -191,11 +208,11 @@ export default function LoginPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="admin-password">Contraseña</Label>
+                  <Label htmlFor="admin-password">ContraseÃ±a</Label>
                   <Input
                     id="admin-password"
                     type="password"
-                    placeholder="Ingresa tu contraseña"
+                    placeholder="Ingresa tu contraseÃ±a"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -211,12 +228,12 @@ export default function LoginPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Iniciando sesión...
+                      Iniciando sesion...
                     </>
                   ) : (
                     <>
                       <Shield className="mr-2 h-4 w-4" />
-                      Iniciar sesión
+                      Iniciar sesion
                     </>
                   )}
                 </Button>
@@ -228,7 +245,7 @@ export default function LoginPage() {
               <form onSubmit={handlePatientLogin} className="space-y-4">
                 <div className="space-y-2">
                     
-                  <Label htmlFor="accessCode">Código de acceso</Label>
+                  <Label htmlFor="accessCode">Codigo de acceso</Label>
                   
                  <InputOTP
                   maxLength={8}
@@ -260,10 +277,10 @@ export default function LoginPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verificando código...
+                      Verificando cÃ³digo...
                     </>
                   ) : (
-                    'Acceder con código'
+                    'Acceder con cÃ³digo'
                   )}
                 </Button>
               </form>
@@ -272,7 +289,7 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center text-sm text-gray-600">
             <p>Sistema inteligente - Deterioro cognitivo</p>
-            <p className="text-xs mt-1">Versión 1.0</p>
+            <p className="text-xs mt-1">VersiÃ³n 1.0</p>
           </div>
         </CardContent>
       </Card>

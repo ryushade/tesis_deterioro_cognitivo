@@ -11,6 +11,9 @@ import CodigosAcceso from './pages/CodigosAcceso/Code';
 import Evaluaciones from './pages/Evaluaciones/Evaluaciones';
 import CDTTestPage from './pages/CDTTestPage';
 
+import MMSEPatient from './pages/Evaluaciones/ComponentsEvaluaciones/Pruebas/MMSE/MMSE';
+import Pruebas from './pages/Pruebas/Pruebas';
+import PruebaFinalizada from './pages/Pruebas/PruebaFinalizada';
 // Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthorizationService } from './services/auth.middleware';
@@ -77,7 +80,7 @@ function App() {
                 path="/login"
                 element={
                   isAuthenticated ? (
-                    <Navigate to="/dashboard" replace />
+                    <Navigate to={AuthorizationService.getDefaultRoute()} replace />
                   ) : (
                     <LoginPage />
                   )
@@ -130,6 +133,30 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <CDTTestPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pruebas"
+                element={
+                  <ProtectedRoute>
+                    <Pruebas />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/pruebas/finalizado"
+                element={
+                  <ProtectedRoute>
+                    <PruebaFinalizada />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/mmse"
+                element={
+                  <ProtectedRoute>
+                    <MMSEPatient />
                   </ProtectedRoute>
                 }
               />
