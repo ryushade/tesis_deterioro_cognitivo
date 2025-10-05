@@ -12,6 +12,7 @@ import pruebasCognitivasService from '../../services/pruebasCognitivas.service';
 
 import PaginacionEvaluacion from './ComponentsEvaluaciones/PaginacionEvaluacion';
 import { PruebasCognitivasTable } from './ComponentsEvaluaciones/PruebasCognitivasTable';
+import ViewPrueba from './ComponentsEvaluaciones/ViewPrueba';
 import { AddPrueba } from './ComponentsEvaluaciones/AddPrueba';
 
 import {
@@ -25,6 +26,8 @@ import {
 function Evaluaciones() {
   // Estado UI
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showViewModal, setShowViewModal] = useState(false);
+  const [selectedPrueba, setSelectedPrueba] = useState<PruebaCognitiva | null>(null);
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
@@ -91,7 +94,8 @@ function Evaluaciones() {
   };
 
   const handleViewPrueba = (prueba: PruebaCognitiva) => {
-    toast.success(`Ver prueba ${prueba.codigo}`);
+    setSelectedPrueba(prueba);
+    setShowViewModal(true);
   };
 
   const handleEditPrueba = (prueba: PruebaCognitiva) => {
@@ -218,6 +222,15 @@ function Evaluaciones() {
                 onCreate={handleCreatePrueba}
               />
             )}
+
+            {/* Modal: Ver indicaciones de la prueba */}
+            {showViewModal && (
+              <ViewPrueba
+                open={showViewModal}
+                onClose={() => { setShowViewModal(false); setSelectedPrueba(null); }}
+                prueba={selectedPrueba}
+              />
+            )}
           </div>
         </div>
       </SidebarInset>
@@ -226,4 +239,3 @@ function Evaluaciones() {
 }
 
 export default Evaluaciones;
-

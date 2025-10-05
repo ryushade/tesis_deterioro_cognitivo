@@ -82,7 +82,12 @@ export function PruebasCognitivasTable({ pruebas, loading, onView, onEdit, onDel
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-2">
 
-                        <Eye className="h-4 w-4 cursor-pointer text-blue-600 hover:text-blue-700" title="Ver" onClick={() => onView(prueba)} />
+                        <Eye
+                          className="h-4 w-4 cursor-pointer text-blue-600 hover:text-blue-700"
+                          title="Indicaciones (neuropsicología)"
+                          onClick={() => onView(prueba)}
+                          aria-label="Ver indicaciones de la prueba"
+                        />
 
                     </div>
                   </td>
@@ -97,4 +102,3 @@ export function PruebasCognitivasTable({ pruebas, loading, onView, onEdit, onDel
 }
 
 export default PruebasCognitivasTable;
-

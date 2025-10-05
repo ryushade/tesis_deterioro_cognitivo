@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Pagination, PaginationContent, PaginationItem, PaginationLink } from '@/components/ui/pagination';
+import PaginacionEvaluacion from '../../Evaluaciones/ComponentsEvaluaciones/PaginacionEvaluacion';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 import { useGetPacientes, type Paciente } from '@/services/pacientesService';
@@ -31,6 +31,11 @@ const estadoLabels: Record<Estado, string> = {
   fallida: 'Fallida',
 };
 
+const isReyCode = (code?: string | null) => {
+  const c = (code || '').toUpperCase();
+  return c === 'REY' || c === 'ROCF' || c.includes('REY');
+};
+
 const formatDateTime = (value?: string | null) => {
   if (!value) return '—';
   const date = new Date(value);
@@ -51,12 +56,6 @@ const formatScore = (value?: number | null, max?: number | null) => {
 };
 
 type EvalMap = Record<number, EvaluacionCognitiva | null>;
-
-// Acepta códigos REY o ROCF por compatibilidad
-const isReyCode = (code?: string | null) => {
-  const c = (code || '').toUpperCase();
-  return c === 'REY' || c === 'ROCF' || c.includes('REY');
-};
 
 export default function Rey() {
   const { pacientes, metadata, loading, error, refetch } = useGetPacientes();
@@ -84,16 +83,15 @@ export default function Rey() {
     refetch(1, itemsPerPage, value);
   };
 
-  const handlePageChange = (direction: 'prev' | 'next') => {
-    const targetPage = direction === 'prev' ? Math.max(1, (metadata?.page || 1) - 1) : (metadata?.page || 1) + 1;
-    if ((direction === 'prev' && !metadata?.has_prev) || (direction === 'next' && !metadata?.has_next)) return;
-    refetch(targetPage, itemsPerPage, searchTerm);
-  };
-
   const handlePageSizeChange = (value: string) => {
     const size = Number(value) || PAGE_SIZES[0];
     setItemsPerPage(size);
     refetch(1, size, searchTerm);
+  };
+
+  const handleGotoPage = (page: number) => {
+    const p = Math.max(1, page);
+    refetch(p, itemsPerPage, searchTerm);
   };
 
   const cargarEstadosPagina = useCallback(async () => {
@@ -157,14 +155,6 @@ export default function Rey() {
             onChange={handleSearchChange}
             className="w-64"
           />
-          <Select onValueChange={handlePageSizeChange} value={String(itemsPerPage)}>
-            <SelectTrigger className="w-[140px]"><SelectValue placeholder="Filas" /></SelectTrigger>
-            <SelectContent>
-              {PAGE_SIZES.map((s) => (
-                <SelectItem key={s} value={String(s)}>{s} por página</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => refetch(metadata?.page || 1, itemsPerPage, searchTerm)}>
@@ -222,7 +212,7 @@ export default function Rey() {
                           {estadoLabels[evalItem.estado_procesamiento as Estado]}
                         </span>
                       ) : (
-                        <Badge variant="outline">Sin REY</Badge>
+                        <Badge variant="destructive">No realizado</Badge>
                       )}
                     </TableCell>
                     <TableCell className="whitespace-nowrap">
@@ -238,20 +228,40 @@ export default function Rey() {
         </Table>
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="text-xs text-gray-500">
-          Página {metadata.page} de {metadata.total_pages} • {metadata.total} pacientes
+      {/* Pie de tabla estilo Evaluaciones: paginación + resumen + selector */}
+      <div className="mt-2 flex w-full items-center justify-between gap-3">
+        <div className="flex items-center">
+          <PaginacionEvaluacion
+            currentPage={metadata?.page || 1}
+            totalPages={metadata?.total_pages || 1}
+            onPageChange={handleGotoPage}
+            disabled={loading}
+          />
         </div>
-        <Pagination>
-          <PaginationContent>
-            <PaginationItem>
-              <PaginationLink href="#" onClick={(e) => { e.preventDefault(); handlePageChange('prev'); }} isActive={false}>Anterior</PaginationLink>
-            </PaginationItem>
-            <PaginationItem>
-              <PaginationLink href="#" onClick={(e) => { e.preventDefault(); handlePageChange('next'); }} isActive={false}>Siguiente</PaginationLink>
-            </PaginationItem>
-          </PaginationContent>
-        </Pagination>
+
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-sm text-gray-600">{(() => {
+            const page = metadata?.page || 1;
+            const total = metadata?.total || 0;
+            const startIndex = total === 0 ? 0 : (page - 1) * itemsPerPage + 1;
+            const endIndex = Math.min(page * itemsPerPage, total);
+            return `Mostrando ${startIndex} a ${endIndex} de ${total} registros`;
+          })()}</p>
+        </div>
+
+        <div className="flex items-center gap-3 text-sm text-gray-700">
+          <span className="whitespace-nowrap">Filas por página:</span>
+          <Select onValueChange={handlePageSizeChange} value={String(itemsPerPage)}>
+            <SelectTrigger className="w-28">
+              <SelectValue placeholder="Entradas" />
+            </SelectTrigger>
+            <SelectContent>
+              {PAGE_SIZES.map((s) => (
+                <SelectItem key={s} value={String(s)}>{s}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <Sheet open={detalleOpen} onOpenChange={setDetalleOpen}>
@@ -295,3 +305,4 @@ export default function Rey() {
     </div>
   );
 }
+

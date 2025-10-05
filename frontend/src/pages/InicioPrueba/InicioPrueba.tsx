@@ -283,7 +283,7 @@ const InicioPrueba = () => {
           <div className="space-y-6">
           <div className='flex w-full flex-col gap-6'>
             <Tabs defaultValue="mmse">
-              <TabsList className="grid w-full grid-cols-3 gap-1">
+              <TabsList className="gap-1">
                 <TabsTrigger value="mmse" className="text-sm py-1.5">MMSE</TabsTrigger>
                 <TabsTrigger value="reloj" className="text-sm py-1.5">Prueba del reloj</TabsTrigger>
                 <TabsTrigger value="rey" className="text-sm py-1.5">Figura completa de rey</TabsTrigger>
