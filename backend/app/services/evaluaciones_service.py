@@ -148,3 +148,85 @@ class EvaluacionesService:
             )
             return cur.rowcount > 0
 
+    # --- MMSE helpers ---
+    def create_evaluacion_mmse(
+        self,
+        id_paciente: int,
+        creado_por: Optional[int] = None,
+        datos_iniciales: Optional[Dict[str, Any]] = None,
+    ) -> Optional[int]:
+        """Crea una evaluación MMSE en estado en_progreso con datos_especificos JSON."""
+        query = """
+            INSERT INTO evaluaciones_cognitivas (
+                id_paciente,
+                id_codigo,
+                tipo_evaluacion,
+                fecha_evaluacion,
+                puntuacion_total,
+                puntuacion_maxima,
+                clasificacion,
+                confianza,
+                estado_procesamiento,
+                tiempo_procesamiento,
+                version_algoritmo,
+                observaciones,
+                imagen_url,
+                metodo_cdt,
+                creado_por,
+                datos_especificos
+            ) VALUES (
+                %s, NULL, 'MMSE', NOW(),
+                %s, %s, NULL, NULL,
+                'en_progreso', NULL, NULL,
+                %s, NULL, NULL,
+                %s,
+                %s
+            )
+            RETURNING id_evaluacion
+        """
+        params = (
+            id_paciente,
+            0.0,
+            30.0,  # puntaje maximo típico MMSE
+            'Evaluación MMSE iniciada',
+            creado_por,
+            datos_iniciales or {},
+        )
+        with self.db.get_cursor() as cur:
+            cur.execute(query, params)
+            row = cur.fetchone()
+            return row['id_evaluacion'] if row else None
+
+    def get_mmse_by_id(self, id_evaluacion: int) -> Optional[Dict[str, Any]]:
+        data = self.get_evaluacion_by_id(id_evaluacion)
+        if not data or data.get('tipo_evaluacion') != 'MMSE':
+            return None
+        return data
+
+    def update_mmse_progress(
+        self,
+        id_evaluacion: int,
+        datos_especificos: Dict[str, Any],
+        puntuacion_total: Optional[float] = None,
+        estado_procesamiento: Optional[str] = None,
+    ) -> bool:
+        fields: Dict[str, Any] = {'datos_especificos': datos_especificos}
+        if puntuacion_total is not None:
+            fields['puntuacion_total'] = puntuacion_total
+        if estado_procesamiento is not None:
+            fields['estado_procesamiento'] = estado_procesamiento
+        return self.update_evaluacion(id_evaluacion, fields)
+
+    def finalizar_mmse(
+        self,
+        id_evaluacion: int,
+        puntuacion_total: float,
+        clasificacion: Optional[str] = None,
+    ) -> bool:
+        fields: Dict[str, Any] = {
+            'puntuacion_total': puntuacion_total,
+            'estado_procesamiento': 'completada',
+        }
+        if clasificacion is not None:
+            fields['clasificacion'] = clasificacion
+        return self.update_evaluacion(id_evaluacion, fields)

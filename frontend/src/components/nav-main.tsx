@@ -18,9 +18,7 @@ import {
   SidebarMenuSubItem,
 } from "@/components/ui/sidebar"
 
-export function NavMain({
-  items,
-}: {
+export function NavMain({ items, label }: {
   items: {
     title: string
     url: string
@@ -47,7 +45,7 @@ export function NavMain({
   return (
     <SidebarGroup>
       <SidebarGroupLabel className="font-semibold text-sm tracking-wide uppercase text-sidebar-foreground/70">
-        MÃ³dulos
+        {label ?? 'Módulos'}
       </SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
@@ -107,3 +105,5 @@ export function NavMain({
     </SidebarGroup>
   )
 }
+
+

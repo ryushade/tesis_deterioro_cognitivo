@@ -218,37 +218,7 @@ export default function MMSEPatient() {
     <div className="max-w-4xl mx-auto space-y-6">
       <header className="space-y-2">
         <h1 className="text-3xl font-extrabold text-blue-900">MMSE — Cuestionario para el paciente</h1>
-        <p className="text-base text-gray-700">Responda a cada pregunta según se le solicite. Algunas tareas requieren ejecutar acciones simples.</p>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setFontScale((v) => Math.max(1, Math.round((v - 0.1) * 10) / 10))}
-            aria-label="Reducir tamaño de texto"
-          >
-            <Minus className="w-4 h-4" /> A-
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => setFontScale((v) => Math.min(1.6, Math.round((v + 0.1) * 10) / 10))}
-            aria-label="Aumentar tamaño de texto"
-          >
-            <Plus className="w-4 h-4" /> A+
-          </Button>
-          <Button
-            type="button"
-            variant={highContrast ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setHighContrast((v) => !v)}
-            aria-pressed={highContrast}
-            aria-label="Alternar alto contraste"
-          >
-            <Contrast className="w-4 h-4 mr-1" /> Alto contraste
-          </Button>
-        </div>
+        
       </header>
 
       <MMSEProgress currentStep={currentStep} totalSteps={sections.length} score={score} totalMax={totalMax} />

@@ -14,7 +14,6 @@ export default function MMSEProgress({
     <div className="space-y-2">
       <div className="flex items-center justify-between text-sm text-gray-700">
         <span>Paso {currentStep + 1} de {totalSteps}</span>
-        <span>Puntaje preliminar: <span className="font-semibold">{score}</span> / {totalMax}</span>
       </div>
       <div className="h-2 w-full bg-gray-200 rounded">
         <div className="h-2 bg-blue-600 rounded" style={{ width: `${pct}%` }} />

@@ -49,12 +49,7 @@ export default function MMSESectionCard({
     <Card key={section.key} className={cardClasses} style={{ fontSize: `${Math.round(fontScale * 100)}%` }}>
       <CardHeader>
         <div className="flex items-center justify-between gap-3">
-          <CardTitle className="text-base">{section.title}</CardTitle>
-          {onSpeak && (
-            <Button type="button" variant={highContrast ? 'default' : 'outline'} size={big ? 'lg' : 'sm'} onClick={() => onSpeak(`${section.title}. ${section.description || ''}`)}>
-              <Volume2 className="w-4 h-4 mr-1" /> Escuchar
-            </Button>
-          )}
+       
         </div>
         {section.description && <p className="text-xs text-gray-600">{section.description}</p>}
       </CardHeader>

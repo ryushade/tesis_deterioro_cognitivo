@@ -100,24 +100,11 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
     },
     
     {
-      title: "Gestión de Usuarios",
-      url: "/usuarios",
+      title: "Roles y permisos",
+      url: "/roles-permisos",
       icon: Database,
       roles: ['Administrador'], // Solo administradores
-      items: [
-        {
-          title: "Usuarios",
-          url: "/usuarios/lista",
-        },
-        {
-          title: "Roles",
-          url: "/usuarios/roles",
-        },
-        {
-          title: "Permisos",
-          url: "/usuarios/permisos",
-        },
-      ],
+      
     },
     {
       title: "Configuración",
@@ -148,6 +135,12 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
     avatar: "", // No avatar for now
   };
 
+  // Agrupar en secciones de navegación
+  const pickByUrls = (urls: string[]) => navData.filter(i => urls.includes(i.url))
+  const navMainItems = pickByUrls(["/dashboard","/pacientes","/pruebas-cognitivas","/codigos-acceso","/cdt-test"]) 
+  const navReportsItems = pickByUrls(["/evaluaciones","/resultados"]) 
+  const navGestionItems = pickByUrls(["/neuropsicologos","/roles-permisos"]) 
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
@@ -162,7 +155,9 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={navData} />
+        {navMainItems.length > 0 && <NavMain label="Principal" items={navMainItems} />}
+        {navReportsItems.length > 0 && <NavMain label="Reportes" items={navReportsItems} />}
+        {navGestionItems.length > 0 && <NavMain label="Gestión" items={navGestionItems} />}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={userWithAvatar} onLogout={onLogout} />
