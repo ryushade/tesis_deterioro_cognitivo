@@ -9,8 +9,8 @@ type Answer = string | number | boolean | null
 type Question = {
   id: string
   label: string
-  type: 'text' | 'number' | 'select' | 'boolean'
-  options?: { value: string; label: string; score?: number }[]
+  type: 'text' | 'number' | 'select' | 'boolean' | 'image'
+  options?: { value: string; label: string; score?: number; image?: string; emoji?: string }[]
   maxScore: number
 }
 
@@ -94,6 +94,30 @@ export default function MMSESectionCard({
                 <div className="flex gap-2">
                   <Button type="button" className={buttonSize} variant={(answers[q.id] as boolean) === true ? 'default' : 'outline'} onClick={() => onChange(q.id, true)}>Cumple</Button>
                   <Button type="button" className={buttonSize} variant={(answers[q.id] as boolean) === false ? 'default' : 'outline'} onClick={() => onChange(q.id, false)}>No cumple</Button>
+                </div>
+              )}
+              {q.type === 'image' && (
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
+                  {q.options?.map((opt) => {
+                    const selected = (answers[q.id] as string) === opt.value
+                    return (
+                      <button
+                        type="button"
+                        key={opt.value}
+                        onClick={() => onChange(q.id, opt.value)}
+                        className={`relative rounded-lg border p-2 flex flex-col items-center justify-center hover:shadow-md transition ${selected ? 'border-blue-600 ring-2 ring-blue-200' : 'border-gray-200'}`}
+                        aria-pressed={selected}
+                      >
+                        {opt.image ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={opt.image} alt={opt.label} className="h-16 w-16 object-contain" />
+                        ) : (
+                          <div className="h-16 w-16 flex items-center justify-center text-4xl">{opt.emoji ?? '🔷'}</div>
+                        )}
+                        <span className="mt-2 text-xs font-medium text-gray-800">{opt.label}</span>
+                      </button>
+                    )
+                  })}
                 </div>
               )}
               {isInvalid && (
