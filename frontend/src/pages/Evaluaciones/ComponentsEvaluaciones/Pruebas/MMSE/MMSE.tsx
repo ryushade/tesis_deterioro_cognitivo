@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Contrast, Minus, Plus } from 'lucide-react'
+import MMSESectionCard from './components/MMSESectionCard'
+import MMSEProgress from './components/MMSEProgress'
 
 type Answer = string | number | boolean | null
 
@@ -126,6 +126,11 @@ export default function MMSEPatient() {
   const navigate = useNavigate()
   const [answers, setAnswers] = useState<Answers>({})
   const [submitting, setSubmitting] = useState(false)
+  const [currentStep, setCurrentStep] = useState(0)
+  const [invalid, setInvalid] = useState<Record<string, boolean>>({})
+  const [showValidation, setShowValidation] = useState(false)
+  const [fontScale, setFontScale] = useState(1)
+  const [highContrast, setHighContrast] = useState(false)
 
   const totalMax = useMemo(
     () => sections.reduce((acc, s) => acc + s.questions.reduce((a, q) => a + q.maxScore, 0), 0),
@@ -153,6 +158,36 @@ export default function MMSEPatient() {
 
   const handleChange = (id: string, value: Answer) => {
     setAnswers((prev) => ({ ...prev, [id]: value }))
+    if (invalid[id]) {
+      setInvalid((prev) => ({ ...prev, [id]: false }))
+    }
+  }
+
+  const isValueValid = (type: Question['type'], value: Answer) => {
+    switch (type) {
+      case 'boolean':
+        return typeof value === 'boolean'
+      case 'text':
+        return typeof value === 'string' && value.trim().length > 0
+      case 'number':
+        return typeof value === 'number' && Number.isFinite(value)
+      case 'select':
+        return typeof value === 'string' && value.length > 0
+      default:
+        return false
+    }
+  }
+
+  const validateStep = (stepIndex: number): { valid: boolean; invalidMap: Record<string, boolean> } => {
+    const sec = sections[stepIndex]
+    const invalidMap: Record<string, boolean> = {}
+    for (const q of sec.questions) {
+      const v = answers[q.id]
+      if (!isValueValid(q.type, v)) {
+        invalidMap[q.id] = true
+      }
+    }
+    return { valid: Object.keys(invalidMap).length === 0, invalidMap }
   }
 
   const handleSubmit = async () => {
@@ -168,61 +203,119 @@ export default function MMSEPatient() {
     }
   }
 
+  const handleSpeak = (text: string) => {
+    try {
+      const s = window.speechSynthesis
+      if (!s) return
+      s.cancel()
+      const utter = new SpeechSynthesisUtterance(text)
+      utter.lang = 'es-ES'
+      s.speak(utter)
+    } catch {}
+  }
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-bold text-blue-900">MMSE – Cuestionario para el paciente</h1>
-        <p className="text-sm text-gray-600">Responda a cada pregunta según se le solicite. Algunas tareas requieren ejecutar acciones simples.</p>
+      <header className="space-y-2">
+        <h1 className="text-3xl font-extrabold text-blue-900">MMSE — Cuestionario para el paciente</h1>
+        <p className="text-base text-gray-700">Responda a cada pregunta según se le solicite. Algunas tareas requieren ejecutar acciones simples.</p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setFontScale((v) => Math.max(1, Math.round((v - 0.1) * 10) / 10))}
+            aria-label="Reducir tamaño de texto"
+          >
+            <Minus className="w-4 h-4" /> A-
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setFontScale((v) => Math.min(1.6, Math.round((v + 0.1) * 10) / 10))}
+            aria-label="Aumentar tamaño de texto"
+          >
+            <Plus className="w-4 h-4" /> A+
+          </Button>
+          <Button
+            type="button"
+            variant={highContrast ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setHighContrast((v) => !v)}
+            aria-pressed={highContrast}
+            aria-label="Alternar alto contraste"
+          >
+            <Contrast className="w-4 h-4 mr-1" /> Alto contraste
+          </Button>
+        </div>
       </header>
 
+      <MMSEProgress currentStep={currentStep} totalSteps={sections.length} score={score} totalMax={totalMax} />
+
       <div className="grid gap-4">
-        {sections.map((sec) => (
-          <Card key={sec.key}>
-            <CardHeader>
-              <CardTitle className="text-base">{sec.title}</CardTitle>
-              {sec.description && <p className="text-xs text-gray-500">{sec.description}</p>}
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {sec.questions.map((q) => (
-                <div key={q.id} className="grid gap-1">
-                  <label className="text-sm font-medium text-gray-800" htmlFor={q.id}>{q.label}</label>
-                  {q.type === 'text' && (
-                    <Input id={q.id} value={(answers[q.id] as string) || ''} onChange={(e) => handleChange(q.id, e.target.value)} />
-                  )}
-                  {q.type === 'number' && (
-                    <Input id={q.id} type="number" value={answers[q.id] as number | undefined} onChange={(e) => handleChange(q.id, Number(e.target.value))} />
-                  )}
-                  {q.type === 'select' && (
-                    <Select value={(answers[q.id] as string) || ''} onValueChange={(v) => handleChange(q.id, v)}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Seleccione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {q.options?.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  {q.type === 'boolean' && (
-                    <div className="flex gap-2">
-                      <Button type="button" variant={(answers[q.id] as boolean) === true ? 'default' : 'outline'} onClick={() => handleChange(q.id, true)}>Cumple</Button>
-                      <Button type="button" variant={(answers[q.id] as boolean) === false ? 'default' : 'outline'} onClick={() => handleChange(q.id, false)}>No cumple</Button>
-                    </div>
-                  )}
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        ))}
+        {(() => {
+          const sec = sections[currentStep]
+          const invalidMap = showValidation ? invalid : {}
+          return (
+            <MMSESectionCard
+              section={sec}
+              answers={answers}
+              onChange={handleChange}
+              invalid={invalidMap}
+              fontScale={fontScale}
+              highContrast={highContrast}
+              onSpeak={handleSpeak}
+            />
+          )
+        })()}
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
+        <Button type="button" variant="outline" onClick={() => setCurrentStep((s) => Math.max(0, s - 1))} disabled={currentStep === 0}>
+          Anterior
+        </Button>
+        {currentStep < sections.length - 1 ? (
+          <Button
+            type="button"
+            onClick={() => {
+              const { valid, invalidMap } = validateStep(currentStep)
+              if (!valid) {
+                setInvalid(invalidMap)
+                setShowValidation(true)
+                return
+              }
+              setShowValidation(false)
+              setInvalid({})
+              setCurrentStep((s) => Math.min(sections.length - 1, s + 1))
+            }}
+          >
+            Siguiente
+          </Button>
+        ) : (
+          <Button
+            onClick={() => {
+              const { valid, invalidMap } = validateStep(currentStep)
+              if (!valid) {
+                setInvalid(invalidMap)
+                setShowValidation(true)
+                return
+              }
+              handleSubmit()
+            }}
+            disabled={submitting}
+          >
+            {submitting ? 'Enviando…' : 'Enviar respuestas'}
+          </Button>
+        )}
+      </div>
+
+      {false && (<div className="flex items-center justify-between">
         <div className="text-sm text-gray-700">Puntaje preliminar: <span className="font-semibold">{score}</span> / {totalMax}</div>
         <Button onClick={handleSubmit} disabled={submitting}>
           {submitting ? 'Enviando…' : 'Enviar respuestas'}
         </Button>
-      </div>
+      </div>)}
     </div>
   )
 }

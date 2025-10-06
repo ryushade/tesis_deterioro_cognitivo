@@ -68,14 +68,13 @@ export function NavUser({ user, onLogout }: NavUserProps) {
                 </div>
               </div>
             </div>
-            <DropdownMenuSeparator />
             <DropdownMenuItem
               variant="destructive"
               onClick={() => onLogout?.()}
               className="text-red-600"
             >
               <LogOut className="h-4 w-4" />
-              Cerrar Sesión
+              Cerrar sesión
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

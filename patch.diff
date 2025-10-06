@@ -1,0 +1,9 @@
+*** Begin Patch
+*** Update File: frontend/src/pages/Neuropsicologos/Neuropsicologo.tsx
+@@
+ import ViewNeuropsicologo from "./ComponentsNeuropsicologos/ViewNeuropsicologo"
+ import toast, { Toaster } from 'react-hot-toast'
+ import { userService } from '@/services/userService'
+ import PaginationControls from "../Pacientes/ComponentsPacientes/PaginationControls"
++import ConfirmDialog from '@/components/ui/confirm-dialog'
+*** End Patch

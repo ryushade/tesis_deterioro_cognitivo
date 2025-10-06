@@ -271,7 +271,7 @@ const InicioPrueba = () => {
       <div className="space-y-6">
         <header className="flex flex-col gap-2">
         <h1 className="font-black text-5xl text-blue-900 tracking-tight mb-2">
-          Seguimiento de pruebas</h1>
+          Seguimiento de evaluaciones cognitivas</h1>
         <p className="text-lg font-medium text-blue-700/80 leading-relaxed">
             Selecciona una prueba y monitorea en tiempo real el estado cognitivo de los pacientes.
           </p>

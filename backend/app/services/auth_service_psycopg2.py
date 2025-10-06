@@ -151,6 +151,57 @@ class AuthServicePsycopg2:
         except Exception as e:
             logger.error(f"Error getting roles: {e}")
             return []
+
+    def update_user(self, user_id, username=None, role_id=None):
+        """Actualizar usuario (username y/o rol)."""
+        try:
+            # Verificar que el usuario exista
+            check_query = "SELECT id_usuario FROM usuario WHERE id_usuario = %s"
+            existing = db_service.execute_one(check_query, (user_id,))
+            if not existing:
+                return None, "Usuario no encontrado"
+
+            set_clauses = []
+            params = []
+            if username is not None:
+                set_clauses.append("usua = %s")
+                params.append(username)
+            if role_id is not None:
+                # Validar rol
+                role_query = "SELECT id_rol FROM rol WHERE id_rol = %s"
+                role = db_service.execute_one(role_query, (role_id,))
+                if not role:
+                    return None, "Rol no válido"
+                set_clauses.append("id_rol = %s")
+                params.append(role_id)
+
+            if not set_clauses:
+                return None, "Nada para actualizar"
+
+            params.append(user_id)
+            update_query = f"""
+                UPDATE usuario
+                SET {', '.join(set_clauses)}
+                WHERE id_usuario = %s
+                RETURNING id_usuario, usua, id_rol
+            """
+            updated = db_service.execute_one(update_query, params)
+            return (dict(updated) if updated else None), ("Usuario actualizado" if updated else "No se pudo actualizar")
+        except Exception as e:
+            logger.error(f"Error updating user {user_id}: {e}")
+            return None, f"Error al actualizar: {str(e)}"
+
+    def delete_user(self, user_id):
+        """Eliminar usuario por ID."""
+        try:
+            del_query = "DELETE FROM usuario WHERE id_usuario = %s RETURNING id_usuario"
+            deleted = db_service.execute_one(del_query, (user_id,))
+            if deleted:
+                return True, "Usuario eliminado"
+            return False, "No se pudo eliminar"
+        except Exception as e:
+            logger.error(f"Error deleting user {user_id}: {e}")
+            return False, f"Error al eliminar: {str(e)}"
     
     def create_default_roles(self):
         """Crear roles por defecto si no existen"""

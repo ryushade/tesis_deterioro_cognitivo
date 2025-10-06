@@ -1,0 +1,112 @@
+import { useEffect, useState } from 'react'
+import { X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+
+import { authService, type Role } from '@/services/auth'
+
+export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: boolean; onClose: () => void; onSuccess?: () => void }) {
+      const [username, setUsername] = useState('')
+    const [password, setPassword] = useState('')
+  const [password2, setPassword2] = useState('')\n  const [roles, setRoles] = useState<Role[]>([])\n  const [roleId, setRoleId] = useState<number | null>(null)
+  const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  if (!open) return null
+
+  
+  useEffect(() => {
+    if (!open) return
+    let mounted = true
+    authService.getRoles().then((rs) => {
+      if (!mounted) return
+      setRoles(rs)
+      const neuro = rs.find(x => x.nom_rol === 'Neuropsicólogo') || rs.find(x => x.nom_rol === 'Neuropsic??logo')
+      if (neuro) setRoleId(neuro.id_rol)
+    })
+    return () => { mounted = false }
+  }, [open])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setSubmitting(true)
+    setError(null)
+    try {
+      if (!username.trim() || !password || !roleId) {
+        setError('Todos los campos son obligatorios')
+        return
+      }
+      if (password !== password2) {
+        setError('Las Contraseñas no coinciden')
+        return
+      }
+      if (password.length < 6) {
+        setError('La Contraseña debe tener al menos 6 caracteres')
+        return
+      }
+      const reg = await authService.register({ username: username.trim(), password, role_id: roleId })
+      if (!reg.success) throw new Error(reg.message || 'No se pudo crear el usuario')
+      reset()
+      onSuccess?.()
+      onClose()
+    } catch (err: any) {
+      setError(err?.message || 'Error al crear neuropsicÃ³logo')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+      <div className="bg-white w-full max-w-lg rounded-lg shadow-lg overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b">
+          <h3 className="text-lg font-semibold">Agregar neuropsicÃ³logo</h3>
+          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100" aria-label="Cerrar"><X className="h-5 w-5" /></button>
+        </div>
+        <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
+          {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>}
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <Label htmlFor="nombres">Nombres</Label>
+              <Input id="nombres" value={nombres} onChange={(e) => setNombres(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="apellidos">Apellidos</Label>
+              <Input id="apellidos" value={apellidos} onChange={(e) => setApellidos(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="username">Usuario</Label>
+              <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="password">Contraseña</Label>
+              <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="password2">Confirmar contraseña</Label>
+              <Input id="password2" type="password" value={password2} onChange={(e) => setPassword(e.target.value)} required />
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>Cancelar</Button>
+            <Button type="submit" disabled={submitting}>{submitting ? 'Guardando...' : 'Guardar'}</Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+
+
+
+
+
+
+
+

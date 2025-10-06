@@ -57,10 +57,10 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
      
     },
     {
-      title: "Evaluaciones",
-      url: "/evaluaciones",
+      title: "Pruebas cognitivas",
+      url: "/pruebas-cognitivas",
       icon: Brain,
-      roles: ['Administrador', 'Neuropsicologo', 'Paciente'], // Todos pueden acceder a evaluaciones
+      roles: ['Administrador', 'Neuropsicologo'], // Todos pueden acceder a evaluaciones
       
     },
     {
@@ -72,8 +72,8 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
     },
 
     {
-      title: "Pruebas",
-      url: "/inicio-prueba",
+      title: "Evaluaciones",
+      url: "/evaluaciones",
       icon: BarChart3,
       roles: ['Neuropsicologo'], // Solo neuropsicólogos
     },
@@ -84,7 +84,14 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       roles: ['Administrador', 'Neuropsicologo'], // Solo profesionales
       
     },
-    
+
+    {
+      title: "Neuropsicólogos",
+      url: "/neuropsicologos",
+      icon: Users,
+      roles: ['Administrador'], // Solo administradores
+    },
+  
     {
       title: "CDT Test",
       url: "/cdt-test",

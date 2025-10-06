@@ -14,6 +14,7 @@ import CDTTestPage from './pages/CDTTestPage';
 import MMSEPatient from './pages/Evaluaciones/ComponentsEvaluaciones/Pruebas/MMSE/MMSE';
 import Pruebas from './pages/Pruebas/Pruebas';
 import PruebaFinalizada from './pages/Pruebas/PruebaFinalizada';
+import Neuropsicologos from './pages/Neuropsicologos/Neuropsicologo';
 // Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthorizationService } from './services/auth.middleware';
@@ -104,7 +105,7 @@ function App() {
               />
 
               <Route
-                path="/evaluaciones"
+                path="/pruebas-cognitivas"
                 element={
                   <ProtectedRoute>
                     <Evaluaciones />
@@ -120,7 +121,15 @@ function App() {
                 }
               />
               <Route
-                path="/inicio-prueba"
+                path="/neuropsicologos"
+                element={
+                  <ProtectedRoute requiredRoles={["Administrador"]}>
+                    <Neuropsicologos />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/evaluaciones"
                 element={
                   <ProtectedRoute requiredRoles={["Neuropsicologo"]}>
                     <InicioPrueba />

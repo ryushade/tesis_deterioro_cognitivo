@@ -51,12 +51,12 @@ export default function LoginPage() {
         navigate(defaultRoute, { replace: true });
       } else {
         const message = response.message || '';
-        let translatedMessage = 'No se pudo iniciar sesiÃ³n.';
+        let translatedMessage = 'No se pudo iniciar sesión.';
 
         if (message.includes('Invalid credentials')) {
           translatedMessage = message.includes('inactive role')
             ? 'Tu usuario estÃ¡ inactivo. Contacta a un administrador.'
-            : 'Usuario o contraseÃ±a incorrectos.';
+            : 'Usuario o contraseña incorrectos.';
         } else if (message) {
           translatedMessage = message;
         }
@@ -64,7 +64,7 @@ export default function LoginPage() {
         setError(translatedMessage);
       }
     } catch (error: any) {
-      setError('Error de conexiÃ³n con el servidor');
+      setError('Error de conexion con el servidor');
     } finally {
       setIsLoading(false);
     }
@@ -86,6 +86,12 @@ export default function LoginPage() {
           if (match) {
             localStorage.setItem("accessCode", match.codigo);
             localStorage.setItem("tipoEvaluacion", match.tipo_evaluacion);
+            // Marcar el código como usado para que no quede en 'emitido'
+            try {
+              await codigosAccesoService.marcarComoUsado(match.codigo);
+            } catch (markErr) {
+              console.warn('No se pudo marcar el código como usado:', markErr);
+            }
             switch ((match.tipo_evaluacion || "").toUpperCase()) {
               case "CDT":
                 target = "/cdt-test";
@@ -98,7 +104,10 @@ export default function LoginPage() {
                 break;
             }
           }
-        } catch (e) {}
+        } catch (e) {
+          // Si falló la búsqueda, intentar marcar igualmente con el código ingresado
+          try { await codigosAccesoService.marcarComoUsado(accessCode); } catch {}
+        }
         navigate(target, { replace: true });
       } else {
         setError(response.message);
@@ -164,11 +173,11 @@ export default function LoginPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="password">ContraseÃ±a</Label>
+                  <Label htmlFor="password">Contraseña</Label>
                   <Input
                     id="password"
                     type="password"
-                    placeholder="Ingresa tu contraseÃ±a"
+                    placeholder="Ingresa tu contraseña"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -186,7 +195,7 @@ export default function LoginPage() {
                       Iniciando sesion...
                     </>
                   ) : (
-                    'Iniciar sesion'
+                    'Iniciar sesión'
                   )}
                 </Button>
               </form>
@@ -208,11 +217,11 @@ export default function LoginPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="admin-password">ContraseÃ±a</Label>
+                  <Label htmlFor="admin-password">Contraseña</Label>
                   <Input
                     id="admin-password"
                     type="password"
-                    placeholder="Ingresa tu contraseÃ±a"
+                    placeholder="Ingresa tu contraseña"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
@@ -233,7 +242,7 @@ export default function LoginPage() {
                   ) : (
                     <>
                       <Shield className="mr-2 h-4 w-4" />
-                      Iniciar sesion
+                      Iniciar sesión
                     </>
                   )}
                 </Button>
@@ -245,15 +254,20 @@ export default function LoginPage() {
               <form onSubmit={handlePatientLogin} className="space-y-4">
                 <div className="space-y-2">
                     
-                  <Label htmlFor="accessCode">Codigo de acceso</Label>
+                  <Label htmlFor="accessCode"
+                  className='justify-center flex mb-4'
+                  >Codigo de acceso</Label>
                   
                  <InputOTP
                   maxLength={8}
                   value={accessCode}
                   onChange={setAccessCode}
                   pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
+                  containerClassName="justify-center"
+                  
                 >
-                  <InputOTPGroup>
+                  <InputOTPGroup
+                  >
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
                     <InputOTPSlot index={2} />
@@ -277,10 +291,10 @@ export default function LoginPage() {
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Verificando cÃ³digo...
+                      Verificando código...
                     </>
                   ) : (
-                    'Acceder con cÃ³digo'
+                    'Acceder con código'
                   )}
                 </Button>
               </form>
