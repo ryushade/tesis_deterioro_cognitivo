@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Contrast, Minus, Plus, Timer as TimerIcon } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Timer as TimerIcon, Lock } from 'lucide-react'
 import MMSESectionCard from './components/MMSESectionCard'
 import MMSEProgress from './components/MMSEProgress'
 import { mmseService } from '@/services/mmseService'
@@ -11,8 +12,8 @@ type Answer = string | number | boolean | null
 type Question = {
   id: string
   label: string
-  type: 'text' | 'number' | 'select' | 'boolean'
-  options?: { value: string; label: string; score?: number }[]
+  type: 'text' | 'number' | 'select' | 'boolean' | 'image'
+  options?: { value: string; label: string; score?: number; emoji?: string }[]
   maxScore: number
 }
 
@@ -95,47 +96,17 @@ const sections: Section[] = [
   {
     key: 'registro',
     title: 'Registro',
-    description: 'Seleccione las im�genes correctas para las palabras: Casa - Mesa - Gato',
+    description: 'Recuerde estas tres palabras: Casa - Mesa - Gato',
     questions: [
-      {
-        id: 'palabra1',
-        label: 'Seleccione "Casa"',
-        type: 'image',
-        maxScore: 1,
-        options: [
-          { value: 'casa', label: 'Casa', emoji: '??' },
-          { value: 'coche', label: 'Coche', emoji: '??' },
-          { value: 'arbol', label: '�rbol', emoji: '??' }
-        ]
-      },
-      {
-        id: 'palabra2',
-        label: 'Seleccione "Mesa"',
-        type: 'image',
-        maxScore: 1,
-        options: [
-          { value: 'mesa', label: 'Mesa', emoji: '???' },
-          { value: 'silla', label: 'Silla', emoji: '??' },
-          { value: 'cama', label: 'Cama', emoji: '???' }
-        ]
-      },
-      {
-        id: 'palabra3',
-        label: 'Seleccione "Gato"',
-        type: 'image',
-        maxScore: 1,
-        options: [
-          { value: 'gato', label: 'Gato', emoji: '??' },
-          { value: 'perro', label: 'Perro', emoji: '??' },
-          { value: 'pajaro', label: 'P�jaro', emoji: '??' }
-        ]
-      }
+      { id: 'registro_casa', label: 'Repita: Casa', type: 'boolean', maxScore: 1 },
+      { id: 'registro_mesa', label: 'Repita: Mesa', type: 'boolean', maxScore: 1 },
+      { id: 'registro_gato', label: 'Repita: Gato', type: 'boolean', maxScore: 1 },
     ],
   },
   {
     key: 'atencion_calculo',
     title: 'Atención y cálculo',
-    description: 'Reste de 7 en 7 desde 100 (cinco respuestas) o deletree "MUNDO" al revés.',
+    description: 'Reste de 7 en 7 desde 100 (cinco respuestas).',
     questions: [
       { id: '100-93', label: '100 - 7 =', type: 'number', maxScore: 1 },
       { id: '93-86', label: '93 - 7 =', type: 'number', maxScore: 1 },
@@ -149,15 +120,15 @@ const sections: Section[] = [
     title: 'Recuerdo',
     description: 'Mencione las tres palabras que recordó antes (registro).',
     questions: [
-      { id: 'recuerdo1', label: 'Recuerdo 1', type: 'text', maxScore: 1 },
-      { id: 'recuerdo2', label: 'Recuerdo 2', type: 'text', maxScore: 1 },
-      { id: 'recuerdo3', label: 'Recuerdo 3', type: 'text', maxScore: 1 },
+      { id: 'recuerdo1', label: 'Primera palabra', type: 'text', maxScore: 1 },
+      { id: 'recuerdo2', label: 'Segunda palabra', type: 'text', maxScore: 1 },
+      { id: 'recuerdo3', label: 'Tercera palabra', type: 'text', maxScore: 1 },
     ],
   },
   {
     key: 'lenguaje',
     title: 'Lenguaje y órdenes',
-    description: 'Nombre objetos, repita una frase, cumpla una orden de 3 pasos, lea y haga, escriba una frase.',
+    description: 'Responda las siguientes preguntas.',
     questions: [
       { id: 'reloj', label: 'Nombre este objeto: reloj', type: 'boolean', maxScore: 1 },
       { id: 'lapiz', label: 'Nombre este objeto: lápiz', type: 'boolean', maxScore: 1 },
@@ -173,29 +144,25 @@ type Answers = Record<string, Answer>
 
 export default function MMSEPatient() {
   const navigate = useNavigate()
+  const [showCodeInput, setShowCodeInput] = useState(true)
+  const [codigo, setCodigo] = useState('')
+  const [codigoError, setCodigoError] = useState('')
+  const [validatingCode, setValidatingCode] = useState(false)
+  
   const [answers, setAnswers] = useState<Answers>({})
   const [submitting, setSubmitting] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [invalid, setInvalid] = useState<Record<string, boolean>>({})
   const [showValidation, setShowValidation] = useState(false)
-  const [fontScale, setFontScale] = useState(1)
-  const [highContrast, setHighContrast] = useState(false)
+  const [fontScale] = useState(1)
+  const [highContrast] = useState(false)
   const [sessionId, setSessionId] = useState<number | null>(null)
-  const saveTimer = useRef<number | null>(null)
-  const [elapsedTime, setElapsedTime] = useState(600) // 10 minutos en segundos
+  const [idPaciente, setIdPaciente] = useState<number | null>(null)
+  const [idCodigo, setIdCodigo] = useState<number | null>(null)
+  const [tiempoRestante, setTiempoRestante] = useState(600) // 10 minutos por defecto
   const timerRef = useRef<number | null>(null)
 
-  const patientId = useMemo(() => {
-    try {
-      const sp = new URLSearchParams(window.location.search)
-      const v = Number(sp.get('id_paciente') || sp.get('paciente_id'))
-      return Number.isFinite(v) && v > 0 ? v : null
-    } catch {
-      return null
-    }
-  }, [])
-
-  const storageKey = useMemo(() => `mmseSession:${patientId ?? 'global'}`, [patientId])
+  const storageKey = useMemo(() => `mmseSession:${idPaciente ?? 'temp'}`, [idPaciente])
 
   const totalMax = useMemo(
     () => sections.reduce((acc, s) => acc + s.questions.reduce((a, q) => a + q.maxScore, 0), 0),
@@ -221,76 +188,126 @@ export default function MMSEPatient() {
     return s
   }, [answers])
 
+  // Validar código de acceso
+  const handleValidateCode = async () => {
+    if (!codigo.trim()) {
+      setCodigoError('Por favor ingrese un código de acceso')
+      return
+    }
+
+    setValidatingCode(true)
+    setCodigoError('')
+
+    try {
+      const response = await mmseService.validarCodigo(codigo.trim())
+      
+      if (!response.success || !response.data) {
+        setCodigoError(response.message || 'Código inválido')
+        setValidatingCode(false)
+        return
+      }
+
+      const codigoData = response.data
+      setIdPaciente(codigoData.id_paciente)
+      setIdCodigo(codigoData.id_codigo)
+      
+      // Verificar si hay una sesión guardada en localStorage
+      const existingSession = localStorage.getItem(`mmseSession:${codigoData.id_paciente}`)
+      
+      if (existingSession) {
+        // Recuperar sesión existente
+        const sid = Number(existingSession)
+        const sessionResp = await mmseService.getSession(sid)
+        
+        if (sessionResp.success && sessionResp.data) {
+          setSessionId(sid)
+          // Cargar progreso guardado si existe en datos_especificos
+          setShowCodeInput(false)
+        } else {
+          // La sesión no existe, crear una nueva
+          await createNewSession(codigoData.id_paciente, codigoData.id_codigo)
+        }
+      } else {
+        // Crear nueva sesión
+        await createNewSession(codigoData.id_paciente, codigoData.id_codigo)
+      }
+    } catch (error) {
+      console.error('Error validando código:', error)
+      setCodigoError('Error al validar el código')
+    } finally {
+      setValidatingCode(false)
+    }
+  }
+
+  const createNewSession = async (pacienteId: number, codigoId: number) => {
+    const createResp = await mmseService.createSession(pacienteId, codigoId)
+    
+    if (createResp.success && createResp.sesion_id) {
+      setSessionId(createResp.sesion_id)
+      localStorage.setItem(`mmseSession:${pacienteId}`, String(createResp.sesion_id))
+      setShowCodeInput(false)
+    } else {
+      setCodigoError(createResp.message || 'No se pudo crear la sesión')
+    }
+  }
+
+  // Actualizar tiempo desde el backend
+  useEffect(() => {
+    if (!sessionId || showCodeInput) return
+
+    const updateTimer = async () => {
+      try {
+        const resp = await mmseService.getSession(sessionId)
+        if (resp.success && resp.data?.tiempo_info) {
+          setTiempoRestante(resp.data.tiempo_info.tiempo_restante_segundos)
+          
+          // Si el tiempo se agotó
+          if (resp.data.tiempo_info.tiempo_restante_segundos <= 0) {
+            if (timerRef.current) window.clearInterval(timerRef.current)
+            // Auto finalizar o mostrar mensaje
+            alert('El tiempo ha terminado')
+            await handleSubmit()
+          }
+        }
+      } catch (error) {
+        console.error('Error actualizando timer:', error)
+      }
+    }
+
+    // Actualizar inmediatamente
+    updateTimer()
+
+    // Actualizar cada 5 segundos
+    timerRef.current = window.setInterval(updateTimer, 5000) as unknown as number
+
+    return () => {
+      if (timerRef.current) window.clearInterval(timerRef.current)
+    }
+  }, [sessionId, showCodeInput])
+
+  // Guardar progreso periódicamente
+  useEffect(() => {
+    if (!sessionId || showCodeInput) return
+
+    const saveProgress = async () => {
+      const progreso = Math.round((currentStep / Math.max(1, sections.length - 1)) * 100)
+      try {
+        await mmseService.updateProgress(sessionId, progreso, 'en_progreso')
+      } catch (error) {
+        console.error('Error guardando progreso:', error)
+      }
+    }
+
+    const saveTimer = setTimeout(saveProgress, 2000)
+    return () => clearTimeout(saveTimer)
+  }, [sessionId, currentStep, showCodeInput])
+
   const handleChange = (id: string, value: Answer) => {
     setAnswers((prev) => ({ ...prev, [id]: value }))
     if (invalid[id]) {
       setInvalid((prev) => ({ ...prev, [id]: false }))
     }
   }
-
-  // Cargar o crear sesión
-  useEffect(() => {
-    let cancelled = false
-    const boot = async () => {
-      try {
-        const existing = localStorage.getItem(storageKey)
-        if (existing) {
-          const sid = Number(existing)
-          setSessionId(sid)
-          const resp = await mmseService.getSession(sid)
-          if (!cancelled && resp.success && resp.data?.datos_especificos) {
-            const datos = resp.data.datos_especificos
-            if (datos.answers) setAnswers(datos.answers)
-            if (typeof datos.current_section === 'number') setCurrentStep(datos.current_section)
-          }
-          return
-        }
-        const create = await mmseService.createSession(patientId ?? 0, { current_section: 0, answers: {}, progress: 0 })
-        if (!cancelled && create.success && create.sesion_id) {
-          setSessionId(create.sesion_id)
-          localStorage.setItem(storageKey, String(create.sesion_id))
-        }
-      } catch {}
-    }
-    boot()
-    return () => { cancelled = true }
-  }, [storageKey, patientId])
-
-  // Autosave con debounce
-  useEffect(() => {
-    if (!sessionId) return
-    if (saveTimer.current) window.clearTimeout(saveTimer.current)
-    saveTimer.current = window.setTimeout(() => {
-      mmseService.updateProgress(sessionId, {
-        datos_especificos: {
-          current_section: currentStep,
-          answers,
-          progress: Math.round((currentStep / Math.max(1, sections.length - 1)) * 100),
-        },
-        puntuacion_total: score,
-        estado_procesamiento: 'en_progreso',
-      }).catch(() => {})
-    }, 700) as unknown as number
-    return () => {
-      if (saveTimer.current) window.clearTimeout(saveTimer.current)
-    }
-  }, [answers, currentStep, score, sessionId])
-
-  // Timer contador regresivo desde 10 minutos
-  useEffect(() => {
-    timerRef.current = window.setInterval(() => {
-      setElapsedTime((prev) => {
-        if (prev <= 0) {
-          if (timerRef.current) window.clearInterval(timerRef.current)
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-    return () => {
-      if (timerRef.current) window.clearInterval(timerRef.current)
-    }
-  }, [])
 
   const isValueValid = (type: Question['type'], value: Answer) => {
     switch (type) {
@@ -328,13 +345,19 @@ export default function MMSEPatient() {
   }
 
   const handleSubmit = async () => {
+    if (!sessionId) return
+    
     setSubmitting(true)
     try {
-      if (sessionId) {
-        await mmseService.finalize(sessionId, { puntuacion_total: score })
-        localStorage.removeItem(storageKey)
-      }
+      await mmseService.finalize(sessionId, {
+        puntuacion_total: score,
+        datos_especificos: { answers, sections: sections.map(s => s.key) }
+      })
+      localStorage.removeItem(storageKey)
       navigate('/pruebas/finalizado', { replace: true })
+    } catch (error) {
+      console.error('Error finalizando test:', error)
+      alert('Error al finalizar el test')
     } finally {
       setSubmitting(false)
     }
@@ -351,26 +374,79 @@ export default function MMSEPatient() {
     } catch {}
   }
 
+  // Pantalla de ingreso de código
+  if (showCodeInput) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="max-w-md w-full mx-4">
+          <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
+            <div className="text-center">
+              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <Lock className="w-8 h-8 text-blue-600" />
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Test MMSE</h1>
+              <p className="text-gray-600">Ingrese su código de acceso para comenzar</p>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Input
+                  type="text"
+                  placeholder="Código de acceso"
+                  value={codigo}
+                  onChange={(e) => {
+                    setCodigo(e.target.value.toUpperCase())
+                    setCodigoError('')
+                  }}
+                  onKeyDown={(e) => e.key === 'Enter' && handleValidateCode()}
+                  className="text-center text-2xl font-mono tracking-wider h-14"
+                  maxLength={12}
+                  disabled={validatingCode}
+                />
+                {codigoError && (
+                  <p className="text-red-600 text-sm mt-2 text-center">{codigoError}</p>
+                )}
+              </div>
+
+              <Button
+                onClick={handleValidateCode}
+                className="w-full h-12 text-lg"
+                disabled={validatingCode || !codigo.trim()}
+              >
+                {validatingCode ? 'Validando...' : 'Iniciar Test'}
+              </Button>
+            </div>
+
+            <div className="text-center text-sm text-gray-500">
+              <p>El test tiene una duración de 10 minutos</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Pantalla del test
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="max-w-4xl mx-auto space-y-6 p-6">
       <header className="space-y-2">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-extrabold text-blue-900 mt-6">Prueba neuropsicológica MMSE </h1>
+          <h1 className="text-3xl font-extrabold text-blue-900">Prueba neuropsicológica MMSE</h1>
           <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-            elapsedTime <= 120 ? 'bg-red-50 border-red-300' : 
-            elapsedTime <= 300 ? 'bg-yellow-50 border-yellow-300' : 
+            tiempoRestante <= 120 ? 'bg-red-50 border-red-300' : 
+            tiempoRestante <= 300 ? 'bg-yellow-50 border-yellow-300' : 
             'bg-blue-50 border-blue-200'
           }`}>
             <TimerIcon className={`w-5 h-5 ${
-              elapsedTime <= 120 ? 'text-red-600' : 
-              elapsedTime <= 300 ? 'text-yellow-600' : 
+              tiempoRestante <= 120 ? 'text-red-600' : 
+              tiempoRestante <= 300 ? 'text-yellow-600' : 
               'text-blue-600'
             }`} />
             <span className={`text-lg font-semibold ${
-              elapsedTime <= 120 ? 'text-red-900' : 
-              elapsedTime <= 300 ? 'text-yellow-900' : 
+              tiempoRestante <= 120 ? 'text-red-900' : 
+              tiempoRestante <= 300 ? 'text-yellow-900' : 
               'text-blue-900'
-            }`}>{formatTime(elapsedTime)}</span>
+            }`}>{formatTime(tiempoRestante)}</span>
           </div>
         </div>
       </header>
@@ -433,7 +509,3 @@ export default function MMSEPatient() {
     </div>
   )
 }
-
-
-
-

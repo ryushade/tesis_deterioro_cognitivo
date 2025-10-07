@@ -228,6 +228,57 @@ class CodigosAccesoService:
                 'message': f'Error al obtener código de acceso: {str(e)}'
             }
     
+    def get_by_codigo(self, codigo_str):
+        """Obtener un código de acceso por su código (string)"""
+        try:
+            query = """
+                SELECT 
+                    ca.id_codigo,
+                    ca.codigo,
+                    ca.id_paciente,
+                    ca.id_prueba,
+                    CONCAT(p.nombres, ' ', p.apellidos) as nombre_paciente,
+                    pr.codigo AS tipo_evaluacion,
+                    pr.nombre AS nombre_prueba,
+                    ca.vence_at as fecha_expiracion,
+                    ca.estado,
+                    ca.creado_en,
+                    ca.ultimo_uso_en
+                FROM codigo_acceso ca
+                JOIN paciente p ON ca.id_paciente = p.id_paciente
+                JOIN prueba_cognitiva pr ON ca.id_prueba = pr.id_prueba
+                WHERE ca.codigo = %s
+            """
+            
+            with self.db_service.get_cursor() as cursor:
+                cursor.execute(query, (codigo_str,))
+                result = cursor.fetchone()
+                
+                if result:
+                    codigo = dict(result)
+                    
+                    # Convertir fechas a string para JSON
+                    if codigo.get('fecha_expiracion'):
+                        codigo['fecha_expiracion'] = codigo['fecha_expiracion'].isoformat()
+                    if codigo.get('creado_en'):
+                        codigo['creado_en'] = codigo['creado_en'].isoformat()
+                    if codigo.get('ultimo_uso_en'):
+                        codigo['ultimo_uso_en'] = codigo['ultimo_uso_en'].isoformat()
+                    
+                    # Actualizar estado si está vencido
+                    if codigo.get('fecha_expiracion'):
+                        from datetime import datetime
+                        fecha_exp = datetime.fromisoformat(codigo['fecha_expiracion'].replace('Z', '+00:00'))
+                        if fecha_exp < datetime.now(fecha_exp.tzinfo) and codigo['estado'] == 'emitido':
+                            codigo['estado'] = 'vencido'
+                    
+                    return codigo
+                
+                return None
+        except Exception as e:
+            logger.error(f"Error al obtener código de acceso por código: {e}")
+            return None
+    
     def create(self, codigo_data):
         """Crear un nuevo código de acceso"""
         try:

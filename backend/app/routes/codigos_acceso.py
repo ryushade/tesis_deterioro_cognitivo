@@ -217,3 +217,74 @@ def generar_codigo_unico():
             'success': False,
             'message': 'Error interno del servidor'
         }), 500
+
+
+@codigos_acceso_bp.route('/validar', methods=['POST'])
+def validar_codigo():
+    """Validar un código de acceso para uso del paciente"""
+    try:
+        data = request.get_json()
+        codigo = data.get('codigo', '').strip()
+        
+        if not codigo:
+            return jsonify({
+                'success': False,
+                'message': 'El código es requerido'
+            }), 400
+        
+        # Buscar el código
+        result = codigos_acceso_service.get_by_codigo(codigo)
+        
+        if not result:
+            return jsonify({
+                'success': False,
+                'message': 'Código no encontrado'
+            }), 404
+        
+        # Verificar estado (emitido es el estado válido, usado/vencido/revocado no)
+        if result['estado'] == 'usado':
+            return jsonify({
+                'success': False,
+                'message': 'El código ya ha sido usado'
+            }), 400
+        
+        if result['estado'] == 'vencido':
+            return jsonify({
+                'success': False,
+                'message': 'El código ha vencido'
+            }), 400
+        
+        if result['estado'] == 'revocado':
+            return jsonify({
+                'success': False,
+                'message': 'El código ha sido revocado'
+            }), 400
+        
+        # Verificar fecha de expiración
+        from datetime import datetime
+        if result['fecha_expiracion']:
+            fecha_exp = result['fecha_expiracion']
+            if isinstance(fecha_exp, str):
+                fecha_exp = datetime.fromisoformat(fecha_exp.replace('Z', '+00:00'))
+            if fecha_exp < datetime.now(fecha_exp.tzinfo):
+                return jsonify({
+                    'success': False,
+                    'message': 'El código ha expirado'
+                }), 400
+        
+        # Retornar información del código
+        return jsonify({
+            'success': True,
+            'data': {
+                'id_codigo': result['id_codigo'],
+                'id_paciente': result['id_paciente'],
+                'tipo_evaluacion': result['tipo_evaluacion']
+            }
+        }), 200
+        
+    except Exception as e:
+        logger.error(f"Error en validar_codigo: {e}")
+        return jsonify({
+            'success': False,
+            'message': 'Error interno del servidor'
+        }), 500
