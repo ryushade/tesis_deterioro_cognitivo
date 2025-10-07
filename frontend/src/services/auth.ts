@@ -22,6 +22,12 @@ export interface LoginResponse {
   success: boolean;
   message: string;
   user?: User;
+  codigo_info?: {
+    codigo: string;
+    tipo_evaluacion: string;
+    nombre_paciente: string;
+    id_paciente: number;
+  };
 }
 
 export interface RegisterRequest {

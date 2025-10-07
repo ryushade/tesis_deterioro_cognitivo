@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Timer as TimerIcon, Lock } from 'lucide-react'
-import MMSESectionCard from './components/MMSESectionCard'
-import MMSEProgress from './components/MMSEProgress'
+import MMSESectionCard from './ComponentsMMSE/MMSESectionCard'
+import MMSEProgress from './ComponentsMMSE/MMSEProgress'
 import { mmseService } from '@/services/mmseService'
 
 type Answer = string | number | boolean | null

@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify
 from app.services.auth_service_psycopg2 import auth_service_psycopg2 as auth_service
 from app.services.jwt_service import JWTService
+from app.services.codigos_acceso_service import CodigosAccesoService
+from datetime import datetime
 # from app.models.auth import Rol  # Comentado - usando psycopg2
 
 auth_bp = Blueprint('auth', __name__)
@@ -209,51 +211,97 @@ def patient_login():
                 'message': 'Access code is required'
             }), 400
         
-        access_code = data.get('access_code')
+        access_code = data.get('access_code').strip()
         
-        # TODO: Implement patient authentication by access code
-        # For now, we'll implement a simple validation
-        # In a real system, you would:
-        # 1. Check if the access code exists in a patient_access_codes table
-        # 2. Verify if it's still valid (not expired)
-        # 3. Get the associated patient information
-        # 4. Generate a token with limited permissions
+        # Initialize service
+        codigos_service = CodigosAccesoService()
         
-        # Temporary implementation - accept any 8-character code
-        if len(access_code) == 8 and access_code.isalnum():
-            # Generate a limited token for patient access
-            token = JWTService.generate_token(
-                user_id=9999,  # Special patient user ID
-                username=f'patient_{access_code}',
-                role_id=3,  # Patient role (you may need to create this role)
-                role_name='Paciente'
-            )
-            
-            if token:
+        # Get the access code from database
+        codigo_data = codigos_service.get_by_codigo(access_code)
+        
+        if not codigo_data:
+            return jsonify({
+                'success': False,
+                'message': 'Código de acceso no encontrado'
+            }), 401
+        
+        # Check if code is in 'emitido' state
+        if codigo_data['estado'] != 'emitido':
+            if codigo_data['estado'] == 'usado':
                 return jsonify({
-                    'success': True,
-                    'message': 'Patient access granted',
-                    'token': token,
-                    'user': {
-                        'id': 9999,
-                        'username': f'patient_{access_code}',
-                        'role': {
-                            'id': 3,
-                            'name': 'Paciente'
-                        },
-                        'access_type': 'patient_code'
-                    }
-                }), 200
+                    'success': False,
+                    'message': 'Este código ya fue utilizado'
+                }), 401
+            elif codigo_data['estado'] == 'vencido':
+                return jsonify({
+                    'success': False,
+                    'message': 'Este código ha vencido'
+                }), 401
+            elif codigo_data['estado'] == 'revocado':
+                return jsonify({
+                    'success': False,
+                    'message': 'Este código ha sido revocado'
+                }), 401
             else:
                 return jsonify({
                     'success': False,
-                    'message': 'Token generation failed'
-                }), 500
+                    'message': f'Código en estado inválido: {codigo_data["estado"]}'
+                }), 401
+        
+        # Check if code has expired
+        if codigo_data.get('fecha_expiracion'):
+            fecha_exp = datetime.fromisoformat(codigo_data['fecha_expiracion'].replace('Z', '+00:00'))
+            if fecha_exp < datetime.now(fecha_exp.tzinfo or None):
+                # Mark as expired
+                codigos_service.update(codigo_data['id_codigo'], {'estado': 'vencido'})
+                return jsonify({
+                    'success': False,
+                    'message': 'Este código ha vencido'
+                }), 401
+        
+        # Mark code as used (this is where it should be marked!)
+        mark_result = codigos_service.marcar_como_usado(access_code)
+        
+        if not mark_result['success']:
+            return jsonify({
+                'success': False,
+                'message': f'Error al validar código: {mark_result["message"]}'
+            }), 400
+        
+        # Generate a limited token for patient access
+        token = JWTService.generate_token(
+            user_id=codigo_data['id_paciente'],
+            username=f'patient_{codigo_data["id_paciente"]}',
+            role_id=3,  # Patient role
+            role_name='Paciente'
+        )
+        
+        if token:
+            return jsonify({
+                'success': True,
+                'message': 'Patient access granted',
+                'token': token,
+                'user': {
+                    'id': codigo_data['id_paciente'],
+                    'username': f'patient_{codigo_data["id_paciente"]}',
+                    'role': {
+                        'id': 3,
+                        'name': 'Paciente'
+                    },
+                    'access_type': 'patient_code'
+                },
+                'codigo_info': {
+                    'codigo': codigo_data['codigo'],
+                    'tipo_evaluacion': codigo_data['tipo_evaluacion'],
+                    'nombre_paciente': codigo_data['nombre_paciente'],
+                    'id_paciente': codigo_data['id_paciente']
+                }
+            }), 200
         else:
             return jsonify({
                 'success': False,
-                'message': 'Código de acceso inválido. Debe tener 8 caracteres alfanuméricos.'
-            }), 401
+                'message': 'Token generation failed'
+            }), 500
             
     except Exception as e:
         return jsonify({

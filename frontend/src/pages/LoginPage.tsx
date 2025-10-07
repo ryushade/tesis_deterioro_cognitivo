@@ -9,7 +9,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Brain, AlertCircle, Shield } from 'lucide-react';
 import { authService } from '@/services/auth';
 import { AuthorizationService } from '@/services/auth.middleware';
-import { codigosAccesoService } from '@/services/codigosAccesoService';
 import { MetaballsOriginal } from '@/pages/MeatBalls/MeatBalls';
 import {
   InputOTP,
@@ -64,6 +63,7 @@ export default function LoginPage() {
         setError(translatedMessage);
       }
     } catch (error: any) {
+      console.error('Error en login:', error);
       setError('Error de conexion con el servidor');
     } finally {
       setIsLoading(false);
@@ -78,41 +78,34 @@ export default function LoginPage() {
       const response = await authService.patientLogin({ access_code: accessCode });
       if (response.success) {
         window.dispatchEvent(new CustomEvent("loginSuccess"));
-        // Detectar prueba por código de acceso
+        
+        // El backend ahora devuelve la información del código en response.codigo_info
         let target = "/pruebas";
-        try {
-          const res = await codigosAccesoService.getAll({ search: accessCode, limit: 1 });
-          const match = (res.data || []).find((c: any) => (c.codigo || "").toUpperCase() === accessCode.toUpperCase());
-          if (match) {
-            localStorage.setItem("accessCode", match.codigo);
-            localStorage.setItem("tipoEvaluacion", match.tipo_evaluacion);
-            // Marcar el código como usado para que no quede en 'emitido'
-            try {
-              await codigosAccesoService.marcarComoUsado(match.codigo);
-            } catch (markErr) {
-              console.warn('No se pudo marcar el código como usado:', markErr);
-            }
-            switch ((match.tipo_evaluacion || "").toUpperCase()) {
-              case "CDT":
-                target = "/cdt-test";
-                break;
-              case "MMSE":
-                target = "/mmse";
-                break;
-              default:
-                target = "/pruebas";
-                break;
-            }
+        
+        if (response.codigo_info) {
+          const { codigo, tipo_evaluacion } = response.codigo_info;
+          localStorage.setItem("accessCode", codigo);
+          localStorage.setItem("tipoEvaluacion", tipo_evaluacion);
+          
+          switch ((tipo_evaluacion || "").toUpperCase()) {
+            case "CDT":
+              target = "/cdt-test";
+              break;
+            case "MMSE":
+              target = "/mmse";
+              break;
+            default:
+              target = "/pruebas";
+              break;
           }
-        } catch (e) {
-          // Si falló la búsqueda, intentar marcar igualmente con el código ingresado
-          try { await codigosAccesoService.marcarComoUsado(accessCode); } catch {}
         }
+        
         navigate(target, { replace: true });
       } else {
         setError(response.message);
       }
     } catch (error: any) {
+      console.error('Error en login de paciente:', error);
       setError("Error de conexión con el servidor");
     } finally {
       setIsLoading(false);
