@@ -182,6 +182,8 @@ export default function MMSEPatient() {
   const [highContrast, setHighContrast] = useState(false)
   const [sessionId, setSessionId] = useState<number | null>(null)
   const saveTimer = useRef<number | null>(null)
+  const [elapsedTime, setElapsedTime] = useState(600) // 10 minutos en segundos
+  const timerRef = useRef<number | null>(null)
 
   const patientId = useMemo(() => {
     try {
@@ -274,6 +276,22 @@ export default function MMSEPatient() {
     }
   }, [answers, currentStep, score, sessionId])
 
+  // Timer contador regresivo desde 10 minutos
+  useEffect(() => {
+    timerRef.current = window.setInterval(() => {
+      setElapsedTime((prev) => {
+        if (prev <= 0) {
+          if (timerRef.current) window.clearInterval(timerRef.current)
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => {
+      if (timerRef.current) window.clearInterval(timerRef.current)
+    }
+  }, [])
+
   const isValueValid = (type: Question['type'], value: Answer) => {
     switch (type) {
       case 'boolean':
@@ -303,6 +321,12 @@ export default function MMSEPatient() {
     return { valid: Object.keys(invalidMap).length === 0, invalidMap }
   }
 
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+  }
+
   const handleSubmit = async () => {
     setSubmitting(true)
     try {
@@ -330,7 +354,25 @@ export default function MMSEPatient() {
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <header className="space-y-2">
-        <h1 className="text-3xl font-extrabold text-blue-900 mt-6">Prueba neuropsicológica MMSE </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-extrabold text-blue-900 mt-6">Prueba neuropsicológica MMSE </h1>
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
+            elapsedTime <= 120 ? 'bg-red-50 border-red-300' : 
+            elapsedTime <= 300 ? 'bg-yellow-50 border-yellow-300' : 
+            'bg-blue-50 border-blue-200'
+          }`}>
+            <TimerIcon className={`w-5 h-5 ${
+              elapsedTime <= 120 ? 'text-red-600' : 
+              elapsedTime <= 300 ? 'text-yellow-600' : 
+              'text-blue-600'
+            }`} />
+            <span className={`text-lg font-semibold ${
+              elapsedTime <= 120 ? 'text-red-900' : 
+              elapsedTime <= 300 ? 'text-yellow-900' : 
+              'text-blue-900'
+            }`}>{formatTime(elapsedTime)}</span>
+          </div>
+        </div>
       </header>
 
       <MMSEProgress currentStep={currentStep} totalSteps={sections.length} score={score} totalMax={totalMax} />
