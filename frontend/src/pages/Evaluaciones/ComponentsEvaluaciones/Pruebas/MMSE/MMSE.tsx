@@ -374,57 +374,7 @@ export default function MMSEPatient() {
     } catch {}
   }
 
-  // Pantalla de ingreso de código
-  if (showCodeInput) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <div className="max-w-md w-full mx-4">
-          <div className="bg-white rounded-2xl shadow-xl p-8 space-y-6">
-            <div className="text-center">
-              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <Lock className="w-8 h-8 text-blue-600" />
-              </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Test MMSE</h1>
-              <p className="text-gray-600">Ingrese su código de acceso para comenzar</p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <Input
-                  type="text"
-                  placeholder="Código de acceso"
-                  value={codigo}
-                  onChange={(e) => {
-                    setCodigo(e.target.value.toUpperCase())
-                    setCodigoError('')
-                  }}
-                  onKeyDown={(e) => e.key === 'Enter' && handleValidateCode()}
-                  className="text-center text-2xl font-mono tracking-wider h-14"
-                  maxLength={12}
-                  disabled={validatingCode}
-                />
-                {codigoError && (
-                  <p className="text-red-600 text-sm mt-2 text-center">{codigoError}</p>
-                )}
-              </div>
-
-              <Button
-                onClick={handleValidateCode}
-                className="w-full h-12 text-lg"
-                disabled={validatingCode || !codigo.trim()}
-              >
-                {validatingCode ? 'Validando...' : 'Iniciar Test'}
-              </Button>
-            </div>
-
-            <div className="text-center text-sm text-gray-500">
-              <p>El test tiene una duración de 10 minutos</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    )
-  }
+ 
 
   // Pantalla del test
   return (
