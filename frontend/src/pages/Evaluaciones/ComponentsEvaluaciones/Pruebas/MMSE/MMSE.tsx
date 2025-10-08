@@ -161,6 +161,7 @@ export default function MMSEPatient() {
   const [idCodigo, setIdCodigo] = useState<number | null>(null)
   const [tiempoRestante, setTiempoRestante] = useState(600) // 10 minutos por defecto
   const timerRef = useRef<number | null>(null)
+  const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false)
 
   const storageKey = useMemo(() => `mmseSession:${idPaciente ?? 'temp'}`, [idPaciente])
 
@@ -239,6 +240,76 @@ export default function MMSEPatient() {
     }
   }
 
+  // Auto-llenar código si ya existe en localStorage (desde el login) y auto-validar
+  useEffect(() => {
+    const savedCode = localStorage.getItem('accessCode')
+    if (savedCode && !codigo && showCodeInput) {
+      setCodigo(savedCode)
+    }
+  }, [showCodeInput, codigo])
+  
+  // Auto-validar cuando se llena el código desde localStorage
+  useEffect(() => {
+    const savedCode = localStorage.getItem('accessCode')
+    if (savedCode && codigo === savedCode && showCodeInput && !validatingCode && !sessionId && !hasAttemptedValidation) {
+      // Validar automáticamente
+      const autoValidate = async () => {
+        try {
+          setValidatingCode(true)
+          setHasAttemptedValidation(true)
+          setCodigoError('')
+          const response = await mmseService.validarCodigo(codigo.trim())
+          
+          if (!response.success || !response.data) {
+            setCodigoError(response.message || 'Código inválido')
+            return
+          }
+
+          const codigoData = response.data
+          setIdPaciente(codigoData.id_paciente)
+          setIdCodigo(codigoData.id_codigo)
+          
+          const existingSession = localStorage.getItem(`mmseSession:${codigoData.id_paciente}`)
+          
+          if (existingSession) {
+            const sid = Number(existingSession)
+            const sessionResp = await mmseService.getSession(sid)
+            
+            if (sessionResp.success && sessionResp.data) {
+              setSessionId(sid)
+              setShowCodeInput(false)
+            } else {
+              const createResp = await mmseService.createSession(codigoData.id_paciente, codigoData.id_codigo)
+              if (createResp.success && createResp.sesion_id) {
+                setSessionId(createResp.sesion_id)
+                localStorage.setItem(`mmseSession:${codigoData.id_paciente}`, String(createResp.sesion_id))
+                setShowCodeInput(false)
+              } else {
+                setCodigoError(createResp.message || 'No se pudo crear la sesión')
+              }
+            }
+          } else {
+            const createResp = await mmseService.createSession(codigoData.id_paciente, codigoData.id_codigo)
+            if (createResp.success && createResp.sesion_id) {
+              setSessionId(createResp.sesion_id)
+              localStorage.setItem(`mmseSession:${codigoData.id_paciente}`, String(createResp.sesion_id))
+              setShowCodeInput(false)
+            } else {
+              setCodigoError(createResp.message || 'No se pudo crear la sesión')
+            }
+          }
+        } catch (error) {
+          console.error('Error validando código automáticamente:', error)
+          setCodigoError('Error al validar el código')
+        } finally {
+          setValidatingCode(false)
+        }
+      }
+      
+      autoValidate()
+    }
+  }, [codigo, showCodeInput, validatingCode, sessionId, hasAttemptedValidation])
+
   const createNewSession = async (pacienteId: number, codigoId: number) => {
     const createResp = await mmseService.createSession(pacienteId, codigoId)
     
@@ -308,6 +379,39 @@ export default function MMSEPatient() {
       setInvalid((prev) => ({ ...prev, [id]: false }))
     }
   }
+
+  // Auto-avanzar a la siguiente sección cuando se completen todos los campos
+  useEffect(() => {
+    // No hacer nada si estamos en la última sección o mostrando el input de código
+    if (currentStep >= sections.length - 1 || showCodeInput || !sessionId) return
+
+    // Validar la sección actual
+    const sec = sections[currentStep]
+    const allFieldsComplete = sec.questions.every((q) => {
+      const v = answers[q.id]
+      return isValueValid(q.type, v)
+    })
+    
+    console.log('Auto-avance check:', {
+      currentStep,
+      section: sec.key,
+      allFieldsComplete,
+      answers: sec.questions.map(q => ({ id: q.id, value: answers[q.id], valid: isValueValid(q.type, answers[q.id]) }))
+    })
+    
+    // Si todos los campos están completos, avanzar automáticamente después de un delay
+    if (allFieldsComplete) {
+      console.log('✅ Todos los campos completos, avanzando en 800ms...')
+      const timer = setTimeout(() => {
+        setShowValidation(false)
+        setInvalid({})
+        setCurrentStep((s) => Math.min(sections.length - 1, s + 1))
+        console.log('⏭️ Avanzando a la siguiente sección')
+      }, 800)
+
+      return () => clearTimeout(timer)
+    }
+  }, [answers, currentStep, showCodeInput, sessionId])
 
   const isValueValid = (type: Question['type'], value: Answer) => {
     switch (type) {
@@ -423,22 +527,12 @@ export default function MMSEPatient() {
 
       <div className="flex items-center justify-end gap-3">
         {currentStep < sections.length - 1 ? (
-          <Button
-            type="button"
-            onClick={() => {
-              const { valid, invalidMap } = validateStep(currentStep)
-              if (!valid) {
-                setInvalid(invalidMap)
-                setShowValidation(true)
-                return
-              }
-              setShowValidation(false)
-              setInvalid({})
-              setCurrentStep((s) => Math.min(sections.length - 1, s + 1))
-            }}
-          >
-            Siguiente
-          </Button>
+          <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
+            <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+            <span>Avanzará automáticamente al completar todos los campos</span>
+          </div>
         ) : (
           <Button
             onClick={() => {

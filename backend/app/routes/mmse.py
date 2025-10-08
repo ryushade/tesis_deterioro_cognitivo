@@ -11,14 +11,23 @@ evals = EvaluacionesService()
 mmse_service = MMSEService()
 
 
+@mmse_bp.route('/test', methods=['GET'])
+def test_mmse():
+    """Endpoint de prueba para verificar que el Blueprint está registrado"""
+    return jsonify({'success': True, 'message': 'MMSE Blueprint funcionando correctamente'}), 200
+
+
 @mmse_bp.route('/sesiones', methods=['POST'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo'])
+@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
 def crear_sesion_mmse():
     try:
+        logger.info("=== CREAR SESIÓN MMSE ===")
         data = request.get_json() or {}
+        logger.info(f"Data recibida: {data}")
         id_paciente = data.get('id_paciente')
         if not id_paciente:
+            logger.error("id_paciente no proporcionado")
             return jsonify({'success': False, 'message': 'id_paciente es requerido'}), 400
         
         # Obtener el ID de la prueba MMSE
@@ -58,7 +67,7 @@ def crear_sesion_mmse():
 
 @mmse_bp.route('/sesiones/<int:id_sesion>', methods=['GET'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo'])
+@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
 def obtener_sesion_mmse(id_sesion: int):
     try:
         sesion = mmse_service.obtener_sesion(id_sesion)
@@ -84,7 +93,7 @@ def obtener_sesion_mmse(id_sesion: int):
 
 @mmse_bp.route('/sesiones/<int:id_sesion>/progreso', methods=['PATCH'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo'])
+@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
 def actualizar_progreso_mmse(id_sesion: int):
     try:
         data = request.get_json() or {}
@@ -111,7 +120,7 @@ def actualizar_progreso_mmse(id_sesion: int):
 
 @mmse_bp.route('/sesiones/<int:id_sesion>/finalizar', methods=['POST'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo'])
+@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
 def finalizar_mmse(id_sesion: int):
     try:
         data = request.get_json() or {}
@@ -155,7 +164,7 @@ def finalizar_mmse(id_sesion: int):
 
 @mmse_bp.route('/sesiones/<int:id_sesion>/pausar', methods=['POST'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo'])
+@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
 def pausar_sesion_mmse(id_sesion: int):
     try:
         ok = mmse_service.pausar_sesion(id_sesion)
@@ -167,7 +176,7 @@ def pausar_sesion_mmse(id_sesion: int):
 
 @mmse_bp.route('/sesiones/<int:id_sesion>/reanudar', methods=['POST'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo'])
+@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
 def reanudar_sesion_mmse(id_sesion: int):
     try:
         ok = mmse_service.reanudar_sesion(id_sesion)
@@ -179,7 +188,7 @@ def reanudar_sesion_mmse(id_sesion: int):
 
 @mmse_bp.route('/sesiones/<int:id_sesion>/cancelar', methods=['POST'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo'])
+@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
 def cancelar_sesion_mmse(id_sesion: int):
     try:
         ok = mmse_service.cancelar_sesion(id_sesion)

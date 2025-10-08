@@ -3,6 +3,7 @@ Rutas para gestión de códigos de acceso usando psycopg2
 """
 from flask import Blueprint, request, jsonify
 from app.services.codigos_acceso_service import CodigosAccesoService
+from app.services.jwt_service import JWTService
 import logging
 
 logger = logging.getLogger(__name__)
@@ -220,6 +221,7 @@ def generar_codigo_unico():
 
 
 @codigos_acceso_bp.route('/validar', methods=['POST'])
+@JWTService.token_required
 def validar_codigo():
     """Validar un código de acceso para uso del paciente"""
     try:
@@ -241,23 +243,34 @@ def validar_codigo():
                 'message': 'Código no encontrado'
             }), 404
         
-        # Verificar estado (emitido es el estado válido, usado/vencido/revocado no)
-        if result['estado'] == 'usado':
-            return jsonify({
-                'success': False,
-                'message': 'El código ya ha sido usado'
-            }), 400
+        # Obtener el usuario autenticado
+        current_user = getattr(request, 'current_user', {})
+        user_id = current_user.get('user_id')
         
-        if result['estado'] == 'vencido':
+        # Verificar estado
+        # Si el código está "usado" pero el usuario autenticado es el dueño, permitirlo
+        if result['estado'] == 'usado':
+            # Verificar si el usuario autenticado es el paciente dueño del código
+            if user_id != result['id_paciente']:
+                return jsonify({
+                    'success': False,
+                    'message': 'El código ya ha sido usado por otro paciente'
+                }), 400
+            # Si es el mismo paciente, permitir continuar
+        elif result['estado'] == 'vencido':
             return jsonify({
                 'success': False,
                 'message': 'El código ha vencido'
             }), 400
-        
-        if result['estado'] == 'revocado':
+        elif result['estado'] == 'revocado':
             return jsonify({
                 'success': False,
                 'message': 'El código ha sido revocado'
+            }), 400
+        elif result['estado'] != 'emitido':
+            return jsonify({
+                'success': False,
+                'message': f'Estado del código inválido: {result["estado"]}'
             }), 400
         
         # Verificar fecha de expiración
