@@ -149,7 +149,23 @@ export default function MMSEPatient() {
   const [codigoError, setCodigoError] = useState('')
   const [validatingCode, setValidatingCode] = useState(false)
   
-  const [answers, setAnswers] = useState<Answers>({})
+  // Inicializar answers con valores vacíos para evitar warnings de inputs controlados
+  const [answers, setAnswers] = useState<Answers>(() => {
+    const initialAnswers: Answers = {}
+    sections.forEach(section => {
+      section.questions.forEach(question => {
+        // Inicializar según el tipo de pregunta
+        if (question.type === 'boolean') {
+          initialAnswers[question.id] = null
+        } else if (question.type === 'number') {
+          initialAnswers[question.id] = null
+        } else {
+          initialAnswers[question.id] = ''
+        }
+      })
+    })
+    return initialAnswers
+  })
   const [submitting, setSubmitting] = useState(false)
   const [currentStep, setCurrentStep] = useState(0)
   const [invalid, setInvalid] = useState<Record<string, boolean>>({})
@@ -240,85 +256,75 @@ export default function MMSEPatient() {
     }
   }
 
-  // Auto-llenar código si ya existe en localStorage (desde el login) y auto-validar
+  // Auto-inicializar con datos del login si ya están disponibles
   useEffect(() => {
-    const savedCode = localStorage.getItem('accessCode')
-    if (savedCode && !codigo && showCodeInput) {
-      setCodigo(savedCode)
-    }
-  }, [showCodeInput, codigo])
-  
-  // Auto-validar cuando se llena el código desde localStorage
-  useEffect(() => {
-    const savedCode = localStorage.getItem('accessCode')
-    if (savedCode && codigo === savedCode && showCodeInput && !validatingCode && !sessionId && !hasAttemptedValidation) {
-      // Validar automáticamente
-      const autoValidate = async () => {
-        try {
-          setValidatingCode(true)
-          setHasAttemptedValidation(true)
-          setCodigoError('')
-          const response = await mmseService.validarCodigo(codigo.trim())
-          
-          if (!response.success || !response.data) {
-            setCodigoError(response.message || 'Código inválido')
-            return
-          }
-
-          const codigoData = response.data
-          setIdPaciente(codigoData.id_paciente)
-          setIdCodigo(codigoData.id_codigo)
-          
-          const existingSession = localStorage.getItem(`mmseSession:${codigoData.id_paciente}`)
-          
-          if (existingSession) {
-            const sid = Number(existingSession)
-            const sessionResp = await mmseService.getSession(sid)
-            
-            if (sessionResp.success && sessionResp.data) {
-              setSessionId(sid)
-              setShowCodeInput(false)
-            } else {
-              const createResp = await mmseService.createSession(codigoData.id_paciente, codigoData.id_codigo)
-              if (createResp.success && createResp.sesion_id) {
-                setSessionId(createResp.sesion_id)
-                localStorage.setItem(`mmseSession:${codigoData.id_paciente}`, String(createResp.sesion_id))
-                setShowCodeInput(false)
-              } else {
-                setCodigoError(createResp.message || 'No se pudo crear la sesión')
-              }
-            }
-          } else {
-            const createResp = await mmseService.createSession(codigoData.id_paciente, codigoData.id_codigo)
-            if (createResp.success && createResp.sesion_id) {
-              setSessionId(createResp.sesion_id)
-              localStorage.setItem(`mmseSession:${codigoData.id_paciente}`, String(createResp.sesion_id))
-              setShowCodeInput(false)
-            } else {
-              setCodigoError(createResp.message || 'No se pudo crear la sesión')
-            }
-          }
-        } catch (error) {
-          console.error('Error validando código automáticamente:', error)
-          setCodigoError('Error al validar el código')
-        } finally {
-          setValidatingCode(false)
-        }
-      }
-      
-      autoValidate()
-    }
-  }, [codigo, showCodeInput, validatingCode, sessionId, hasAttemptedValidation])
-
-  const createNewSession = async (pacienteId: number, codigoId: number) => {
-    const createResp = await mmseService.createSession(pacienteId, codigoId)
+    // Si ya estamos en una sesión activa, no hacer nada
+    if (sessionId || !showCodeInput) return
     
-    if (createResp.success && createResp.sesion_id) {
-      setSessionId(createResp.sesion_id)
-      localStorage.setItem(`mmseSession:${pacienteId}`, String(createResp.sesion_id))
-      setShowCodeInput(false)
-    } else {
-      setCodigoError(createResp.message || 'No se pudo crear la sesión')
+    // Intentar obtener datos del login
+    const savedCode = localStorage.getItem('accessCode')
+    const userStr = localStorage.getItem('user')
+    
+    if (!savedCode || !userStr || hasAttemptedValidation) return
+    
+    try {
+      const user = JSON.parse(userStr)
+      const pacienteId = user.id
+      
+      console.log('🔑 Inicializando MMSE con datos del login:', { savedCode, pacienteId })
+      
+      // Marcar que ya intentamos validar
+      setHasAttemptedValidation(true)
+      
+      // Establecer paciente directamente del token
+      setIdPaciente(pacienteId)
+      
+      // Verificar si ya existe una sesión
+      const existingSession = localStorage.getItem(`mmseSession:${pacienteId}`)
+      
+      if (existingSession) {
+        const sid = Number(existingSession)
+        console.log('📋 Sesión existente encontrada:', sid)
+        mmseService.getSession(sid).then(sessionResp => {
+          if (sessionResp.success && sessionResp.data) {
+            setSessionId(sid)
+            setShowCodeInput(false)
+            console.log('✅ Sesión existente cargada')
+          } else {
+            // Sesión no válida, crear una nueva
+            createNewSession(pacienteId, null)
+          }
+        }).catch(() => {
+          createNewSession(pacienteId, null)
+        })
+      } else {
+        // No hay sesión existente, crear una nueva
+        console.log('🆕 Creando nueva sesión...')
+        createNewSession(pacienteId, null)
+      }
+    } catch (error) {
+      console.error('Error inicializando MMSE:', error)
+      setCodigoError('Error al inicializar la prueba. Por favor, intente nuevamente.')
+    }
+  }, [showCodeInput, sessionId, hasAttemptedValidation])
+
+  const createNewSession = async (pacienteId: number, codigoId: number | null) => {
+    console.log('📝 Creando sesión MMSE para paciente:', pacienteId)
+    try {
+      const createResp = await mmseService.createSession(pacienteId, codigoId)
+      
+      if (createResp.success && createResp.sesion_id) {
+        console.log('✅ Sesión creada exitosamente:', createResp.sesion_id)
+        setSessionId(createResp.sesion_id)
+        localStorage.setItem(`mmseSession:${pacienteId}`, String(createResp.sesion_id))
+        setShowCodeInput(false)
+      } else {
+        console.error('❌ Error creando sesión:', createResp.message)
+        setCodigoError(createResp.message || 'No se pudo crear la sesión')
+      }
+    } catch (error) {
+      console.error('❌ Excepción creando sesión:', error)
+      setCodigoError('Error de conexión al crear la sesión')
     }
   }
 
@@ -361,9 +367,13 @@ export default function MMSEPatient() {
     if (!sessionId || showCodeInput) return
 
     const saveProgress = async () => {
-      const progreso = Math.round((currentStep / Math.max(1, sections.length - 1)) * 100)
+      const datos_especificos = {
+        current_section: currentStep,
+        answers,
+        progress: Math.round((currentStep / Math.max(1, sections.length - 1)) * 100)
+      }
       try {
-        await mmseService.updateProgress(sessionId, progreso, 'en_progreso')
+        await mmseService.updateProgress(sessionId, datos_especificos, score, 'en_progreso')
       } catch (error) {
         console.error('Error guardando progreso:', error)
       }
@@ -371,7 +381,7 @@ export default function MMSEPatient() {
 
     const saveTimer = setTimeout(saveProgress, 2000)
     return () => clearTimeout(saveTimer)
-  }, [sessionId, currentStep, showCodeInput])
+  }, [sessionId, currentStep, answers, score, showCodeInput])
 
   const handleChange = (id: string, value: Answer) => {
     setAnswers((prev) => ({ ...prev, [id]: value }))

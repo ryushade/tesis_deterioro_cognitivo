@@ -18,8 +18,12 @@ export interface MMSESession {
 }
 
 export const mmseService = {
-  async createSession(id_paciente: number, id_codigo?: number): Promise<{ success: boolean; sesion_id?: number; message?: string }> {
-    const { data } = await apiClient.post('/mmse/sesiones', { id_paciente, id_codigo })
+  async createSession(id_paciente: number, id_codigo?: number | null): Promise<{ success: boolean; sesion_id?: number; message?: string }> {
+    const payload: any = { id_paciente }
+    if (id_codigo !== null && id_codigo !== undefined) {
+      payload.id_codigo = id_codigo
+    }
+    const { data } = await apiClient.post('/mmse/sesiones', payload)
     return data
   },
   
@@ -28,8 +32,8 @@ export const mmseService = {
     return data
   },
   
-  async updateProgress(id: number, progreso: number, estado?: string): Promise<{ success: boolean; tiempo_agotado?: boolean; message?: string }> {
-    const { data } = await apiClient.patch(`/mmse/sesiones/${id}/progreso`, { progreso, estado })
+  async updateProgress(id: number, datos_especificos: any, puntuacion_total?: number, estado_procesamiento?: string): Promise<{ success: boolean; tiempo_agotado?: boolean; message?: string }> {
+    const { data } = await apiClient.patch(`/mmse/sesiones/${id}/progreso`, { datos_especificos, puntuacion_total, estado_procesamiento })
     return data
   },
   
