@@ -1,5 +1,4 @@
-﻿import { Button } from '@/components/ui/button';
-import { Eye, Edit, Trash2 } from 'lucide-react';
+﻿import { Eye, Edit, Trash2, ClipboardList } from 'lucide-react';
 import type { CodigoAcceso } from '@/types/codigosAcceso';
 import { getTipoEvaluacionDescription } from '@/types/codigosAcceso';
 
@@ -8,9 +7,10 @@ interface Props {
   onView: (codigo: CodigoAcceso) => void;
   onEdit: (codigo: CodigoAcceso) => void;
   onDelete: (codigo: CodigoAcceso) => void;
+  onAdministerTest?: (codigo: CodigoAcceso) => void;
 }
 
-export default function TablaCodigo({ codigos, onView, onEdit, onDelete }: Props) {
+export default function TablaCodigo({ codigos, onView, onEdit, onDelete, onAdministerTest }: Props) {
   const getNombrePaciente = (c: CodigoAcceso) => {
     const nombre = (c.nombre_paciente || '').trim();
     if (nombre) return nombre;
@@ -99,6 +99,16 @@ export default function TablaCodigo({ codigos, onView, onEdit, onDelete }: Props
               </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-4">
+                      {/* Administrar test MMSE - solo para códigos tipo MMSE en estado emitido */}
+                      {onAdministerTest && 
+                       codigo.tipo_evaluacion?.toUpperCase() === 'MMSE' && 
+                       codigo.estado === 'emitido' && (
+                        <ClipboardList
+                          className="h-4 w-4 cursor-pointer text-green-600 hover:text-green-700"
+                          title="Administrar MMSE"
+                          onClick={() => onAdministerTest(codigo)}
+                        />
+                      )}
                       <Eye
                         className="h-4 w-4 cursor-pointer text-blue-600 hover:text-blue-700"
                         title="Ver"

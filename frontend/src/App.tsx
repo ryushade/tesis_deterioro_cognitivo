@@ -12,6 +12,7 @@ import Evaluaciones from './pages/Evaluaciones/Evaluaciones';
 import CDTTestPage from './pages/CDTTestPage';
 
 import MMSEPatient from './pages/Evaluaciones/ComponentsEvaluaciones/Pruebas/MMSE/MMSE';
+import MMSEPausada from './pages/Evaluaciones/ComponentsEvaluaciones/Pruebas/MMSE/MMSEPausada';
 import Pruebas from './pages/Pruebas/Pruebas';
 import PruebaFinalizada from './pages/Pruebas/PruebaFinalizada';
 import Neuropsicologos from './pages/Neuropsicologos/Neuropsicologo';
@@ -162,7 +163,23 @@ function App() {
                 }
               />
               <Route
+                path="/pruebas/pausada"
+                element={
+                  <ProtectedRoute>
+                    <MMSEPausada />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="/mmse"
+                element={
+                  <ProtectedRoute>
+                    <MMSEPatient />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/evaluaciones/mmse"
                 element={
                   <ProtectedRoute>
                     <MMSEPatient />

@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Timer as TimerIcon, Lock } from 'lucide-react'
 import MMSESectionCard from './ComponentsMMSE/MMSESectionCard'
 import MMSEProgress from './ComponentsMMSE/MMSEProgress'
@@ -145,9 +144,6 @@ type Answers = Record<string, Answer>
 export default function MMSEPatient() {
   const navigate = useNavigate()
   const [showCodeInput, setShowCodeInput] = useState(true)
-  const [codigo, setCodigo] = useState('')
-  const [codigoError, setCodigoError] = useState('')
-  const [validatingCode, setValidatingCode] = useState(false)
   
   // Inicializar answers con valores vacíos para evitar warnings de inputs controlados
   const [answers, setAnswers] = useState<Answers>(() => {
@@ -174,10 +170,13 @@ export default function MMSEPatient() {
   const [highContrast] = useState(false)
   const [sessionId, setSessionId] = useState<number | null>(null)
   const [idPaciente, setIdPaciente] = useState<number | null>(null)
-  const [idCodigo, setIdCodigo] = useState<number | null>(null)
+  const [idCodigo] = useState<number | null>(null)
   const [tiempoRestante, setTiempoRestante] = useState(600) // 10 minutos por defecto
   const timerRef = useRef<number | null>(null)
   const [hasAttemptedValidation, setHasAttemptedValidation] = useState(false)
+  const [pausando, setPausando] = useState(false)
+  const [sesionesDisponibles, setSesionesDisponibles] = useState<any[]>([])
+  const [mostrarSeleccionSesion, setMostrarSeleccionSesion] = useState(false)
 
   const storageKey = useMemo(() => `mmseSession:${idPaciente ?? 'temp'}`, [idPaciente])
 
@@ -205,56 +204,6 @@ export default function MMSEPatient() {
     return s
   }, [answers])
 
-  // Validar código de acceso
-  const handleValidateCode = async () => {
-    if (!codigo.trim()) {
-      setCodigoError('Por favor ingrese un código de acceso')
-      return
-    }
-
-    setValidatingCode(true)
-    setCodigoError('')
-
-    try {
-      const response = await mmseService.validarCodigo(codigo.trim())
-      
-      if (!response.success || !response.data) {
-        setCodigoError(response.message || 'Código inválido')
-        setValidatingCode(false)
-        return
-      }
-
-      const codigoData = response.data
-      setIdPaciente(codigoData.id_paciente)
-      setIdCodigo(codigoData.id_codigo)
-      
-      // Verificar si hay una sesión guardada en localStorage
-      const existingSession = localStorage.getItem(`mmseSession:${codigoData.id_paciente}`)
-      
-      if (existingSession) {
-        // Recuperar sesión existente
-        const sid = Number(existingSession)
-        const sessionResp = await mmseService.getSession(sid)
-        
-        if (sessionResp.success && sessionResp.data) {
-          setSessionId(sid)
-          // Cargar progreso guardado si existe en datos_especificos
-          setShowCodeInput(false)
-        } else {
-          // La sesión no existe, crear una nueva
-          await createNewSession(codigoData.id_paciente, codigoData.id_codigo)
-        }
-      } else {
-        // Crear nueva sesión
-        await createNewSession(codigoData.id_paciente, codigoData.id_codigo)
-      }
-    } catch (error) {
-      console.error('Error validando código:', error)
-      setCodigoError('Error al validar el código')
-    } finally {
-      setValidatingCode(false)
-    }
-  }
 
   // Auto-inicializar con datos del login si ya están disponibles
   useEffect(() => {
@@ -304,12 +253,69 @@ export default function MMSEPatient() {
       }
     } catch (error) {
       console.error('Error inicializando MMSE:', error)
-      setCodigoError('Error al inicializar la prueba. Por favor, intente nuevamente.')
+      alert('Error al inicializar la prueba. Por favor, intente nuevamente.')
     }
   }, [showCodeInput, sessionId, hasAttemptedValidation])
 
+  const verificarSesionesExistentes = async (pacienteId: number) => {
+    try {
+      const sesionesResp = await mmseService.getSesionesPaciente(pacienteId)
+      
+      if (sesionesResp.success && sesionesResp.data) {
+        // Filtrar sesiones que estén en progreso o pausadas
+        const sesionesActivas = sesionesResp.data.filter(
+          (s: any) => s.estado_procesamiento === 'en_progreso' || s.estado_procesamiento === 'pausada'
+        )
+        
+        if (sesionesActivas.length > 0) {
+          setSesionesDisponibles(sesionesActivas)
+          setMostrarSeleccionSesion(true)
+          return true
+        }
+      }
+      return false
+    } catch (error) {
+      console.error('Error verificando sesiones existentes:', error)
+      return false
+    }
+  }
+
+  const cargarSesionExistente = async (sesion: any) => {
+    console.log('📂 Cargando sesión existente:', sesion)
+    setSessionId(sesion.id_evaluacion)
+    localStorage.setItem(`mmseSession:${sesion.id_paciente}`, String(sesion.id_evaluacion))
+    
+    // Cargar progreso guardado
+    if (sesion.datos_especificos) {
+      const datosGuardados = sesion.datos_especificos
+      if (datosGuardados.answers) {
+        setAnswers(datosGuardados.answers)
+      }
+      if (datosGuardados.current_section !== undefined) {
+        setCurrentStep(datosGuardados.current_section)
+      }
+      console.log('✅ Progreso cargado:', datosGuardados)
+    }
+    
+    // Si la sesión estaba pausada, reanudarla automáticamente
+    if (sesion.estado_procesamiento === 'pausada') {
+      await mmseService.reanudar(sesion.id_evaluacion)
+    }
+    
+    setMostrarSeleccionSesion(false)
+    setShowCodeInput(false)
+  }
+
   const createNewSession = async (pacienteId: number, codigoId: number | null) => {
     console.log('📝 Creando sesión MMSE para paciente:', pacienteId)
+    
+    // Primero verificar si ya hay sesiones activas
+    const haySesionesActivas = await verificarSesionesExistentes(pacienteId)
+    if (haySesionesActivas) {
+      console.log('⚠️ Ya existen sesiones activas, mostrando selector')
+      return
+    }
+    
     try {
       const createResp = await mmseService.createSession(pacienteId, codigoId)
       
@@ -320,15 +326,46 @@ export default function MMSEPatient() {
         setShowCodeInput(false)
       } else {
         console.error('❌ Error creando sesión:', createResp.message)
-        setCodigoError(createResp.message || 'No se pudo crear la sesión')
+        alert(createResp.message || 'No se pudo crear la sesión')
       }
     } catch (error) {
       console.error('❌ Excepción creando sesión:', error)
-      setCodigoError('Error de conexión al crear la sesión')
+      alert('Error de conexión al crear la sesión')
     }
   }
 
-  // Actualizar tiempo desde el backend
+  // Función para pausar la sesión
+  const handlePausar = async () => {
+    if (!sessionId) return
+    
+    setPausando(true)
+    try {
+      // Guardar progreso actual antes de pausar
+      const datos_especificos = {
+        current_section: currentStep,
+        answers,
+        progress: Math.round((currentStep / Math.max(1, sections.length - 1)) * 100)
+      }
+      await mmseService.updateProgress(sessionId, datos_especificos, score, 'en_progreso')
+      
+      // Pausar la sesión
+      const resp = await mmseService.pausar(sessionId)
+      
+      if (resp.success) {
+        alert('Tu progreso ha sido guardado. Puedes volver más tarde para continuar.')
+        navigate('/pruebas/pausada', { replace: true })
+      } else {
+        alert('Error al pausar la sesión')
+      }
+    } catch (error) {
+      console.error('Error pausando sesión:', error)
+      alert('Error al pausar la sesión')
+    } finally {
+      setPausando(false)
+    }
+  }
+
+  // Actualizar tiempo desde el backend (solo informativo, no bloqueante)
   useEffect(() => {
     if (!sessionId || showCodeInput) return
 
@@ -338,12 +375,11 @@ export default function MMSEPatient() {
         if (resp.success && resp.data?.tiempo_info) {
           setTiempoRestante(resp.data.tiempo_info.tiempo_restante_segundos)
           
-          // Si el tiempo se agotó
+          // Si el tiempo se agotó, solo mostrar advertencia pero permitir continuar
           if (resp.data.tiempo_info.tiempo_restante_segundos <= 0) {
-            if (timerRef.current) window.clearInterval(timerRef.current)
-            // Auto finalizar o mostrar mensaje
-            alert('El tiempo ha terminado')
-            await handleSubmit()
+            console.warn('⏰ Tiempo de referencia agotado, pero el usuario puede continuar')
+            // No auto-finalizar, solo dejar el temporizador en 0
+            setTiempoRestante(0)
           }
         }
       } catch (error) {
@@ -490,29 +526,124 @@ export default function MMSEPatient() {
 
  
 
+  // Pantalla de selección de sesión existente
+  if (mostrarSeleccionSesion) {
+    return (
+      <div className="max-w-2xl mx-auto p-6 space-y-6">
+        <div className="bg-white rounded-lg shadow-lg p-6">
+          <h2 className="text-2xl font-bold text-blue-900 mb-4">Sesiones MMSE pendientes</h2>
+          <p className="text-gray-600 mb-6">
+            Tienes sesiones MMSE sin completar. ¿Deseas continuar una sesión existente o iniciar una nueva?
+          </p>
+          
+          <div className="space-y-4 mb-6">
+            {sesionesDisponibles.map((sesion) => (
+              <div
+                key={sesion.id_evaluacion}
+                className="border rounded-lg p-4 hover:bg-blue-50 cursor-pointer transition-colors"
+                onClick={() => cargarSesionExistente(sesion)}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-blue-900">
+                      Sesión del {new Date(sesion.fecha_evaluacion).toLocaleDateString('es-ES', {
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      Estado: {sesion.estado_procesamiento === 'pausada' ? 'Pausada' : 'En progreso'} • 
+                      Puntuación actual: {sesion.puntuacion_total || 0} / {sesion.puntuacion_maxima}
+                    </p>
+                    {sesion.datos_especificos?.progress && (
+                      <p className="text-sm text-blue-600">
+                        Progreso: {sesion.datos_especificos.progress}%
+                      </p>
+                    )}
+                  </div>
+                  <Button variant="outline" size="sm">Continuar</Button>
+                </div>
+              </div>
+            ))}
+          </div>
+          
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setMostrarSeleccionSesion(false)
+                setSesionesDisponibles([])
+                // Permitir crear nueva sesión
+                if (idPaciente) {
+                  mmseService.createSession(idPaciente, idCodigo).then(createResp => {
+                    if (createResp.success && createResp.sesion_id) {
+                      setSessionId(createResp.sesion_id)
+                      localStorage.setItem(`mmseSession:${idPaciente}`, String(createResp.sesion_id))
+                      setShowCodeInput(false)
+                    }
+                  })
+                }
+              }}
+              className="flex-1"
+            >
+              Iniciar nueva sesión
+            </Button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   // Pantalla del test
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-6">
       <header className="space-y-2">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-extrabold text-blue-900">Prueba neuropsicológica MMSE</h1>
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
-            tiempoRestante <= 120 ? 'bg-red-50 border-red-300' : 
-            tiempoRestante <= 300 ? 'bg-yellow-50 border-yellow-300' : 
-            'bg-blue-50 border-blue-200'
-          }`}>
-            <TimerIcon className={`w-5 h-5 ${
-              tiempoRestante <= 120 ? 'text-red-600' : 
-              tiempoRestante <= 300 ? 'text-yellow-600' : 
-              'text-blue-600'
-            }`} />
-            <span className={`text-lg font-semibold ${
-              tiempoRestante <= 120 ? 'text-red-900' : 
-              tiempoRestante <= 300 ? 'text-yellow-900' : 
-              'text-blue-900'
-            }`}>{formatTime(tiempoRestante)}</span>
+          <div className="flex items-center gap-3">
+            {/* Botón de pausar */}
+            <Button
+              variant="outline"
+              onClick={handlePausar}
+              disabled={pausando}
+              className="flex items-center gap-2"
+            >
+              <Lock className="w-4 h-4" />
+              {pausando ? 'Guardando...' : 'Pausar y guardar'}
+            </Button>
+            
+            {/* Temporizador informativo */}
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${
+              tiempoRestante <= 0 ? 'bg-gray-100 border-gray-300' :
+              tiempoRestante <= 120 ? 'bg-orange-50 border-orange-300' : 
+              tiempoRestante <= 300 ? 'bg-yellow-50 border-yellow-300' : 
+              'bg-blue-50 border-blue-200'
+            }`}>
+              <TimerIcon className={`w-5 h-5 ${
+                tiempoRestante <= 0 ? 'text-gray-500' :
+                tiempoRestante <= 120 ? 'text-orange-600' : 
+                tiempoRestante <= 300 ? 'text-yellow-600' : 
+                'text-blue-600'
+              }`} />
+              <span className={`text-lg font-semibold ${
+                tiempoRestante <= 0 ? 'text-gray-700' :
+                tiempoRestante <= 120 ? 'text-orange-900' : 
+                tiempoRestante <= 300 ? 'text-yellow-900' : 
+                'text-blue-900'
+              }`}>
+                {tiempoRestante <= 0 ? 'Sin límite' : formatTime(tiempoRestante)}
+              </span>
+            </div>
           </div>
         </div>
+        {tiempoRestante <= 0 && (
+          <p className="text-sm text-gray-600 italic">
+            ℹ️ El tiempo de referencia ha finalizado, pero puedes continuar a tu ritmo.
+          </p>
+        )}
       </header>
 
       <MMSEProgress currentStep={currentStep} totalSteps={sections.length} score={score} totalMax={totalMax} />
@@ -534,17 +665,16 @@ export default function MMSEPatient() {
           )
         })()}
       </div>
+      
 
       <div className="flex items-center justify-end gap-3">
         {currentStep < sections.length - 1 ? (
           <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 px-4 py-2 rounded-lg">
-            <svg className="w-5 h-5 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-            <span>Avanzará automáticamente al completar todos los campos</span>
+            
           </div>
         ) : (
           <Button
+            style={{ display: 'none' }}
             onClick={() => {
               const { valid, invalidMap } = validateStep(currentStep)
               if (!valid) {

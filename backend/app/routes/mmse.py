@@ -123,3 +123,96 @@ def finalizar_mmse(id_sesion: int):
     except Exception as e:
         logger.error(f'Error finalizando MMSE {id_sesion}: {e}')
         return jsonify({'success': False, 'message': 'Error interno del servidor'}), 500
+
+
+@mmse_bp.route('/sesiones/<int:id_sesion>/pausar', methods=['POST'])
+@JWTService.token_required
+@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
+def pausar_mmse(id_sesion: int):
+    """Pausa una sesión MMSE guardando el progreso actual"""
+    try:
+        # Actualizar estado a 'pausada'
+        ok = evals.update_evaluacion(id_sesion, {
+            'estado_procesamiento': 'pausada',
+            'observaciones': 'Sesión pausada por el usuario'
+        })
+        return jsonify({'success': ok, 'message': 'Sesión pausada correctamente'}), (200 if ok else 400)
+    except Exception as e:
+        logger.error(f'Error pausando MMSE {id_sesion}: {e}')
+        return jsonify({'success': False, 'message': 'Error interno del servidor'}), 500
+
+
+@mmse_bp.route('/sesiones/<int:id_sesion>/reanudar', methods=['POST'])
+@JWTService.token_required
+@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
+def reanudar_mmse(id_sesion: int):
+    """Reanuda una sesión MMSE pausada"""
+    try:
+        sesion = evals.get_mmse_by_id(id_sesion)
+        if not sesion:
+            return jsonify({'success': False, 'message': 'Sesión no encontrada'}), 404
+        
+        if sesion.get('estado_procesamiento') != 'pausada':
+            return jsonify({'success': False, 'message': 'La sesión no está pausada'}), 400
+        
+        # Actualizar estado a 'en_progreso'
+        ok = evals.update_evaluacion(id_sesion, {
+            'estado_procesamiento': 'en_progreso',
+            'observaciones': 'Sesión reanudada'
+        })
+        return jsonify({'success': ok, 'message': 'Sesión reanudada correctamente'}), (200 if ok else 400)
+    except Exception as e:
+        logger.error(f'Error reanudando MMSE {id_sesion}: {e}')
+        return jsonify({'success': False, 'message': 'Error interno del servidor'}), 500
+
+
+@mmse_bp.route('/sesiones/<int:id_sesion>/cancelar', methods=['POST'])
+@JWTService.token_required
+@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
+def cancelar_mmse(id_sesion: int):
+    """Cancela una sesión MMSE"""
+    try:
+        ok = evals.update_evaluacion(id_sesion, {
+            'estado_procesamiento': 'cancelada',
+            'observaciones': 'Sesión cancelada por el usuario'
+        })
+        return jsonify({'success': ok, 'message': 'Sesión cancelada correctamente'}), (200 if ok else 400)
+    except Exception as e:
+        logger.error(f'Error cancelando MMSE {id_sesion}: {e}')
+        return jsonify({'success': False, 'message': 'Error interno del servidor'}), 500
+
+
+@mmse_bp.route('/sesiones/paciente/<int:id_paciente>', methods=['GET'])
+@JWTService.token_required
+@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
+def obtener_sesiones_paciente(id_paciente: int):
+    """Obtiene todas las sesiones MMSE de un paciente"""
+    try:
+        query = """
+            SELECT 
+                id_evaluacion,
+                id_paciente,
+                tipo_evaluacion,
+                fecha_evaluacion,
+                puntuacion_total,
+                puntuacion_maxima,
+                clasificacion,
+                estado_procesamiento,
+                datos_especificos
+            FROM evaluaciones_cognitivas
+            WHERE id_paciente = %s AND tipo_evaluacion = 'MMSE'
+            ORDER BY fecha_evaluacion DESC
+        """
+        
+        from app.services.database_service import DatabaseService
+        db = DatabaseService()
+        
+        with db.get_cursor() as cur:
+            cur.execute(query, (id_paciente,))
+            rows = cur.fetchall() or []
+            sesiones = [dict(r) for r in rows]
+        
+        return jsonify({'success': True, 'data': sesiones}), 200
+    except Exception as e:
+        logger.error(f'Error obteniendo sesiones del paciente {id_paciente}: {e}')
+        return jsonify({'success': False, 'message': 'Error interno del servidor'}), 500

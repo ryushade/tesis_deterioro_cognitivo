@@ -61,5 +61,10 @@ export const mmseService = {
     const { data } = await apiClient.post('/codigos-acceso/validar', { codigo })
     return data
   },
+  
+  async getSesionesPaciente(id_paciente: number): Promise<{ success: boolean; data?: MMSESession[]; message?: string }> {
+    const { data } = await apiClient.get(`/mmse/sesiones/paciente/${id_paciente}`)
+    return data
+  },
 }
 

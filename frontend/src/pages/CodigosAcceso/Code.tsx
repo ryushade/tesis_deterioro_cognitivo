@@ -6,7 +6,6 @@ import { SidebarProvider, SidebarInset } from '../../components/ui/sidebar';
 import { Button } from '../../components/ui/button';
 import { authService } from '../../services/auth';
 import type { CodigoAcceso, CodigoAccesoListResponse } from '../../types/codigosAcceso';
-import { Eye, Edit, Trash2 } from 'lucide-react';
 import PaginacionCodigo from './ComponentsCodigo/PaginacionCodigo';
 import TablaCodigo from './ComponentsCodigo/TablaCodigo';
 import {
@@ -19,6 +18,7 @@ import {
 import AddCodigoModal from './ComponentsCodigo/AddCodigo';
 import EditCodigoModal from './ComponentsCodigo/EditCodigo';
 import ViewCodigoModal from './ComponentsCodigo/ViewCodigo';
+import MMSEAdmin from '../Evaluaciones/ComponentsEvaluaciones/Pruebas/MMSE/MMSEAdmin';
 import './CodigosAcceso.css';
 import { codigosAccesoService } from '@/services/codigosAccesoService';
 
@@ -30,6 +30,7 @@ function CodigosAcceso() {
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showMMSEAdminModal, setShowMMSEAdminModal] = useState(false);
   const [selectedCodigo, setSelectedCodigo] = useState<CodigoAcceso | null>(null);
   
   // Datos desde backend
@@ -99,6 +100,11 @@ function CodigosAcceso() {
     setShowDeleteDialog(true);
   };
 
+  const handleAdministerTest = (codigo: CodigoAcceso) => {
+    setSelectedCodigo(codigo);
+    setShowMMSEAdminModal(true);
+  };
+
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
@@ -117,24 +123,6 @@ function CodigosAcceso() {
   // Cálculo de índices para el texto de paginación
   const startIndex = total === 0 ? 0 : (currentPage - 1) * itemsPerPage;
   const endIndex = total === 0 ? 0 : Math.min(startIndex + codigosAcceso.length, total);
-
-  const formatFecha = (fecha: string) => {
-    return new Date(fecha).toLocaleDateString('es-ES', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const getEstadoColor = (estado: string) => {
-    switch (estado) {
-      case 'emitido': return 'text-blue-600 bg-blue-100';
-      case 'usado': return 'text-green-600 bg-green-100';
-      case 'vencido': return 'text-red-600 bg-red-100';
-      case 'revocado': return 'text-gray-600 bg-gray-100';
-      default: return 'text-gray-600 bg-gray-100';
-    }
-  };
 
   if (error) {
     return (
@@ -207,6 +195,7 @@ function CodigosAcceso() {
                 onView={handleViewCodigo}
                 onEdit={handleEditCodigo}
                 onDelete={handleDeleteCodigo}
+                onAdministerTest={handleAdministerTest}
               />
             )}
 
@@ -312,6 +301,19 @@ function CodigosAcceso() {
               open={showViewModal}
               onClose={() => setShowViewModal(false)}
               codigo={selectedCodigo}
+            />
+          )}
+
+          {showMMSEAdminModal && selectedCodigo && (
+            <MMSEAdmin
+              codigo={selectedCodigo}
+              onClose={() => {
+                setShowMMSEAdminModal(false);
+                setSelectedCodigo(null);
+              }}
+              onSuccess={() => {
+                handleRefresh();
+              }}
             />
           )}
           </div>
