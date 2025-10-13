@@ -17,7 +17,7 @@ def test_mmse():
 
 @mmse_bp.route('/sesiones', methods=['POST'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo'])
+@JWTService.role_required(['Administrador', 'Neuropsicologo'])
 def crear_sesion_mmse():
     try:
         logger.info("=== CREAR SESIÓN MMSE ===")
@@ -50,7 +50,7 @@ def crear_sesion_mmse():
 
 @mmse_bp.route('/sesiones/<int:id_sesion>', methods=['GET'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
+@JWTService.role_required(['Administrador', 'Neuropsicologo', 'Paciente'])
 def obtener_sesion_mmse(id_sesion: int):
     try:
         sesion = evals.get_mmse_by_id(id_sesion)
@@ -89,7 +89,7 @@ def obtener_sesion_mmse(id_sesion: int):
 
 @mmse_bp.route('/sesiones/<int:id_sesion>/progreso', methods=['PATCH'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
+@JWTService.role_required(['Administrador', 'Neuropsicologo', 'Paciente'])
 def actualizar_progreso_mmse(id_sesion: int):
     try:
         data = request.get_json() or {}
@@ -109,7 +109,7 @@ def actualizar_progreso_mmse(id_sesion: int):
 
 @mmse_bp.route('/sesiones/<int:id_sesion>/finalizar', methods=['POST'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
+@JWTService.role_required(['Administrador', 'Neuropsicologo', 'Paciente'])
 def finalizar_mmse(id_sesion: int):
     try:
         data = request.get_json() or {}
@@ -127,7 +127,7 @@ def finalizar_mmse(id_sesion: int):
 
 @mmse_bp.route('/sesiones/<int:id_sesion>/pausar', methods=['POST'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
+@JWTService.role_required(['Administrador', 'Neuropsicologo', 'Paciente'])
 def pausar_mmse(id_sesion: int):
     """Pausa una sesión MMSE guardando el progreso actual"""
     try:
@@ -144,7 +144,7 @@ def pausar_mmse(id_sesion: int):
 
 @mmse_bp.route('/sesiones/<int:id_sesion>/reanudar', methods=['POST'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
+@JWTService.role_required(['Administrador', 'Neuropsicologo', 'Paciente'])
 def reanudar_mmse(id_sesion: int):
     """Reanuda una sesión MMSE pausada"""
     try:
@@ -168,7 +168,7 @@ def reanudar_mmse(id_sesion: int):
 
 @mmse_bp.route('/sesiones/<int:id_sesion>/cancelar', methods=['POST'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
+@JWTService.role_required(['Administrador', 'Neuropsicologo', 'Paciente'])
 def cancelar_mmse(id_sesion: int):
     """Cancela una sesión MMSE"""
     try:
@@ -184,33 +184,54 @@ def cancelar_mmse(id_sesion: int):
 
 @mmse_bp.route('/sesiones/paciente/<int:id_paciente>', methods=['GET'])
 @JWTService.token_required
-@JWTService.role_required(['Administrador', 'Neuropsicólogo', 'Paciente'])
+@JWTService.role_required(['Administrador', 'Neuropsicologo', 'Paciente'])
 def obtener_sesiones_paciente(id_paciente: int):
     """Obtiene todas las sesiones MMSE de un paciente"""
     try:
         query = """
             SELECT 
-                id_evaluacion,
-                id_paciente,
-                tipo_evaluacion,
-                fecha_evaluacion,
-                puntuacion_total,
-                puntuacion_maxima,
-                clasificacion,
-                estado_procesamiento,
-                datos_especificos
-            FROM evaluaciones_cognitivas
-            WHERE id_paciente = %s AND tipo_evaluacion = 'MMSE'
-            ORDER BY fecha_evaluacion DESC
+                ec.id_evaluacion,
+                ec.id_paciente,
+                'MMSE' as tipo_evaluacion,
+                ec.fecha_evaluacion,
+                ec.puntuacion_total,
+                ec.puntuacion_maxima,
+                ec.clasificacion,
+                ec.observaciones,
+                pc.codigo as prueba_codigo,
+                pc.nombre as prueba_nombre
+            FROM evaluaciones_cognitivas ec
+            JOIN prueba_cognitiva pc ON ec.id_prueba = pc.id_prueba
+            WHERE ec.id_paciente = %s 
+              AND (UPPER(pc.codigo) = 'MMSE' OR UPPER(pc.nombre) LIKE '%MMSE%')
+            ORDER BY ec.fecha_evaluacion DESC
         """
         
         from app.services.database_service import DatabaseService
+        import json
         db = DatabaseService()
         
         with db.get_cursor() as cur:
             cur.execute(query, (id_paciente,))
             rows = cur.fetchall() or []
-            sesiones = [dict(r) for r in rows]
+            sesiones = []
+            
+            for r in rows:
+                sesion = dict(r)
+                # Parsear observaciones para obtener estado y datos
+                if sesion.get('observaciones'):
+                    try:
+                        obs_data = json.loads(sesion['observaciones'])
+                        sesion['estado_procesamiento'] = obs_data.get('estado', 'en_progreso')
+                        sesion['datos_especificos'] = obs_data.get('datos_iniciales', {})
+                    except:
+                        sesion['estado_procesamiento'] = 'completada' if sesion.get('clasificacion') else 'en_progreso'
+                        sesion['datos_especificos'] = {}
+                else:
+                    sesion['estado_procesamiento'] = 'completada' if sesion.get('clasificacion') else 'en_progreso'
+                    sesion['datos_especificos'] = {}
+                
+                sesiones.append(sesion)
         
         return jsonify({'success': True, 'data': sesiones}), 200
     except Exception as e:

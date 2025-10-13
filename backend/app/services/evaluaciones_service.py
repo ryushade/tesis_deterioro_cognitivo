@@ -3,6 +3,7 @@ Servicio de evaluaciones cognitivas usando psycopg2 (sin SQLAlchemy)
 """
 from typing import Optional, Dict, Any, List
 from datetime import datetime
+import json
 
 from .database_service import DatabaseService
 
@@ -127,7 +128,11 @@ class EvaluacionesService:
         params = []
         for k, v in fields.items():
             set_clauses.append(f"{k} = %s")
-            params.append(v)
+            # Convertir diccionarios a JSON string para campos JSONB
+            if isinstance(v, dict):
+                params.append(json.dumps(v))
+            else:
+                params.append(v)
         # actualizar timestamp
         set_clauses.append("actualizado_en = NOW()")
         query = f"""
@@ -155,53 +160,97 @@ class EvaluacionesService:
         creado_por: Optional[int] = None,
         datos_iniciales: Optional[Dict[str, Any]] = None,
     ) -> Optional[int]:
-        """Crea una evaluación MMSE en estado en_progreso con datos_especificos JSON."""
-        query = """
-            INSERT INTO evaluaciones_cognitivas (
-                id_paciente,
-                id_codigo,
-                tipo_evaluacion,
-                fecha_evaluacion,
-                puntuacion_total,
-                puntuacion_maxima,
-                clasificacion,
-                confianza,
-                estado_procesamiento,
-                tiempo_procesamiento,
-                version_algoritmo,
-                observaciones,
-                imagen_url,
-                metodo_cdt,
-                creado_por,
-                datos_especificos
-            ) VALUES (
-                %s, NULL, 'MMSE', NOW(),
-                %s, %s, NULL, NULL,
-                'en_progreso', NULL, NULL,
-                %s, NULL, NULL,
-                %s,
-                %s
-            )
-            RETURNING id_evaluacion
+        """Crea una evaluación MMSE usando el esquema real de la tabla."""
+        # Primero obtener el id_prueba para MMSE
+        query_prueba = """
+            SELECT id_prueba FROM prueba_cognitiva 
+            WHERE UPPER(codigo) = 'MMSE' OR UPPER(nombre) LIKE '%MMSE%'
+            LIMIT 1
         """
-        params = (
-            id_paciente,
-            0.0,
-            30.0,  # puntaje maximo típico MMSE
-            'Evaluación MMSE iniciada',
-            creado_por,
-            datos_iniciales or {},
-        )
+        
         with self.db.get_cursor() as cur:
+            cur.execute(query_prueba)
+            prueba_row = cur.fetchone()
+            if not prueba_row:
+                # Si no existe, crear la prueba MMSE
+                cur.execute("""
+                    INSERT INTO prueba_cognitiva (codigo, nombre, descripcion, duracion_estimada_minutos, puntaje_maximo, activo)
+                    VALUES ('MMSE', 'Mini-Mental State Examination', 'Evaluación cognitiva básica', 10, 30, true)
+                    RETURNING id_prueba
+                """)
+                prueba_row = cur.fetchone()
+            
+            id_prueba = prueba_row['id_prueba']
+            
+            # Crear la evaluación con el esquema correcto
+            query = """
+                INSERT INTO evaluaciones_cognitivas (
+                    id_paciente,
+                    id_prueba,
+                    id_codigo,
+                    puntuacion_total,
+                    puntuacion_maxima,
+                    clasificacion,
+                    observaciones
+                ) VALUES (
+                    %s, %s, NULL,
+                    %s, %s,
+                    'En progreso',
+                    %s
+                )
+                RETURNING id_evaluacion
+            """
+            
+            # Guardar datos iniciales en observaciones como JSON
+            observaciones = json.dumps({
+                'estado': 'en_progreso',
+                'datos_iniciales': datos_iniciales or {},
+                'creado_por': creado_por,
+                'tipo': 'MMSE'
+            })
+            
+            params = (
+                id_paciente,
+                id_prueba,
+                0.0,  # puntuacion_total inicial
+                30.0,  # puntuacion_maxima
+                observaciones
+            )
+            
             cur.execute(query, params)
             row = cur.fetchone()
             return row['id_evaluacion'] if row else None
 
     def get_mmse_by_id(self, id_evaluacion: int) -> Optional[Dict[str, Any]]:
-        data = self.get_evaluacion_by_id(id_evaluacion)
-        if not data or data.get('tipo_evaluacion') != 'MMSE':
-            return None
-        return data
+        """Obtiene evaluación MMSE verificando que sea del tipo correcto."""
+        query = """
+            SELECT 
+                ec.*,
+                pc.codigo as prueba_codigo,
+                pc.nombre as prueba_nombre
+            FROM evaluaciones_cognitivas ec
+            JOIN prueba_cognitiva pc ON ec.id_prueba = pc.id_prueba
+            WHERE ec.id_evaluacion = %s 
+              AND (UPPER(pc.codigo) = 'MMSE' OR UPPER(pc.nombre) LIKE '%MMSE%')
+        """
+        with self.db.get_cursor() as cur:
+            cur.execute(query, (id_evaluacion,))
+            row = cur.fetchone()
+            if not row:
+                return None
+            
+            data = dict(row)
+            # Parsear observaciones si contiene JSON
+            if data.get('observaciones'):
+                try:
+                    obs_data = json.loads(data['observaciones'])
+                    data['datos_especificos'] = obs_data.get('datos_iniciales', {})
+                    data['estado_procesamiento'] = obs_data.get('estado', 'en_progreso')
+                except:
+                    data['datos_especificos'] = {}
+                    data['estado_procesamiento'] = 'en_progreso'
+            
+            return data
 
     def update_mmse_progress(
         self,
@@ -210,12 +259,36 @@ class EvaluacionesService:
         puntuacion_total: Optional[float] = None,
         estado_procesamiento: Optional[str] = None,
     ) -> bool:
-        fields: Dict[str, Any] = {'datos_especificos': datos_especificos}
-        if puntuacion_total is not None:
-            fields['puntuacion_total'] = puntuacion_total
-        if estado_procesamiento is not None:
-            fields['estado_procesamiento'] = estado_procesamiento
-        return self.update_evaluacion(id_evaluacion, fields)
+        """Actualiza progreso de MMSE guardando en observaciones."""
+        # Obtener observaciones actuales
+        query_get = "SELECT observaciones FROM evaluaciones_cognitivas WHERE id_evaluacion = %s"
+        with self.db.get_cursor() as cur:
+            cur.execute(query_get, (id_evaluacion,))
+            row = cur.fetchone()
+            if not row:
+                return False
+            
+            # Parsear observaciones actuales o crear nuevo objeto
+            try:
+                obs_data = json.loads(row['observaciones']) if row['observaciones'] else {}
+            except:
+                obs_data = {}
+            
+            # Actualizar datos
+            obs_data['datos_iniciales'] = datos_especificos
+            obs_data['estado'] = estado_procesamiento or obs_data.get('estado', 'en_progreso')
+            obs_data['tipo'] = 'MMSE'
+            
+            # Actualizar en base de datos
+            query_update = """
+                UPDATE evaluaciones_cognitivas 
+                SET observaciones = %s,
+                    puntuacion_total = COALESCE(%s, puntuacion_total),
+                    actualizado_en = NOW()
+                WHERE id_evaluacion = %s
+            """
+            cur.execute(query_update, (json.dumps(obs_data), puntuacion_total, id_evaluacion))
+            return cur.rowcount > 0
 
     def finalizar_mmse(
         self,
@@ -223,10 +296,56 @@ class EvaluacionesService:
         puntuacion_total: float,
         clasificacion: Optional[str] = None,
     ) -> bool:
-        fields: Dict[str, Any] = {
-            'puntuacion_total': puntuacion_total,
-            'estado_procesamiento': 'completada',
-        }
-        if clasificacion is not None:
-            fields['clasificacion'] = clasificacion
-        return self.update_evaluacion(id_evaluacion, fields)
+        """Finaliza evaluación MMSE con puntuación final."""
+        # Obtener observaciones actuales para preservar datos
+        query_get = "SELECT observaciones FROM evaluaciones_cognitivas WHERE id_evaluacion = %s"
+        with self.db.get_cursor() as cur:
+            cur.execute(query_get, (id_evaluacion,))
+            row = cur.fetchone()
+            if not row:
+                return False
+            
+            # Parsear y actualizar observaciones
+            try:
+                obs_data = json.loads(row['observaciones']) if row['observaciones'] else {}
+            except:
+                obs_data = {}
+            
+            obs_data['estado'] = 'completada'
+            obs_data['tipo'] = 'MMSE'
+            
+            # Calcular porcentaje de acierto
+            porcentaje = (puntuacion_total / 30.0) * 100 if puntuacion_total else 0
+            
+            # Actualizar evaluación
+            query_update = """
+                UPDATE evaluaciones_cognitivas 
+                SET puntuacion_total = %s,
+                    porcentaje_acierto = %s,
+                    clasificacion = %s,
+                    observaciones = %s,
+                    actualizado_en = NOW()
+                WHERE id_evaluacion = %s
+            """
+            
+            clasificacion_final = clasificacion or self._clasificar_mmse(puntuacion_total)
+            
+            cur.execute(query_update, (
+                puntuacion_total,
+                porcentaje,
+                clasificacion_final,
+                json.dumps(obs_data),
+                id_evaluacion
+            ))
+            return cur.rowcount > 0
+    
+    def _clasificar_mmse(self, puntuacion: float) -> str:
+        """Clasifica resultado MMSE según puntuación."""
+        if puntuacion >= 27:
+            return 'Normal'
+        elif puntuacion >= 24:
+            return 'Deterioro cognitivo leve'
+        elif puntuacion >= 19:
+            return 'Deterioro cognitivo moderado'
+        else:
+            return 'Deterioro cognitivo severo'

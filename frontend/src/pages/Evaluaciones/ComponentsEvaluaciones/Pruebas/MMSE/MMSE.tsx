@@ -5,6 +5,7 @@ import { Timer as TimerIcon, Lock } from 'lucide-react'
 import MMSESectionCard from './ComponentsMMSE/MMSESectionCard'
 import MMSEProgress from './ComponentsMMSE/MMSEProgress'
 import { mmseService } from '@/services/mmseService'
+import { validateAnswer } from './mmseValidations'
 
 type Answer = string | number | boolean | null
 
@@ -435,14 +436,14 @@ export default function MMSEPatient() {
     const sec = sections[currentStep]
     const allFieldsComplete = sec.questions.every((q) => {
       const v = answers[q.id]
-      return isValueValid(q.type, v)
+      return isValueValid(q.id, q.type, v)
     })
     
     console.log('Auto-avance check:', {
       currentStep,
       section: sec.key,
       allFieldsComplete,
-      answers: sec.questions.map(q => ({ id: q.id, value: answers[q.id], valid: isValueValid(q.type, answers[q.id]) }))
+      answers: sec.questions.map(q => ({ id: q.id, value: answers[q.id], valid: isValueValid(q.id, q.type, answers[q.id]) }))
     })
     
     // Si todos los campos están completos, avanzar automáticamente después de un delay
@@ -459,21 +460,10 @@ export default function MMSEPatient() {
     }
   }, [answers, currentStep, showCodeInput, sessionId])
 
-  const isValueValid = (type: Question['type'], value: Answer) => {
-    switch (type) {
-      case 'boolean':
-        return typeof value === 'boolean'
-      case 'text':
-        return typeof value === 'string' && value.trim().length > 0
-      case 'number':
-        return typeof value === 'number' && Number.isFinite(value)
-      case 'select':
-        return typeof value === 'string' && value.length > 0
-      case 'image':
-        return typeof value === 'string' && value.length > 0
-      default:
-        return false
-    }
+  const isValueValid = (questionId: string, type: Question['type'], value: Answer) => {
+    // Usar la validación robusta del sistema
+    const validation = validateAnswer(questionId, value, type)
+    return validation.isValid
   }
 
   const validateStep = (stepIndex: number): { valid: boolean; invalidMap: Record<string, boolean> } => {
@@ -481,7 +471,7 @@ export default function MMSEPatient() {
     const invalidMap: Record<string, boolean> = {}
     for (const q of sec.questions) {
       const v = answers[q.id]
-      if (!isValueValid(q.type, v)) {
+      if (!isValueValid(q.id, q.type, v)) {
         invalidMap[q.id] = true
       }
     }
@@ -511,17 +501,6 @@ export default function MMSEPatient() {
     } finally {
       setSubmitting(false)
     }
-  }
-
-  const handleSpeak = (text: string) => {
-    try {
-      const s = window.speechSynthesis
-      if (!s) return
-      s.cancel()
-      const utter = new SpeechSynthesisUtterance(text)
-      utter.lang = 'es-ES'
-      s.speak(utter)
-    } catch {}
   }
 
  
@@ -652,17 +631,16 @@ export default function MMSEPatient() {
         {(() => {
           const sec = sections[currentStep]
           const invalidMap = showValidation ? invalid : {}
-          return (
-            <MMSESectionCard
-              section={sec}
-              answers={answers}
-              onChange={handleChange}
-              invalid={invalidMap}
-              fontScale={fontScale}
-              highContrast={highContrast}
-              onSpeak={handleSpeak}
-            />
-          )
+            return (
+              <MMSESectionCard
+                section={sec}
+                answers={answers}
+                onChange={handleChange}
+                invalid={invalidMap}
+                fontScale={fontScale}
+                highContrast={highContrast}
+              />
+            )
         })()}
       </div>
       

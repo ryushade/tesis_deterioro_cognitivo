@@ -6,6 +6,7 @@ import MMSEProgress from './ComponentsMMSE/MMSEProgress'
 import { mmseService } from '@/services/mmseService'
 import type { CodigoAcceso } from '@/types/codigosAcceso'
 import { toast } from 'react-hot-toast'
+import { validateAnswer } from './mmseValidations'
 
 type Answer = string | number | boolean | null
 
@@ -223,21 +224,10 @@ export default function MMSEAdmin({ codigo, onClose, onSuccess }: MMSEAdminProps
     }
   }
 
-  const isValueValid = (type: Question['type'], value: Answer) => {
-    switch (type) {
-      case 'boolean':
-        return typeof value === 'boolean'
-      case 'text':
-        return typeof value === 'string' && value.trim().length > 0
-      case 'number':
-        return typeof value === 'number' && Number.isFinite(value)
-      case 'select':
-        return typeof value === 'string' && value.length > 0
-      case 'image':
-        return typeof value === 'string' && value.length > 0
-      default:
-        return false
-    }
+  const isValueValid = (questionId: string, type: Question['type'], value: Answer) => {
+    // Usar la validación robusta del sistema
+    const validation = validateAnswer(questionId, value, type)
+    return validation.isValid
   }
 
   const validateStep = (stepIndex: number): { valid: boolean; invalidMap: Record<string, boolean> } => {
@@ -245,7 +235,7 @@ export default function MMSEAdmin({ codigo, onClose, onSuccess }: MMSEAdminProps
     const invalidMap: Record<string, boolean> = {}
     for (const q of sec.questions) {
       const v = answers[q.id]
-      if (!isValueValid(q.type, v)) {
+      if (!isValueValid(q.id, q.type, v)) {
         invalidMap[q.id] = true
       }
     }
@@ -301,17 +291,6 @@ export default function MMSEAdmin({ codigo, onClose, onSuccess }: MMSEAdminProps
     }
   }
 
-  const handleSpeak = (text: string) => {
-    try {
-      const s = window.speechSynthesis
-      if (!s) return
-      s.cancel()
-      const utter = new SpeechSynthesisUtterance(text)
-      utter.lang = 'es-ES'
-      s.speak(utter)
-    } catch {}
-  }
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -350,7 +329,6 @@ export default function MMSEAdmin({ codigo, onClose, onSuccess }: MMSEAdminProps
                 invalid={invalidMap}
                 fontScale={fontScale}
                 highContrast={highContrast}
-                onSpeak={handleSpeak}
               />
             )
           })()}

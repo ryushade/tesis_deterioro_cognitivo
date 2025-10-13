@@ -1,8 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Volume2 } from 'lucide-react'
+import { AlertCircle } from 'lucide-react'
+import { validateAnswer } from '../mmseValidations'
 
 type Answer = string | number | boolean | null
 
@@ -28,7 +29,6 @@ export default function MMSESectionCard({
   invalid = {},
   fontScale = 1,
   highContrast = false,
-  onSpeak,
 }: {
   section: Section
   answers: Record<string, Answer>
@@ -36,7 +36,6 @@ export default function MMSESectionCard({
   invalid?: Record<string, boolean>
   fontScale?: number
   highContrast?: boolean
-  onSpeak?: (text: string) => void
 }) {
   const big = fontScale > 1.05
   const cardClasses = highContrast ? 'border-2 border-black shadow-none' : ''
@@ -56,27 +55,57 @@ export default function MMSESectionCard({
       <CardContent className="space-y-3">
         {section.questions.map((q) => {
           const isInvalid = !!invalid[q.id]
+          const currentValue = answers[q.id]
+          
+          // Validar en tiempo real para mostrar advertencias
+          const validation = currentValue !== null && currentValue !== undefined && currentValue !== ''
+            ? validateAnswer(q.id, currentValue, q.type)
+            : { isValid: true }
+          
+          const showWarning = !validation.isValid || (validation.errorMessage && validation.isValid)
+          const errorColor = !validation.isValid ? 'text-red-600' : 'text-yellow-600'
+          
           return (
             <div key={q.id} className="grid gap-1">
               <label className={`${labelSize} font-medium text-gray-800`} htmlFor={q.id}>{q.label}</label>
               {q.type === 'text' && (
-                <Input
-                  id={q.id}
-                  value={(answers[q.id] as string) || ''}
-                  onChange={(e) => onChange(q.id, e.target.value)}
-                  className={`${inputSize} ${isInvalid ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
-                  aria-invalid={isInvalid}
-                />
+                <>
+                  <Input
+                    id={q.id}
+                    value={(answers[q.id] as string) || ''}
+                    onChange={(e) => onChange(q.id, e.target.value)}
+                    className={`${inputSize} ${isInvalid || !validation.isValid ? 'border-red-500 focus-visible:ring-red-500' : validation.errorMessage ? 'border-yellow-500' : ''}`}
+                    aria-invalid={isInvalid || !validation.isValid}
+                    placeholder="Escriba la respuesta..."
+                  />
+                  {showWarning && validation.errorMessage && (
+                    <div className={`flex items-center gap-1 text-xs ${errorColor}`}>
+                      <AlertCircle className="w-3 h-3" />
+                      <span>{validation.errorMessage}</span>
+                    </div>
+                  )}
+                </>
               )}
               {q.type === 'number' && (
-                <Input
-                  id={q.id}
-                  type="number"
-                  value={typeof answers[q.id] === 'number' ? (answers[q.id] as number) : undefined}
-                  onChange={(e) => onChange(q.id, e.target.value === '' ? null : Number(e.target.value))}
-                  className={`${inputSize} ${isInvalid ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
-                  aria-invalid={isInvalid}
-                />
+                <>
+                  <Input
+                    id={q.id}
+                    type="number"
+                    value={typeof answers[q.id] === 'number' ? (answers[q.id] as number) : ''}
+                    onChange={(e) => onChange(q.id, e.target.value === '' ? null : Number(e.target.value))}
+                    className={`${inputSize} ${isInvalid || !validation.isValid ? 'border-red-500 focus-visible:ring-red-500' : validation.errorMessage ? 'border-yellow-500' : ''}`}
+                    aria-invalid={isInvalid || !validation.isValid}
+                    placeholder="Ingrese un número..."
+                    min={q.id === 'fecha' ? 1 : undefined}
+                    max={q.id === 'fecha' ? 31 : undefined}
+                  />
+                  {showWarning && validation.errorMessage && (
+                    <div className={`flex items-center gap-1 text-xs ${errorColor}`}>
+                      <AlertCircle className="w-3 h-3" />
+                      <span>{validation.errorMessage}</span>
+                    </div>
+                  )}
+                </>
               )}
               {q.type === 'select' && (
                 <Select value={(answers[q.id] as string) || ''} onValueChange={(v) => onChange(q.id, v)}>
@@ -91,10 +120,18 @@ export default function MMSESectionCard({
                 </Select>
               )}
               {q.type === 'boolean' && (
-                <div className="flex gap-2">
-                  <Button type="button" className={buttonSize} variant={(answers[q.id] as boolean) === true ? 'default' : 'outline'} onClick={() => onChange(q.id, true)}>Cumple</Button>
-                  <Button type="button" className={buttonSize} variant={(answers[q.id] as boolean) === false ? 'default' : 'outline'} onClick={() => onChange(q.id, false)}>No cumple</Button>
-                </div>
+                <>
+                  <div className="flex gap-2">
+                    <Button type="button" className={buttonSize} variant={(answers[q.id] as boolean) === true ? 'default' : 'outline'} onClick={() => onChange(q.id, true)}>Cumple</Button>
+                    <Button type="button" className={buttonSize} variant={(answers[q.id] as boolean) === false ? 'default' : 'outline'} onClick={() => onChange(q.id, false)}>No cumple</Button>
+                  </div>
+                  {isInvalid && (
+                    <div className="flex items-center gap-1 text-xs text-red-600">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>Debe seleccionar una opción</span>
+                    </div>
+                  )}
+                </>
               )}
               {q.type === 'image' && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-3">
@@ -120,8 +157,11 @@ export default function MMSESectionCard({
                   })}
                 </div>
               )}
-              {isInvalid && (
-                <span className="text-xs text-red-600">Campo obligatorio</span>
+              {q.type === 'select' && isInvalid && (
+                <div className="flex items-center gap-1 text-xs text-red-600">
+                  <AlertCircle className="w-3 h-3" />
+                  <span>Debe seleccionar una opción</span>
+                </div>
               )}
             </div>
           )
