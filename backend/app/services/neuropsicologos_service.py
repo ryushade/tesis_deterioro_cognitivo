@@ -123,3 +123,25 @@ class NeuropsicologosService:
                     "has_prev": False,
                 },
             }
+    
+    def get_total_neuropsicologos(self):
+        """Obtener el total de neuropsicólogos activos"""
+        try:
+            # Obtener el ID del rol de Neuropsicólogo
+            role_id = self.get_role_id_by_name('Neuropsicólogo')
+            if not role_id:
+                role_id = 3  # Fallback
+            
+            query = """
+                SELECT COUNT(*) as total 
+                FROM usuario u 
+                JOIN rol r ON u.id_rol = r.id_rol 
+                WHERE u.id_rol = %s AND r.estado_rol = true
+            """
+            with self.db.get_cursor() as cursor:
+                cursor.execute(query, (role_id,))
+                result = cursor.fetchone()
+                return result[0] if result else 0
+        except Exception as e:
+            logger.error(f"Error obteniendo total de neuropsicólogos: {e}")
+            return 0

@@ -349,3 +349,55 @@ class EvaluacionesService:
             return 'Deterioro cognitivo moderado'
         else:
             return 'Deterioro cognitivo severo'
+    
+    def get_total_evaluaciones(self):
+        """Obtener el total de evaluaciones realizadas"""
+        try:
+            query = "SELECT COUNT(*) as total FROM evaluaciones_cognitivas"
+            with self.db.get_cursor() as cursor:
+                cursor.execute(query)
+                result = cursor.fetchone()
+                return result[0] if result else 0
+        except Exception as e:
+            print(f"Error obteniendo total de evaluaciones: {e}")
+            return 0
+    
+    def get_evaluaciones_por_mes(self):
+        """Obtener evaluaciones agrupadas por mes de los últimos 6 meses"""
+        try:
+            query = """
+                SELECT 
+                    TO_CHAR(fecha_evaluacion, 'YYYY-MM') as mes,
+                    COUNT(*) as cantidad
+                FROM evaluaciones_cognitivas 
+                WHERE fecha_evaluacion >= NOW() - INTERVAL '6 months'
+                GROUP BY TO_CHAR(fecha_evaluacion, 'YYYY-MM')
+                ORDER BY mes
+            """
+            with self.db.get_cursor() as cursor:
+                cursor.execute(query)
+                results = cursor.fetchall()
+                return [{'mes': row[0], 'cantidad': row[1]} for row in results]
+        except Exception as e:
+            print(f"Error obteniendo evaluaciones por mes: {e}")
+            return []
+    
+    def get_evaluaciones_por_tipo(self):
+        """Obtener distribución de evaluaciones por tipo"""
+        try:
+            query = """
+                SELECT 
+                    tipo_evaluacion,
+                    COUNT(*) as cantidad
+                FROM evaluaciones_cognitivas 
+                WHERE tipo_evaluacion IS NOT NULL
+                GROUP BY tipo_evaluacion
+                ORDER BY cantidad DESC
+            """
+            with self.db.get_cursor() as cursor:
+                cursor.execute(query)
+                results = cursor.fetchall()
+                return [{'tipo': row[0], 'cantidad': row[1]} for row in results]
+        except Exception as e:
+            print(f"Error obteniendo evaluaciones por tipo: {e}")
+            return []

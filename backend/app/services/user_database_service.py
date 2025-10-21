@@ -144,3 +144,20 @@ class UserDatabaseService:
             'limit': limit,
             'total_pages': (total + limit - 1) // limit
         }
+    
+    @staticmethod
+    def get_total_active_users():
+        """Obtener el total de usuarios activos"""
+        try:
+            # Usar la tabla usuario en lugar de users
+            query = """
+                SELECT COUNT(*) as total 
+                FROM usuario u 
+                JOIN rol r ON u.id_rol = r.id_rol 
+                WHERE r.estado_rol = true
+            """
+            result = db.execute_one(query)
+            return result['total'] if result else 0
+        except Exception as e:
+            print(f"Error obteniendo total de usuarios activos: {e}")
+            return 0
