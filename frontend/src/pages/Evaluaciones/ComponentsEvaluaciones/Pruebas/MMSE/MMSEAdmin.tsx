@@ -105,7 +105,7 @@ const sections: Section[] = [
     ],
   },
   {
-    key: 'atencion_calculo',
+    key: 'atencion_calculo',  
     title: 'Atención y cálculo',
     description: 'Reste de 7 en 7 desde 100 (cinco respuestas).',
     questions: [
@@ -198,10 +198,44 @@ export default function MMSEAdmin({ codigo, onClose, onSuccess }: MMSEAdminProps
     return s
   }, [answers])
 
-  // Crear sesión al montar
+  // Crear o recuperar sesión al montar
   useEffect(() => {
-    const createSession = async () => {
+    const initSession = async () => {
       try {
+        // Primero verificar si ya existe una sesión activa para este paciente
+        console.log('🔍 Verificando sesiones existentes para paciente:', codigo.id_paciente)
+        const sesionesResp = await mmseService.getSesionesPaciente(codigo.id_paciente)
+        
+        if (sesionesResp.success && sesionesResp.data) {
+          // Buscar sesión en progreso o pausada
+          const sesionExistente: any = sesionesResp.data.find(
+            (s: any) => s.estado_procesamiento === 'en_progreso' || s.estado_procesamiento === 'pausada'
+          )
+          
+          if (sesionExistente) {
+            console.log('📂 Sesión existente encontrada:', sesionExistente.id_evaluacion)
+            setSessionId(sesionExistente.id_evaluacion)
+            
+            // Cargar progreso guardado
+            if (sesionExistente.datos_especificos) {
+              const datosGuardados: any = sesionExistente.datos_especificos
+              if (datosGuardados.answers) {
+                setAnswers(datosGuardados.answers)
+                console.log('✅ Respuestas recuperadas:', Object.keys(datosGuardados.answers).length)
+              }
+              if (datosGuardados.current_section !== undefined) {
+                setCurrentStep(datosGuardados.current_section)
+                console.log('✅ Sección recuperada:', datosGuardados.current_section)
+              }
+            }
+            
+            toast.success('Continuando sesión existente')
+            return
+          }
+        }
+        
+        // No hay sesión existente, crear nueva
+        console.log('🆕 Creando nueva sesión MMSE')
         const resp = await mmseService.createSession(codigo.id_paciente, codigo.id_codigo)
         if (resp.success && resp.sesion_id) {
           setSessionId(resp.sesion_id)
@@ -210,12 +244,54 @@ export default function MMSEAdmin({ codigo, onClose, onSuccess }: MMSEAdminProps
           toast.error('No se pudo crear la sesión MMSE')
         }
       } catch (error) {
-        console.error('Error creando sesión:', error)
+        console.error('Error inicializando sesión:', error)
         toast.error('Error al iniciar la evaluación')
       }
     }
-    createSession()
+    initSession()
   }, [codigo])
+
+  // Guardar progreso periódicamente (solo después de que haya cambios)
+  useEffect(() => {
+    if (!sessionId) return
+    
+    // No guardar si no hay respuestas todavía
+    const hasAnswers = Object.keys(answers).some(key => {
+      const value = answers[key]
+      return value !== null && value !== undefined && value !== ''
+    })
+    
+    if (!hasAnswers) {
+      console.log('⏸️ Sin respuestas aún, esperando...')
+      return
+    }
+
+    const saveProgress = async () => {
+      const datos_especificos = {
+        current_section: currentStep,
+        answers,
+        progress: Math.round((currentStep / Math.max(1, sections.length - 1)) * 100),
+        administered_by_professional: true
+      }
+      
+      console.log('💾 Guardando progreso (Admin)...', { 
+        currentStep, 
+        score, 
+        respuestas: Object.keys(answers).length,
+        sessionId 
+      })
+      
+      try {
+        await mmseService.updateProgress(sessionId, datos_especificos, score, 'en_progreso')
+        console.log('✅ Progreso guardado exitosamente')
+      } catch (error) {
+        console.error('❌ Error guardando progreso:', error)
+      }
+    }
+
+    const saveTimer = setTimeout(saveProgress, 2000)
+    return () => clearTimeout(saveTimer)
+  }, [sessionId, currentStep, answers, score])
 
   const handleChange = (id: string, value: Answer) => {
     setAnswers((prev) => ({ ...prev, [id]: value }))
@@ -258,6 +334,40 @@ export default function MMSEAdmin({ codigo, onClose, onSuccess }: MMSEAdminProps
     setShowValidation(false)
     setInvalid({})
     setCurrentStep((s) => Math.max(0, s - 1))
+  }
+
+  const handleClose = async () => {
+    if (!sessionId) {
+      onClose()
+      return
+    }
+
+    // Verificar si hay respuestas
+    const hasAnswers = Object.keys(answers).some(key => {
+      const value = answers[key]
+      return value !== null && value !== undefined && value !== ''
+    })
+
+    if (hasAnswers) {
+      console.log('💾 Guardando progreso antes de cerrar modal...')
+      try {
+        const datos_especificos = {
+          current_section: currentStep,
+          answers,
+          progress: Math.round((currentStep / Math.max(1, sections.length - 1)) * 100),
+          administered_by_professional: true
+        }
+        
+        await mmseService.updateProgress(sessionId, datos_especificos, score, 'pausada')
+        console.log('✅ Progreso guardado - sesión pausada')
+        toast.success('Progreso guardado. Puedes continuar más tarde.')
+      } catch (error) {
+        console.error('❌ Error guardando al cerrar:', error)
+        toast.error('Error guardando progreso')
+      }
+    }
+
+    onClose()
   }
 
   const handleSubmit = async () => {
@@ -303,9 +413,9 @@ export default function MMSEAdmin({ codigo, onClose, onSuccess }: MMSEAdminProps
             </p>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-2 hover:bg-white/20 rounded-lg transition-colors"
-            title="Cerrar"
+            title="Guardar y cerrar"
           >
             <X className="w-6 h-6" />
           </button>
@@ -317,7 +427,7 @@ export default function MMSEAdmin({ codigo, onClose, onSuccess }: MMSEAdminProps
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="flex-1 overflow-y-auto px-6 py-4">
           {(() => {
             const sec = sections[currentStep]
             const invalidMap = showValidation ? invalid : {}
@@ -335,7 +445,7 @@ export default function MMSEAdmin({ codigo, onClose, onSuccess }: MMSEAdminProps
         </div>
 
         {/* Footer Actions */}
-        <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-between">
+        <div className="px-4 py-4 border-t bg-gray-50 flex items-center justify-between">
           <div className="flex gap-2">
             <Button
               onClick={handlePrev}

@@ -286,16 +286,42 @@ export default function MMSEPatient() {
     setSessionId(sesion.id_evaluacion)
     localStorage.setItem(`mmseSession:${sesion.id_paciente}`, String(sesion.id_evaluacion))
     
+    // Intentar cargar desde el servidor primero
+    let datosGuardados = sesion.datos_especificos
+    
+    // Si no hay datos en el servidor, intentar desde localStorage
+    if (!datosGuardados || !datosGuardados.answers) {
+      const backupKey = `mmse_backup_${sesion.id_evaluacion}`
+      const backupData = localStorage.getItem(backupKey)
+      
+      if (backupData) {
+        try {
+          const backup = JSON.parse(backupData)
+          console.log('📦 Recuperando desde backup localStorage:', backup)
+          datosGuardados = {
+            answers: backup.answers,
+            current_section: backup.currentStep,
+            progress: backup.progress
+          }
+        } catch (e) {
+          console.error('Error parseando backup:', e)
+        }
+      }
+    }
+    
     // Cargar progreso guardado
-    if (sesion.datos_especificos) {
-      const datosGuardados = sesion.datos_especificos
+    if (datosGuardados) {
       if (datosGuardados.answers) {
         setAnswers(datosGuardados.answers)
+        console.log('✅ Respuestas cargadas:', Object.keys(datosGuardados.answers).length, 'preguntas')
       }
       if (datosGuardados.current_section !== undefined) {
         setCurrentStep(datosGuardados.current_section)
+        console.log('✅ Sección actual:', datosGuardados.current_section)
       }
-      console.log('✅ Progreso cargado:', datosGuardados)
+      console.log('✅ Progreso completo cargado')
+    } else {
+      console.log('⚠️ No se encontró progreso guardado')
     }
     
     // Si la sesión estaba pausada, reanudarla automáticamente
@@ -399,9 +425,20 @@ export default function MMSEPatient() {
     }
   }, [sessionId, showCodeInput])
 
-  // Guardar progreso periódicamente
+  // Guardar progreso periódicamente y en localStorage como backup
   useEffect(() => {
     if (!sessionId || showCodeInput) return
+    
+    // No guardar si no hay respuestas todavía
+    const hasAnswers = Object.keys(answers).some(key => {
+      const value = answers[key]
+      return value !== null && value !== undefined && value !== ''
+    })
+    
+    if (!hasAnswers) {
+      console.log('⏸️ Sin respuestas aún, esperando...')
+      return
+    }
 
     const saveProgress = async () => {
       const datos_especificos = {
@@ -409,15 +446,92 @@ export default function MMSEPatient() {
         answers,
         progress: Math.round((currentStep / Math.max(1, sections.length - 1)) * 100)
       }
+      
+      console.log('💾 Guardando progreso...', { 
+        currentStep, 
+        score, 
+        respuestas: Object.keys(answers).filter(k => {
+          const v = answers[k]
+          return v !== null && v !== undefined && v !== ''
+        }).length,
+        sessionId 
+      })
+      
       try {
+        // Guardar en base de datos
         await mmseService.updateProgress(sessionId, datos_especificos, score, 'en_progreso')
+        console.log('✅ Progreso guardado en servidor')
+        
+        // Guardar también en localStorage como backup
+        const backupData = {
+          sessionId,
+          currentStep,
+          answers,
+          score,
+          timestamp: new Date().toISOString()
+        }
+        localStorage.setItem(`mmse_backup_${sessionId}`, JSON.stringify(backupData))
+        console.log('✅ Backup guardado en localStorage')
       } catch (error) {
-        console.error('Error guardando progreso:', error)
+        console.error('❌ Error guardando progreso:', error)
       }
     }
 
     const saveTimer = setTimeout(saveProgress, 2000)
     return () => clearTimeout(saveTimer)
+  }, [sessionId, currentStep, answers, score, showCodeInput])
+
+  // Guardar progreso cuando se cierra la ventana
+  useEffect(() => {
+    if (!sessionId || showCodeInput) return
+
+    const handleBeforeUnload = async () => {
+      const datos_especificos = {
+        current_section: currentStep,
+        answers,
+        progress: Math.round((currentStep / Math.max(1, sections.length - 1)) * 100)
+      }
+      
+      console.log('🚪 Guardando progreso antes de cerrar...')
+      
+      // Guardar en localStorage inmediatamente (síncrono)
+      const backupData = {
+        sessionId,
+        currentStep,
+        answers,
+        score,
+        timestamp: new Date().toISOString()
+      }
+      localStorage.setItem(`mmse_backup_${sessionId}`, JSON.stringify(backupData))
+      
+      // Intentar guardar en servidor (puede no completarse a tiempo)
+      try {
+        // Usar sendBeacon para envío garantizado
+        const data = {
+          datos_especificos,
+          puntuacion_total: score,
+          estado_procesamiento: 'en_progreso'
+        }
+        const blob = new Blob([JSON.stringify(data)], { type: 'application/json' })
+        const url = `/api/mmse/sesiones/${sessionId}/progreso`
+        
+        // sendBeacon es más confiable que fetch al cerrar
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon(url, blob)
+        } else {
+          // Fallback para navegadores antiguos
+          mmseService.updateProgress(sessionId, datos_especificos, score, 'en_progreso')
+        }
+      } catch (error) {
+        console.error('Error en beforeunload:', error)
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
   }, [sessionId, currentStep, answers, score, showCodeInput])
 
   const handleChange = (id: string, value: Answer) => {
@@ -489,11 +603,17 @@ export default function MMSEPatient() {
     
     setSubmitting(true)
     try {
+      console.log('🏁 Finalizando test MMSE...')
       await mmseService.finalize(sessionId, {
         puntuacion_total: score,
         datos_especificos: { answers, sections: sections.map(s => s.key) }
       })
+      
+      // Limpiar almacenamiento local
       localStorage.removeItem(storageKey)
+      localStorage.removeItem(`mmse_backup_${sessionId}`)
+      console.log('🧹 Limpieza de almacenamiento completada')
+      
       navigate('/pruebas/finalizado', { replace: true })
     } catch (error) {
       console.error('Error finalizando test:', error)
