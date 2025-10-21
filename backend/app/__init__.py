@@ -32,6 +32,7 @@ def create_app(config_name=None):
     from app.routes.cdt_psycopg2 import cdt_psycopg2_bp
     from app.routes.neuropsicologos import neuropsicologos_bp
     from app.routes.mmse import mmse_bp
+    from app.routes.mmse_config import mmse_config_bp
     from app.routes.users_psycopg2 import users_psycopg2_bp
     
     app.register_blueprint(health_bp, url_prefix='/api')
@@ -43,6 +44,7 @@ def create_app(config_name=None):
     app.register_blueprint(cdt_psycopg2_bp)
     app.register_blueprint(neuropsicologos_bp, url_prefix='/api/neuropsicologos')
     app.register_blueprint(mmse_bp)
+    app.register_blueprint(mmse_config_bp)
     app.register_blueprint(users_psycopg2_bp, url_prefix='/api/users')
     
     return app

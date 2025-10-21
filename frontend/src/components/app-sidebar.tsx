@@ -70,6 +70,12 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       roles: ['Administrador', 'Neuropsicologo'], // Solo admin y neuropsicólogos
      
     },
+    {
+      title: "Configuración MMSE",
+      url: "/mmse-configuracion",
+      icon: Settings,
+      roles : ['Neuropsicologo'],
+    },
 
     {
       title: "Evaluaciones",

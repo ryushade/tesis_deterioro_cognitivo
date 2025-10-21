@@ -244,3 +244,49 @@ export function validateAnswer(
   }
 }
 
+/**
+ * Valida una respuesta usando configuración dinámica del backend
+ */
+export async function validateAnswerWithDynamicConfig(
+  questionId: string, 
+  value: string | number | boolean | null, 
+  questionType: string,
+  contexto?: string
+): Promise<ValidationResult> {
+  // Primero hacer validación básica
+  const basicValidation = validateAnswer(questionId, value, questionType)
+  if (!basicValidation.isValid) {
+    return basicValidation
+  }
+
+  // Para preguntas de orientación en el lugar, usar configuración dinámica
+  const dynamicQuestions = ['pais', 'provincia', 'ciudad', 'establecimiento', 'piso']
+  
+  if (dynamicQuestions.includes(questionId) && typeof value === 'string' && value.trim()) {
+    try {
+      // Importar el servicio dinámicamente para evitar dependencias circulares
+      const { mmseConfigService } = await import('@/services/mmseConfigService')
+      
+      const result = await mmseConfigService.validateAnswer({
+        pregunta_id: questionId,
+        respuesta: value,
+        contexto: contexto
+      })
+      
+      const validationData = result.data
+      
+      return {
+        isValid: validationData.is_valid,
+        errorMessage: validationData.message || undefined
+      }
+      
+    } catch (error) {
+      console.warn('Error validando con configuración dinámica:', error)
+      // Fallback a validación básica si hay error
+      return basicValidation
+    }
+  }
+
+  return basicValidation
+}
+

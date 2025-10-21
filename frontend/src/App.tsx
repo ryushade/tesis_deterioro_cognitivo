@@ -16,6 +16,8 @@ import MMSEPausada from './pages/Evaluaciones/ComponentsEvaluaciones/Pruebas/MMS
 import Pruebas from './pages/Pruebas/Pruebas';
 import PruebaFinalizada from './pages/Pruebas/PruebaFinalizada';
 import Neuropsicologos from './pages/Neuropsicologos/Neuropsicologo';
+
+import MMSEConfiguracionPage from './pages/Admin/MMSEConfiguracion';
 // Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthorizationService } from './services/auth.middleware';
@@ -167,6 +169,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <MMSEPausada />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/mmse-configuracion"
+                element={
+                  <ProtectedRoute>
+                    <MMSEConfiguracionPage />
                   </ProtectedRoute>
                 }
               />
