@@ -1,173 +1,87 @@
 import jwt
 from datetime import datetime, timedelta
-from flask import current_app
 from functools import wraps
 from flask import request, jsonify
 
+from config import settings
+
+
 class JWTService:
-    @staticmethod
-    def generate_token(user_id, username, role_id=None, role_name=None):
-        """Generate JWT token for user"""
-        try:
-            payload = {
-                'user_id': user_id,
-                'username': username,
-                'role_id': role_id,
-                'role_name': role_name,
-                'exp': datetime.utcnow() + timedelta(hours=24),  # Token expires in 24 hours
-                'iat': datetime.utcnow()
-            }
-            
-            token = jwt.encode(
-                payload,
-                current_app.config['SECRET_KEY'],
-                algorithm='HS256'
-            )
-            
-            return token
-        except Exception as e:
-            print(f"Error generating token: {e}")
-            return None
+    def __init__(self):
+        self.secret = settings.JWT_SECRET
+        self.expiration_hours = settings.JWT_EXPIRATION_HOURS
     
-    @staticmethod
-    def decode_token(token):
-        """Decode JWT token"""
+    def generate_token(self, user: dict) -> str:
+        """Generar un token JWT para el usuario."""
+        payload = {
+            "user_id": user["id"],
+            "email": user["email"],
+            "rol": user["rol"],
+            "exp": datetime.utcnow() + timedelta(hours=self.expiration_hours),
+            "iat": datetime.utcnow()
+        }
+        return jwt.encode(payload, self.secret, algorithm="HS256")
+    
+    def decode_token(self, token: str) -> dict | None:
+        """Decodificar y validar un token JWT."""
         try:
-            payload = jwt.decode(
-                token,
-                current_app.config['SECRET_KEY'],
-                algorithms=['HS256']
-            )
+            payload = jwt.decode(token, self.secret, algorithms=["HS256"])
             return payload
         except jwt.ExpiredSignatureError:
             return None
         except jwt.InvalidTokenError:
             return None
-    
-    @staticmethod
-    def token_required(f):
-        """Decorator for routes that require authentication"""
-        @wraps(f)
-        def decorated(*args, **kwargs):
-            token = None
-            
-            # Check for token in Authorization header
-            if 'Authorization' in request.headers:
-                auth_header = request.headers['Authorization']
-                try:
-                    token = auth_header.split(" ")[1]  # Bearer TOKEN
-                except IndexError:
-                    return jsonify({
-                        'success': False,
-                        'message': 'Token format invalid'
-                    }), 401
-            
-            if not token:
-                return jsonify({
-                    'success': False,
-                    'message': 'Token is missing'
-                }), 401
-            
-            try:
-                data = JWTService.decode_token(token)
-                if data is None:
-                    return jsonify({
-                        'success': False,
-                        'message': 'Token is invalid or expired'
-                    }), 401
-                
-                # Add user data to request context
-                request.current_user = data
-                
-            except Exception as e:
-                return jsonify({
-                    'success': False,
-                    'message': 'Token validation failed'
-                }), 401
-            
-            return f(*args, **kwargs)
+
+
+# Instancia global
+_jwt_service = JWTService()
+
+
+def token_required(f):
+    """Decorador para proteger rutas que requieren autenticación."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = None
         
-        return decorated
-    
-    @staticmethod
-    def admin_required(f):
-        """Decorator for routes that require admin role"""
-        @wraps(f)
-        def decorated(*args, **kwargs):
-            if not hasattr(request, 'current_user'):
-                return jsonify({
-                    'success': False,
-                    'message': 'Authentication required'
-                }), 401
-            
-            if request.current_user.get('role_name') != 'Administrador':
-                return jsonify({
-                    'success': False,
-                    'message': 'Admin privileges required'
-                }), 403
-            
-            return f(*args, **kwargs)
+        # Buscar token en header Authorization
+        if "Authorization" in request.headers:
+            auth_header = request.headers["Authorization"]
+            if auth_header.startswith("Bearer "):
+                token = auth_header.split(" ")[1]
         
-        return decorated
-    
-    @staticmethod
-    def neuropsicologo_required(f):
-        """Decorator for routes that require neuropsicólogo role"""
-        @wraps(f)
-        def decorated(*args, **kwargs):
-            if not hasattr(request, 'current_user'):
-                return jsonify({
-                    'success': False,
-                    'message': 'Authentication required'
-                }), 401
-            
-            allowed_roles = ['Administrador', 'Neuropsicólogo']
-            if request.current_user.get('role_name') not in allowed_roles:
-                return jsonify({
-                    'success': False,
-                    'message': 'Neuropsicólogo privileges required'
-                }), 403
-            
-            return f(*args, **kwargs)
+        if not token:
+            return jsonify({"error": "Token requerido"}), 401
         
-        return decorated
-    
-    @staticmethod
-    def role_required(allowed_roles):
-        """Decorator for routes that require specific roles"""
-        def decorator(f):
-            @wraps(f)
-            def decorated(*args, **kwargs):
-                if not hasattr(request, 'current_user'):
-                    return jsonify({
-                        'success': False,
-                        'message': 'Authentication required'
-                    }), 401
-                
-                user_role = request.current_user.get('role_name')
-                if user_role not in allowed_roles:
-                    return jsonify({
-                        'success': False,
-                        'message': f'Required roles: {", ".join(allowed_roles)}'
-                    }), 403
-                
-                return f(*args, **kwargs)
-            
-            return decorated
-        return decorator
-    
-    @staticmethod
-    def patient_access_allowed(f):
-        """Decorator for routes that allow patient access"""
-        @wraps(f)
-        def decorated(*args, **kwargs):
-            if not hasattr(request, 'current_user'):
-                return jsonify({
-                    'success': False,
-                    'message': 'Authentication required'
-                }), 401
-            
-            # Allow all authenticated users including patients
-            return f(*args, **kwargs)
+        payload = _jwt_service.decode_token(token)
+        if not payload:
+            return jsonify({"error": "Token inválido o expirado"}), 401
         
-        return decorated
+        # Obtener usuario de la base de datos
+        from app.utils.database import get_db_connection
+        
+        try:
+            conn = get_db_connection()
+            cur = conn.cursor()
+            cur.execute(
+                "SELECT id, email, nombre, rol FROM usuarios WHERE id = %s",
+                (payload["user_id"],)
+            )
+            row = cur.fetchone()
+            cur.close()
+            conn.close()
+            
+            if not row:
+                return jsonify({"error": "Usuario no encontrado"}), 401
+            
+            current_user = {
+                "id": row[0],
+                "email": row[1],
+                "nombre": row[2],
+                "rol": row[3]
+            }
+        except Exception as e:
+            return jsonify({"error": f"Error de autenticación: {str(e)}"}), 500
+        
+        return f(current_user, *args, **kwargs)
+    
+    return decorated
