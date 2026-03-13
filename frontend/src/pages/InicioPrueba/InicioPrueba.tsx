@@ -2,7 +2,7 @@
 import toast, { Toaster } from 'react-hot-toast';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { authService } from '@/services/auth';
-import { useGetPacientes, type Paciente } from '@/services/pacientesService';
+// import { useGetPacientes, type Paciente } from '@/services/pacientesService';
 import { evaluacionesLiveService } from '@/services/evaluacionesLive.service';
 import { pruebasCognitivasService } from '@/services/pruebasCognitivas.service';
 import type { EvaluacionCognitiva, PruebaCognitiva } from '@/types/evaluaciones';

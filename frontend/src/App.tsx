@@ -9,7 +9,6 @@ import { HomePage } from './pages/HomePage';
 import Pacientes from './pages/Pacientes/Pacientes';
 import CodigosAcceso from './pages/CodigosAcceso/Code';
 import Evaluaciones from './pages/Evaluaciones/Evaluaciones';
-import CDTTestPage from './pages/CDTTestPage';
 
 import MMSEPatient from './pages/Evaluaciones/ComponentsEvaluaciones/Pruebas/MMSE/MMSE';
 import MMSEPausada from './pages/Evaluaciones/ComponentsEvaluaciones/Pruebas/MMSE/MMSEPausada';
