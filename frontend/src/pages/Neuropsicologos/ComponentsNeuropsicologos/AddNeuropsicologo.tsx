@@ -7,9 +7,14 @@ import { Label } from '@/components/ui/label'
 import { authService, type Role } from '@/services/auth'
 
 export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: boolean; onClose: () => void; onSuccess?: () => void }) {
-      const [username, setUsername] = useState('')
+  const [nombres, setNombres] = useState('')
+  const [apellidos, setApellidos] = useState('')
+  const [email, setEmail] = useState('')
+  const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
-  const [password2, setPassword2] = useState('')\n  const [roles, setRoles] = useState<Role[]>([])\n  const [roleId, setRoleId] = useState<number | null>(null)
+  const [password2, setPassword2] = useState('')
+  const [roles, setRoles] = useState<Role[]>([])
+  const [roleId, setRoleId] = useState<number | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -22,7 +27,7 @@ export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: 
     authService.getRoles().then((rs) => {
       if (!mounted) return
       setRoles(rs)
-      const neuro = rs.find(x => x.nom_rol === 'Neuropsicólogo') || rs.find(x => x.nom_rol === 'Neuropsic??logo')
+      const neuro = rs.find(x => x.nom_rol === 'Neuropsicï¿½logo') || rs.find(x => x.nom_rol === 'Neuropsic??logo')
       if (neuro) setRoleId(neuro.id_rol)
     })
     return () => { mounted = false }
@@ -38,16 +43,21 @@ export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: 
         return
       }
       if (password !== password2) {
-        setError('Las Contraseñas no coinciden')
+        setError('Las Contraseï¿½as no coinciden')
         return
       }
       if (password.length < 6) {
-        setError('La Contraseña debe tener al menos 6 caracteres')
+        setError('La Contraseï¿½a debe tener al menos 6 caracteres')
         return
       }
       const reg = await authService.register({ username: username.trim(), password, role_id: roleId })
       if (!reg.success) throw new Error(reg.message || 'No se pudo crear el usuario')
-      reset()
+      setUsername('')
+      setNombres('')
+      setApellidos('')
+      setEmail('')
+      setPassword('')
+      setPassword2('')
       onSuccess?.()
       onClose()
     } catch (err: any) {
@@ -84,12 +94,12 @@ export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: 
               <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
             </div>
             <div>
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">Contraseï¿½a</Label>
               <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
             </div>
             <div>
-              <Label htmlFor="password2">Confirmar contraseña</Label>
-              <Input id="password2" type="password" value={password2} onChange={(e) => setPassword(e.target.value)} required />
+              <Label htmlFor="password2">Confirmar contraseï¿½a</Label>
+              <Input id="password2" type="password" value={password2} onChange={(e) => setPassword2(e.target.value)} required />
             </div>
           </div>
           <div className="flex justify-end gap-3 pt-2">

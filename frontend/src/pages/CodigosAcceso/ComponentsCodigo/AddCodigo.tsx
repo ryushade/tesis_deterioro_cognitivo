@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import toast from 'react-hot-toast';
 import { codigosAccesoService } from '@/services/codigosAccesoService';
-import { pacientesService, type Paciente } from '@/services/pacientesService';
+import { pacientesService, type Paciente } from '@/services/pacientes.services';
 import { pruebasCognitivasService } from '@/services/pruebasCognitivas.service';
 // Eliminado Popover; usaremos Select con búsqueda embebida
 
@@ -165,7 +165,7 @@ export default function AddCodigoModal({ open, onClose, onSuccess }: AddCodigoMo
                 const psel = patientResults.find(pr => pr.id_paciente === pid);
                 if (psel) setPaciente(psel);
                 else {
-                  pacientesService.getById(pid).then(r => r.success && r.data && setPaciente(r.data));
+                  pacientesService.getById(pid).then(r => setPaciente(r)).catch(console.error);
                 }
               }}
             >

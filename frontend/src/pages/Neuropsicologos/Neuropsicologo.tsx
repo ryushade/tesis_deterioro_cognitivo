@@ -11,7 +11,7 @@ import ViewNeuropsicologo from "./ComponentsNeuropsicologos/ViewNeuropsicologoMo
 import toast, { Toaster } from 'react-hot-toast'
 import { userService } from '@/services/userService'
 import PaginationControls from "../Pacientes/ComponentsPacientes/PaginationControls"
-import ConfirmDialog from '@/components/ui/confirm-dialog'
+import ConfirmationModal from '@/components/ui/ConfirmationModal'
 
 function Neuropsicologos() {
   const [showAddModal, setShowAddModal] = useState(false)
@@ -87,7 +87,7 @@ function Neuropsicologos() {
         <AddNeuropsicologo open={showAddModal} onClose={() => setShowAddModal(false)} onSuccess={() => { setShowAddModal(false); handleRefresh() }} />
         {showEditModal && selectedItem && (<EditNeuropsicologo open={showEditModal} onClose={() => setShowEditModal(false)} item={selectedItem} onSuccess={() => { setShowEditModal(false); handleRefresh() }} />)}
         {showViewModal && selectedItem && (<ViewNeuropsicologo open={showViewModal} onClose={() => setShowViewModal(false)} item={selectedItem} />)}
-        <ConfirmDialog open={showDeleteDialog} onClose={() => setShowDeleteDialog(false)} onConfirm={confirmDelete} title="Eliminar neuropsicólogo" message={`¿Eliminar a ${selectedItem?.nombres} ${selectedItem?.apellidos}?`} confirmText="Eliminar" variant="danger" />
+        <ConfirmationModal isOpen={showDeleteDialog} onClose={() => setShowDeleteDialog(false)} onConfirm={confirmDelete} title="Eliminar neuropsicólogo" message={`¿Eliminar a ${selectedItem?.nombres} ${selectedItem?.apellidos}?`} confirmText="Eliminar" type="danger" />
       </div>
     </DashboardLayout>
   )

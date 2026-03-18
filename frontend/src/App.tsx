@@ -139,6 +139,7 @@ function App() {
                 }
               />
 
+              {/*
               <Route
                 path="/cdt-test"
                 element={
@@ -147,6 +148,7 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              */}
               <Route
                 path="/pruebas"
                 element={

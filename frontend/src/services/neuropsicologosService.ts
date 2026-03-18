@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { apiClient } from './api'
 
 const RESOURCE = '/neuropsicologos'
@@ -68,34 +68,7 @@ export function useGetNeuropsicologos() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  const fetchNeuropsicologos = async (
-    page: number = 1,
-    limit: number = 5,
-    search: string = '',
-    includeInactive: boolean = true,
-  ) => {
-    try {
-      setLoading(true)
-      setError(null)
-      const { data } = await apiClient.get<NeuropsicologosResponse>(RESOURCE, {
-        params: {
-          page,
-          limit,
-          ...(search ? { search } : {}),
-          ...(includeInactive ? { include_inactive: true } : {}),
-        },
-      })
-      if (data?.success) {
-        setNeuropsicologos(data.data || [])
-        setMetadata(data.metadata)
-      } else setError(data?.message || 'Error al cargar neuropsicÃ³logos')
-    } catch (e) {
-      setError('Error de conexiÃ³n al servidor')
-      console.error('Error fetching neuropsicologos:', e)
-    } finally {
-      setLoading(false)
-    }
-  }
+
 
   // Fallback-aware fetch: intenta /neuropsicologos y si no existe usa /users?role_id=3
   const fetchNeuropsicologosSafe = async (

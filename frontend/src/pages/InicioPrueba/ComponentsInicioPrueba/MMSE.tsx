@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import PaginacionEvaluacion from '../../Evaluaciones/ComponentsEvaluaciones/PaginacionEvaluacion';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
-import { useGetPacientes, type Paciente } from '@/services/pacientesService';
+import { useGetPacientes, type Paciente } from '@/services/pacientes.services';
 import { evaluacionesLiveService } from '@/services/evaluacionesLive.service';
 import type { EvaluacionCognitiva } from '@/types/evaluaciones';
 

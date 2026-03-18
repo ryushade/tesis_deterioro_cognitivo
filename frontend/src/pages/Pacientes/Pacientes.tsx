@@ -1,15 +1,15 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { authService } from '@/services/auth';
-import { useGetPacientes } from '@/services/pacientesService';
+import { useGetPacientes } from '@/services/pacientes.services';
 import TablaPacientesSimple from './ComponentsPacientes/TablaPacientesSimple';
 import AddPacienteModal from './ComponentsPacientes/AddPaciente';
 import EditPacienteModal from './ComponentsPacientes/EditPaciente';
 import ViewPacienteModal from './ComponentsPacientes/ViewPaciente';
-import ConfirmDialog from '@/components/ui/confirm-dialog';
-import { pacientesService, type Paciente } from '@/services/pacientesService';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
+import { pacientesService, type Paciente } from '@/services/pacientes.services';
 import toast, { Toaster } from 'react-hot-toast';
 import PaginacionPacientes from './ComponentsPacientes/PaginacionPacientes';
 import {
@@ -73,11 +73,11 @@ function Pacientes() {
     if (selectedPaciente) {
       try {
         const response = await pacientesService.delete(selectedPaciente.id_paciente);
-        if (response.success) {
+        if (response) {
           toast.success('Paciente eliminado exitosamente');
           refetch(currentPage, itemsPerPage, searchTerm);
         } else {
-          toast.error(response.message || 'Error al eliminar paciente');
+          toast.error('Error al eliminar paciente');
         }
       } catch (error) {
         console.error('Error deleting paciente:', error);
@@ -228,14 +228,14 @@ function Pacientes() {
           />
         )}
 
-        <ConfirmDialog
-          open={showDeleteDialog}
+        <ConfirmationModal
+          isOpen={showDeleteDialog}
           onClose={() => setShowDeleteDialog(false)}
           onConfirm={confirmDelete}
           title="Eliminar Paciente"
           message={`¿Eliminar a ${selectedPaciente?.nombres} ${selectedPaciente?.apellidos}?`}
           confirmText="Eliminar"
-          variant="danger"
+          type="danger"
         />
       </div>
     </DashboardLayout>

@@ -16,6 +16,5 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ["react", "react-dom", "input-otp"],
-    dedupe: ["react", "react-dom"],
   },
 })

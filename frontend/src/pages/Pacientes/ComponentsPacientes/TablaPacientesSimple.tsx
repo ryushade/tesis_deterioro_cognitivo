@@ -3,13 +3,11 @@ import {
   Eye, 
   Edit, 
   Trash2, 
-  ChevronLeft,
-  ChevronRight,
   User,
   Calendar,
   GraduationCap
 } from 'lucide-react';
-import { type Paciente } from '@/services/pacientesService';
+import { type Paciente } from '@/services/pacientes.services';
 
 interface TablaPacientesSimpleProps {
   pacientes: Paciente[];
@@ -31,9 +29,6 @@ export default function TablaPacientesSimple({
   error,
   searchTerm,
   onSearch: _onSearch,
-  currentPage,
-  totalPages,
-  onPageChange,
   onView,
   onEdit,
   onDelete
@@ -172,13 +167,13 @@ export default function TablaPacientesSimple({
                         ? 'text-purple-700 bg-purple-100'
                         : 'text-gray-700 bg-gray-100'
                     }`}>
-                      {formatSexo(paciente.sexo)}
+                      {formatSexo(paciente.sexo || null)}
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900">
                       <GraduationCap className="h-4 w-4 mr-2 text-gray-400" />
-                      {formatEscolaridad(paciente.escolaridad)}
+                      {formatEscolaridad(paciente.escolaridad || null)}
                     </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">

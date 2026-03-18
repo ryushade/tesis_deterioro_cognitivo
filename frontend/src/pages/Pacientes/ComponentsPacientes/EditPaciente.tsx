@@ -1,10 +1,10 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { pacientesService, type Paciente, type PacienteUpdate, NIVELES_EDUCATIVOS } from '@/services/pacientesService';
+import { pacientesService, type Paciente, type PacienteUpdate, NIVELES_EDUCATIVOS } from '@/services/pacientes.services';
 import toast from 'react-hot-toast';
 import { X, User, Calendar, Users, GraduationCap } from 'lucide-react';
 
@@ -91,11 +91,11 @@ const handleSubmit = async (e: React.FormEvent) => {
         return;
       }
       const response = await pacientesService.update(paciente.id_paciente, formData);
-      if (response.success) {
+      if (response) {
         toast.success('Paciente actualizado exitosamente');
         onSuccess();
       } else {
-        toast.error(response.message || 'Error al actualizar paciente');
+        toast.error('Error al actualizar paciente');
       }
     } catch (error) {
       toast.error('Error de conexiÃ³n al servidor');

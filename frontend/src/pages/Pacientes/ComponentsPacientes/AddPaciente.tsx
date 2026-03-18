@@ -1,10 +1,10 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { pacientesService } from '@/services/pacientesService';
+import { pacientesService } from '@/services/pacientes.services';
 
 type Sexo = 'M' | 'F' | '';
 type Escolaridad = 'primaria_basica' | 'secundaria_completa' | 'superior_completa';
@@ -54,8 +54,8 @@ export function AddPaciente({ open, onClose, onSuccess }: AddPacienteProps) {
       if (sexo === 'M' || sexo === 'F') payload.sexo = sexo;
 
       const res = await pacientesService.create(payload as any);
-      if (!res.success) {
-        throw new Error(res.message || 'No se pudo crear el paciente');
+      if (!res) {
+        throw new Error('No se pudo crear el paciente');
       }
 
       reset();

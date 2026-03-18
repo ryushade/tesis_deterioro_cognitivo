@@ -3,20 +3,9 @@ import ReactDOM from 'react-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { X, User, Calendar, Clock, Users, GraduationCap, Hash } from 'lucide-react';
+import { X, User, Calendar, Clock, Users, GraduationCap } from 'lucide-react';
 
-interface Paciente {
-  id?: number;
-  id_paciente?: number;
-  nombres: string;
-  apellidos: string;
-  fecha_nacimiento: string;
-  sexo: 'M' | 'F' | null;
-  escolaridad?: 'primaria_basica' | 'secundaria_completa' | 'superior_completa' | string | null;
-  fecha_registro?: string;
-  fecha_actualizacion?: string;
-  estado?: boolean;
-}
+import { type Paciente } from '@/services/pacientes.services';
 
 interface ViewPacienteModalProps {
   open: boolean;
@@ -136,7 +125,7 @@ const ViewPacienteModal: React.FC<ViewPacienteModalProps> = ({ open, onClose, pa
                 <span className="text-sm font-medium text-gray-700">Sexo</span>
               </div>
               <Badge variant="secondary" className="capitalize">
-                {formatSexo(paciente.sexo)}
+                {formatSexo(paciente.sexo || null)}
               </Badge>
             </div>
 
