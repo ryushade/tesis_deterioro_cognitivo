@@ -10559,6 +10559,6 @@ b a c k e n d / b e s t _ c d t _ m o d e l . h 5 
  
  backend/*.h5
 *.h5
-
+backend/venv
 node_modules/
 CON
