@@ -118,13 +118,9 @@ export default function LoginPage() {
       <div className="relative z-10 min-h-screen flex items-center justify-center bg-transparent p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <div className="flex items-center justify-center mb-4">
-            <div className="bg-indigo-100 p-3 rounded-full">
-              <Brain className="h-8 w-8 text-indigo-600" />
-            </div>
-          </div>
-          <CardTitle className="text-3xl font-black text-center tracking-tight">
-            SISTEMA DETECCION DETERIORO COGNITIVO
+        
+          <CardTitle className="text-3xl font-black text-center tracking-tight mt-4">
+            SISTEMA INTELIGENTE DETERIORO COGNITIVO
           </CardTitle>
           <CardDescription className="text-center font-medium text-base">
             Selecciona tu tipo de acceso al sistema
@@ -296,7 +292,7 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center text-sm text-gray-600">
             <p>Sistema inteligente - Deterioro cognitivo</p>
-            <p className="text-xs mt-1">VersiÃ³n 1.0</p>
+            <p className="text-xs mt-1">Version 1.0</p>
           </div>
         </CardContent>
       </Card>

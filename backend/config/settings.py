@@ -12,7 +12,7 @@ class Settings:
     # Database
     DB_HOST = os.getenv("DB_HOST", "localhost")
     DB_PORT = os.getenv("DB_PORT", "5432")
-    DB_NAME = os.getenv("DB_NAME", "tesis_cognitivo")
+    DB_NAME = os.getenv("DB_NAME", "deterioro_cognitivo")
     DB_USER = os.getenv("DB_USER", "postgres")
     DB_PASSWORD = os.getenv("DB_PASSWORD", "postgres")
     
