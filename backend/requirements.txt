@@ -3,7 +3,7 @@ flask==3.0.0
 flask-cors==4.0.0
 
 # Database
-psycopg2-binary==2.9.9
+psycopg[binary]==3.3.3
 
 # Authentication
 PyJWT==2.8.0
