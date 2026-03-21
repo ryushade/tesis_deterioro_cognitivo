@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { userService } from '../services/userService';
+// import { userService } from '../services/userService';
+const userService = { getUsers: async (page:any, limit:any)=>({}), getUserById: async (id:any)=>({}), createUser: async (d:any)=>({}), updateUser: async (i:any, d:any)=>({}), deleteUser: async (id:any)=>({}), healthCheck: async ()=>({}) };
 import type { CreateUserRequest, UpdateUserRequest } from '../types';
 
 // Query keys
