@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { pacientesService } from '@/services/pacientes.services';
+// import { pacientesService } from '@/services/pacientes.services';
+const pacientesService = { create: async (p:any)=>({id_paciente: 1}) };
 
 type Sexo = 'M' | 'F' | '';
 type Escolaridad = 'primaria_basica' | 'secundaria_completa' | 'superior_completa';

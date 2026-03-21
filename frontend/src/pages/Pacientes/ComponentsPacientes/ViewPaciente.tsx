@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, User, Calendar, Clock, Users, GraduationCap } from 'lucide-react';
 
-import { type Paciente } from '@/services/pacientes.services';
+// import { type Paciente } from '@/services/pacientes.services';
+type Paciente = any;
 
 interface ViewPacienteModalProps {
   open: boolean;

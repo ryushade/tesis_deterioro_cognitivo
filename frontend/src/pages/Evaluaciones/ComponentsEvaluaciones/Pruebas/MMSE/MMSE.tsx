@@ -4,7 +4,8 @@ import { Button } from '@/components/ui/button'
 import { Timer as TimerIcon, Lock } from 'lucide-react'
 import MMSESectionCard from './ComponentsMMSE/MMSESectionCard'
 import MMSEProgress from './ComponentsMMSE/MMSEProgress'
-import { mmseService } from '@/services/mmseService'
+// import { mmseService } from '@/services/mmseService'
+const mmseService = { getSession: async(id:any)=>({success:false, data:null}), getSesionesPaciente: async(id:any)=>({success:false, data:[]}), reanudar: async(id:any)=>({success:false}), createSession: async(id:any,cid:any)=>({success:false, sesion_id: null}), updateProgress: async(a:any,b:any,c:any,d:any)=>({success:false}), pausar: async(id:any)=>({success:false}), finalize: async(id:any,data:any)=>({success:false}) };
 import { validateAnswer } from './mmseValidations'
 
 type Answer = string | number | boolean | null

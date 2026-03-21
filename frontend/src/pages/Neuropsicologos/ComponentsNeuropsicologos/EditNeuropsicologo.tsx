@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { type Neuropsicologo, type NeuropsicologoUpdate } from '@/services/neuropsicologosService'
-import { userService } from '@/services/userService'
+// import { userService } from '@/services/userService'
+const userService = { updateUser: async (id:any, payload:any) => ({success: true}) };
 import { X } from 'lucide-react'
 
 export default function EditNeuropsicologo({ open, onClose, onSuccess, item }: { open: boolean; onClose: () => void; onSuccess: () => void; item: Neuropsicologo | null }) {

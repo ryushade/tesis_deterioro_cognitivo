@@ -7,7 +7,8 @@ import {
   Calendar,
   GraduationCap
 } from 'lucide-react';
-import { type Paciente } from '@/services/pacientes.services';
+// import { type Paciente } from '@/services/pacientes.services';
+type Paciente = any;
 
 interface TablaPacientesSimpleProps {
   pacientes: Paciente[];

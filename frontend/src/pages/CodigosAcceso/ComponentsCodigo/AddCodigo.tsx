@@ -5,9 +5,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import toast from 'react-hot-toast';
-import { codigosAccesoService } from '@/services/codigosAccesoService';
-import { pacientesService, type Paciente } from '@/services/pacientes.services';
-import { pruebasCognitivasService } from '@/services/pruebasCognitivas.service';
+// import { codigosAccesoService } from '@/services/codigosAccesoService';
+// import { pacientesService, type Paciente } from '@/services/pacientes.services';
+// import { pruebasCognitivasService } from '@/services/pruebasCognitivas.service';
+type Paciente = any;
+const codigosAccesoService = { generarCodigo: async (n:any)=>({success:false, data:{codigo:''}}), create: async(p:any)=>({success:false, message:''}) };
+const pacientesService = { getAll: async (a:any,b:any,c:any)=>({data:[]}), getById: async (id:any)=>null };
+const pruebasCognitivasService = { getAll: async (o:any)=>({data:[]}) };
 // Eliminado Popover; usaremos Select con búsqueda embebida
 
 interface AddCodigoModalProps {

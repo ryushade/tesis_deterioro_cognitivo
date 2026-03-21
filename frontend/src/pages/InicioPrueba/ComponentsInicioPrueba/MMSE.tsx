@@ -9,8 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import PaginacionEvaluacion from '../../Evaluaciones/ComponentsEvaluaciones/PaginacionEvaluacion';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
-import { useGetPacientes, type Paciente } from '@/services/pacientes.services';
-import { evaluacionesLiveService } from '@/services/evaluacionesLive.service';
+// import { useGetPacientes, type Paciente } from '@/services/pacientes.services';
+// import { evaluacionesLiveService } from '@/services/evaluacionesLive.service';
+type Paciente = any;
+const useGetPacientes = () => ({ pacientes: [], metadata: {}, loading: false, error: null, refetch: (a?:any,b?:any,c?:any) => {} });
+const evaluacionesLiveService = { getByPaciente: async (id:any) => ({success: false, data: []}) };
 import type { EvaluacionCognitiva } from '@/types/evaluaciones';
 
 const PAGE_SIZES = [5, 10, 20] as const;

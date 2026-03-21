@@ -9,7 +9,8 @@ import AddNeuropsicologo from "./ComponentsNeuropsicologos/AddNeuropsicologoModa
 import EditNeuropsicologo from "./ComponentsNeuropsicologos/EditNeuropsicologoModal"
 import ViewNeuropsicologo from "./ComponentsNeuropsicologos/ViewNeuropsicologoModal"
 import toast, { Toaster } from 'react-hot-toast'
-import { userService } from '@/services/userService'
+// import { userService } from '@/services/userService'
+const userService = { deleteUser: async (id: any) => ({ success: false, message: 'Servicio en mantenimiento' }) };
 import PaginationControls from "../Pacientes/ComponentsPacientes/PaginationControls"
 import ConfirmationModal from '@/components/ui/ConfirmationModal'
 

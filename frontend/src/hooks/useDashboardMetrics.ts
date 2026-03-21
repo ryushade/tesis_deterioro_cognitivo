@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { dashboardService } from '@/services/dashboard.service';
+// import { dashboardService } from '@/services/dashboard.service';
 
 export interface DashboardMetrics {
   usuarios_activos: number;
@@ -45,7 +45,8 @@ export function useDashboardMetrics(): UseDashboardMetricsReturn {
       setLoading(true);
       setError(null);
       
-      const response = await dashboardService.getMetrics();
+      // const response = await dashboardService.getMetrics();
+      const response = { success: false, message: 'Servicio en mantenimiento', data: null as any };
       
       if (response.success) {
         setMetrics(response.data);

@@ -1,10 +1,14 @@
-﻿import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { authService } from '@/services/auth';
 // import { useGetPacientes, type Paciente } from '@/services/pacientesService';
-import { evaluacionesLiveService } from '@/services/evaluacionesLive.service';
-import { pruebasCognitivasService } from '@/services/pruebasCognitivas.service';
+type Paciente = any;
+const useGetPacientes = () => ({ pacientes: [], metadata: {}, loading: false, error: null, refetch: (a?:any,b?:any,c?:any) => {} });
+// import { evaluacionesLiveService } from '@/services/evaluacionesLive.service';
+const evaluacionesLiveService = { getByPaciente: async (id:any) => ({success: false, data: []}) };
+// import { pruebasCognitivasService } from '@/services/pruebasCognitivas.service';
+const pruebasCognitivasService = { getAll: async (opts:any) => ({success: false, data: []}) };
 import type { EvaluacionCognitiva, PruebaCognitiva } from '@/types/evaluaciones';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';

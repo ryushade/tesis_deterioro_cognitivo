@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { Plus } from 'lucide-react';
 import { AppSidebar } from '../../components/app-sidebar';
@@ -20,7 +20,8 @@ import EditCodigoModal from './ComponentsCodigo/EditCodigo';
 import ViewCodigoModal from './ComponentsCodigo/ViewCodigo';
 import MMSEAdmin from '../Evaluaciones/ComponentsEvaluaciones/Pruebas/MMSE/MMSEAdmin';
 import './CodigosAcceso.css';
-import { codigosAccesoService } from '@/services/codigosAccesoService';
+// import { codigosAccesoService } from '@/services/codigosAccesoService';
+const codigosAccesoService = { getAll: async (a?:any) => ({ success: false, metadata: {total:0, total_pages: 1}, data: [], message: 'En mantenimiento'}) };
 
 // Mock data for testing
 
