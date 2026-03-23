@@ -105,20 +105,8 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       // Sin restricción de roles - todos pueden acceder
     },
     
-    {
-      title: "Roles y permisos",
-      url: "/roles-permisos",
-      icon: Database,
-      roles: ['Administrador'], // Solo administradores
-      
-    },
-    {
-      title: "Configuración",
-      url: "/configuracion",
-      icon: Settings,
-      roles: ['Administrador'], // Todos pueden acceder a su configuración
-      
-    },
+   
+   
   ];
 
   // Filter navigation based on user roles
@@ -162,8 +150,8 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       </SidebarHeader>
       <SidebarContent>
         {navMainItems.length > 0 && <NavMain label="Principal" items={navMainItems} />}
-        {navReportsItems.length > 0 && <NavMain label="Reportes" items={navReportsItems} />}
         {navGestionItems.length > 0 && <NavMain label="Gestión" items={navGestionItems} />}
+        {navReportsItems.length > 0 && <NavMain label="Reportes" items={navReportsItems} />}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={userWithAvatar} onLogout={onLogout} />

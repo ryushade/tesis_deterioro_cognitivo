@@ -12,15 +12,15 @@ import Evaluaciones from './pages/Evaluaciones/Evaluaciones';
 
 import MMSEPatient from './pages/Evaluaciones/ComponentsEvaluaciones/Pruebas/MMSE/MMSE';
 import MMSEPausada from './pages/Evaluaciones/ComponentsEvaluaciones/Pruebas/MMSE/MMSEPausada';
-import Pruebas from './pages/Pruebas/Pruebas';
-import PruebaFinalizada from './pages/Pruebas/PruebaFinalizada';
+// import Pruebas from './pages/Pruebas/Pruebas';
+// import PruebaFinalizada from './pages/Pruebas/PruebaFinalizada';
 import Neuropsicologos from './pages/Neuropsicologos/Neuropsicologo';
 
 import MMSEConfiguracionPage from './pages/Admin/MMSEConfiguracion';
 // Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthorizationService } from './services/auth.middleware';
-import InicioPrueba from './pages/InicioPrueba/InicioPrueba';
+// import InicioPrueba from './pages/InicioPrueba/InicioPrueba';
 
 const queryClient = new QueryClient();
 
@@ -130,14 +130,14 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route
+              {/* <Route
                 path="/evaluaciones"
                 element={
                   <ProtectedRoute requiredRoles={["Neuropsicologo"]}>
                     <InicioPrueba />
                   </ProtectedRoute>
                 }
-              />
+              /> */}
 
               {/*
               <Route
@@ -149,22 +149,22 @@ function App() {
                 }
               />
               */}
-              <Route
+              {/* <Route
                 path="/pruebas"
                 element={
                   <ProtectedRoute>
                     <Pruebas />
                   </ProtectedRoute>
                 }
-              />
-              <Route
+              /> */}
+              {/* <Route
                 path="/pruebas/finalizado"
                 element={
                   <ProtectedRoute>
                     <PruebaFinalizada />
                   </ProtectedRoute>
                 }
-              />
+              /> */}
               <Route
                 path="/pruebas/pausada"
                 element={
