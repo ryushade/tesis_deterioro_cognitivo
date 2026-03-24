@@ -17,7 +17,7 @@ export default function EditNeuropsicologo({ open, onClose, onSuccess, item }: {
 
   useEffect(() => {
     if (item) {
-      setUsername(item.username || (item as any).usua || '')
+      setUsername(item.usua || (item as any).usua || '')
       const rid = (item as any).id_rol
       setRoleId(rid !== undefined && rid !== null ? String(rid) : '')
     }
