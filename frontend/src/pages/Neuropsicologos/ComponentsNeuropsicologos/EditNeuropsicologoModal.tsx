@@ -76,7 +76,7 @@ export default function EditNeuropsicologo({ open, onClose, onSuccess, item }: {
               <Input value={username} onChange={(e) => setUsername(e.target.value)} />
             </div>
             <div>
-              <Label>Rol</Label>
+              <Label>Estado</Label>
               <Select value={roleId} onValueChange={setRoleId}>
                 <SelectTrigger className="w-full" disabled>
                   <SelectValue placeholder="Seleccione un rol" />

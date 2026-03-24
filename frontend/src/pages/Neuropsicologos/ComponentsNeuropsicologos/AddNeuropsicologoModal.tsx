@@ -71,6 +71,10 @@ export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: 
           {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>}
           <div className="grid grid-cols-1 gap-4">
             <div>
+              <Label htmlFor="username">Nombres y apellidos</Label>
+              <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+            </div>
+            <div>
               <Label htmlFor="username">Usuario</Label>
               <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
             </div>

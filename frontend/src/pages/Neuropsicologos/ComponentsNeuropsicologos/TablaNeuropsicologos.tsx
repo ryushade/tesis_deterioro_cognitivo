@@ -59,21 +59,20 @@ export default function TablaNeuropsicologos({ items, loading, error, searchTerm
               </tr>
             ) : (
               items.map((it) => (
-                <tr key={it.id_neuropsicologo} className="hover:bg-gray-50">
+                <tr key={it.id_usuario} className="hover:bg-gray-50">
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900">
-                      <IdCard className="h-4 w-4 mr-2 text-gray-400" />
-                      {it.username || it.usua}
+                      {it.usua}
                     </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <Badge variant="default" className="!bg-blue-600 !text-white !border-transparent hover:!bg-blue-700">
-                      {it.password}
+                      {it.contra}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${it.estado ? 'text-green-700 bg-green-100' : 'text-gray-700 bg-gray-100'}`}>
-                      {it.estado ? 'Activo' : 'Inactivo'}
+                      {it.estado_usuario ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">

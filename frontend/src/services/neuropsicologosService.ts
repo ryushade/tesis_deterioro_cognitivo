@@ -1,20 +1,14 @@
 import { useEffect, useState } from 'react'
 import { apiClient } from './api'
 
-const RESOURCE = '/neuropsicologos'
+const RESOURCE = '/auth/obtener_neuropsicologo'
 
 export interface Neuropsicologo {
-  id_neuropsicologo: number
-  nombres: string
-  apellidos: string
-  username: string
-  estado: boolean
-  // Campos reales de usuario/rol (opcionales)
-  id_usuario?: number
-  id_rol?: number
-  usua?: string
-  rol_nombre?: string
-  estado_rol?: boolean
+  id_usuario: number;
+  id_rol: number;
+  usua: string;
+  contra: string;
+  estado_usuario: number;
 }
 
 export interface NeuropsicologoCreate {
