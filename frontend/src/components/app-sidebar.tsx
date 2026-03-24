@@ -98,12 +98,12 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       roles: ['Administrador'], // Solo administradores
     },
   
-    {
-      title: "CDT Test",
-      url: "/cdt-test",
-      icon: Activity,
-      // Sin restricción de roles - todos pueden acceder
-    },
+    // {
+    //   title: "CDT Test",
+    //   url: "/cdt-test",
+    //   icon: Activity,
+    //   // Sin restricción de roles - todos pueden acceder
+    // },
     
    
    
