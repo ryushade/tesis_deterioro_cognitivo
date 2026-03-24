@@ -185,7 +185,7 @@ class AuthService {
   // Register new user (admin only)
   async register(userData: RegisterRequest): Promise<LoginResponse> {
     try {
-      const response = await apiClient.post<LoginResponse>('/auth/register', userData);
+      const response = await apiClient.post<LoginResponse>('/auth/registrar_neuropsicologo', userData);
       return response.data;
     } catch (error: any) {
       if (error.response?.data) {

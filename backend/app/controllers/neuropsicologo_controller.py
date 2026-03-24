@@ -5,7 +5,7 @@ def obtener_neuropsicologo():
     try:
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
-            cursor.execute("SELECT * FROM neuropsicologo")
+            cursor.execute("SELECT * FROM usuario WHERE id_rol = 2")
             return cursor.fetchall()
     except Exception as e:
         print("Error", e)
@@ -41,7 +41,7 @@ def registrar_neuropsicologo_2(usua, contra_encriptada, nombres, apellidos):
             cursor.execute(consulta_usuario, (2, usua, contra_encriptada, 1))
             
             # Capturamos el ID generado
-            nuevo_id_usuario = cursor.fetchone()[0]
+            nuevo_id_usuario = cursor.fetchone()['id_usuario']
 
             # PASO 2: Insertar en la tabla neuropsicologo usando el ID capturado
             consulta_neuropsicologo = """

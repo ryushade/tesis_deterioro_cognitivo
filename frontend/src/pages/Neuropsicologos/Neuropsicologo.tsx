@@ -7,7 +7,7 @@ import { useGetNeuropsicologos, type Neuropsicologo } from "@/services/neuropsic
 import TablaNeuropsicologos from "./ComponentsNeuropsicologos/TablaNeuropsicologos"
 import AddNeuropsicologo from "./ComponentsNeuropsicologos/AddNeuropsicologoModal"
 import EditNeuropsicologo from "./ComponentsNeuropsicologos/EditNeuropsicologoModal"
-import ViewNeuropsicologo from "./ComponentsNeuropsicologos/ViewNeuropsicologoModal"
+// import ViewNeuropsicologo from "./ComponentsNeuropsicologos/ViewNeuropsicologoModal"
 import toast, { Toaster } from 'react-hot-toast'
 // import { userService } from '@/services/userService'
 const userService = { deleteUser: async (id: any) => ({ success: false, message: 'Servicio en mantenimiento' }) };

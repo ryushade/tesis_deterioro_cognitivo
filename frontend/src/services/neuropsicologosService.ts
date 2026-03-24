@@ -8,9 +8,7 @@ export interface Neuropsicologo {
   nombres: string
   apellidos: string
   username: string
-  email: string
   estado: boolean
-  fecha_registro?: string
   // Campos reales de usuario/rol (opcionales)
   id_usuario?: number
   id_rol?: number
@@ -23,7 +21,6 @@ export interface NeuropsicologoCreate {
   nombres: string
   apellidos: string
   username: string
-  email: string
   estado?: boolean
 }
 
@@ -31,7 +28,6 @@ export interface NeuropsicologoUpdate {
   nombres?: string
   apellidos?: string
   username?: string
-  email?: string
   estado?: boolean
 }
 

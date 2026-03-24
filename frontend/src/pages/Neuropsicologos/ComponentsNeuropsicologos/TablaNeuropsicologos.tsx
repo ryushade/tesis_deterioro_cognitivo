@@ -42,10 +42,10 @@ export default function TablaNeuropsicologos({ items, loading, error, searchTerm
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NOMBRE</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CONTRASEÑA</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ESTADO</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ACCIONES</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -68,7 +68,7 @@ export default function TablaNeuropsicologos({ items, loading, error, searchTerm
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <Badge variant="default" className="!bg-blue-600 !text-white !border-transparent hover:!bg-blue-700">
-                      {it.rol_nombre ?? 'Rol no definido'}
+                      {it.password}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
