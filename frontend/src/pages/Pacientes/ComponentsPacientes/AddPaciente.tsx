@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePickerSimple } from '@/components/ui/date-birth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 // import { pacientesService } from '@/services/pacientes.services';
 const pacientesService = { create: async (p:any)=>({id_paciente: 1}) };
@@ -70,7 +71,7 @@ export function AddPaciente({ open, onClose, onSuccess }: AddPacienteProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-12 overflow-y-auto" style={{
       backgroundColor: 'rgba(0,0,0,0.5)',
       backdropFilter: 'blur(8px) saturate(180%) brightness(0.9)'
     }}>
@@ -96,7 +97,8 @@ export function AddPaciente({ open, onClose, onSuccess }: AddPacienteProps) {
             </div>
             <div>
               <Label htmlFor="fecha_nacimiento">Fecha de nacimiento</Label>
-              <Input id="fecha_nacimiento" type="date" value={fechaNacimiento} onChange={(e) => setFechaNacimiento(e.target.value)} required />
+              <DatePickerSimple />
+
             </div>
             <div>
               <Label>Sexo</Label>

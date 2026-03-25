@@ -11,8 +11,15 @@ import EditNeuropsicologo from "./ComponentsNeuropsicologos/EditNeuropsicologoMo
 import toast, { Toaster } from 'react-hot-toast'
 // import { userService } from '@/services/userService'
 const userService = { deleteUser: async (id: any) => ({ success: false, message: 'Servicio en mantenimiento' }) };
-import PaginationControls from "../Pacientes/ComponentsPacientes/PaginationControls"
-import ConfirmationModal from '@/components/ui/ConfirmationModal'
+import PaginacionPacientes from '../Pacientes/ComponentsPacientes/PaginacionPacientes';
+import ConfirmationModal from './ComponentsNeuropsicologos/ConfirmationModal'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 function Neuropsicologos() {
   const [showAddModal, setShowAddModal] = useState(false)
@@ -83,12 +90,46 @@ function Neuropsicologos() {
           onDelete={handleDelete}
         />
 
-        <PaginationControls metadata={metadata as any} page={currentPage} limit={itemsPerPage} changePage={handlePageChange} changeLimit={handlePageSizeChange} />
+ {/* Paginación a la izquierda y texto centrado */}
+        <div className="mt-2 flex w-full items-center justify-between gap-2">
+          {/* Izquierda: paginación */}
+          <div className="flex items-center">
+            <PaginacionPacientes
+              currentPage={currentPage}
+              totalPages={(metadata as any)?.total_pages ?? (metadata as any)?.totalPages ?? 1}
+              onPageChange={handlePageChange}
+            />
+          </div>
 
+          {/* Centro: texto */}
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-sm text-gray-600">
+              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, (metadata as any)?.total ?? (metadata as any)?.totalItems ?? pacientes.length)} de {(metadata as any)?.total ?? (metadata as any)?.totalItems ?? pacientes.length} registros
+            </p>
+          </div>
+            
+          
+          {/* Derecha: espacio para balancear */}
+          <div className="flex items-center gap-3 text-sm text-gray-700">
+            <span className="whitespace-nowrap">Filas por página:</span>
+            <Select value={String(itemsPerPage)} onValueChange={(value) => handlePageSizeChange(Number(value))}>
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="Entradas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100000000000">Todos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
         <AddNeuropsicologo open={showAddModal} onClose={() => setShowAddModal(false)} onSuccess={() => { setShowAddModal(false); handleRefresh() }} />
         {showEditModal && selectedItem && (<EditNeuropsicologo open={showEditModal} onClose={() => setShowEditModal(false)} item={selectedItem} onSuccess={() => { setShowEditModal(false); handleRefresh() }} />)}
-        {showViewModal && selectedItem && (<ViewNeuropsicologo open={showViewModal} onClose={() => setShowViewModal(false)} item={selectedItem} />)}
-        <ConfirmationModal isOpen={showDeleteDialog} onClose={() => setShowDeleteDialog(false)} onConfirm={confirmDelete} title="Eliminar neuropsicólogo" message={`¿Eliminar a ${selectedItem?.nombres} ${selectedItem?.apellidos}?`} confirmText="Eliminar" type="danger" />
+        {/* {showViewModal && selectedItem && (<ViewNeuropsicologo open={showViewModal} onClose={() => setShowViewModal(false)} item={selectedItem} />)} */}
+        <ConfirmationModal isOpen={showDeleteDialog} onClose={() => setShowDeleteDialog(false)} onConfirm={confirmDelete} title="Eliminar neuropsicólogo" message={`¿Eliminar a ${selectedItem?.usua}?`}   confirmText="Eliminar" type="danger" />
       </div>
     </DashboardLayout>
   )

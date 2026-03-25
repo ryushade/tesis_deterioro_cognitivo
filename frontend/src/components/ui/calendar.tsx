@@ -172,12 +172,10 @@ function Calendar({
   )
 }
 
-function CalendarDayButton({
-  className,
-  day,
-  modifiers,
-  ...props
-}: React.ComponentProps<typeof DayButton>) {
+const CalendarDayButton = React.forwardRef<
+  HTMLButtonElement,
+  React.ComponentProps<typeof DayButton>
+>(({ className, day, modifiers, ...props }, forwardedRef) => {
   const defaultClassNames = getDefaultClassNames()
 
   const ref = React.useRef<HTMLButtonElement>(null)
@@ -185,9 +183,19 @@ function CalendarDayButton({
     if (modifiers.focused) ref.current?.focus()
   }, [modifiers.focused])
 
+  const composedRef = React.useCallback(
+    (node: HTMLButtonElement) => {
+      // @ts-ignore
+      ref.current = node
+      if (typeof forwardedRef === "function") forwardedRef(node)
+      else if (forwardedRef) forwardedRef.current = node
+    },
+    [forwardedRef]
+  )
+
   return (
     <Button
-      ref={ref}
+      ref={composedRef}
       variant="ghost"
       size="icon"
       data-day={day.date.toLocaleDateString()}
@@ -208,6 +216,7 @@ function CalendarDayButton({
       {...props}
     />
   )
-}
+})
+CalendarDayButton.displayName = "CalendarDayButton"
 
 export { Calendar, CalendarDayButton }
