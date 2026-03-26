@@ -4,11 +4,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-// import { pacientesService, type Paciente, type PacienteUpdate, NIVELES_EDUCATIVOS } from '@/services/pacientes.services';
-type Paciente = any;
-type PacienteUpdate = any;
+import { pacientesService, type Paciente, type PacienteUpdate } from '@/services/pacienteServices';
 const NIVELES_EDUCATIVOS = ['primaria_basica', 'secundaria_completa', 'superior_completa'];
-const pacientesService = { update: async (id:any, p:any)=>({id_paciente: 1}) };
 import toast from 'react-hot-toast';
 import { X, User, Calendar, Users, GraduationCap } from 'lucide-react';
 
@@ -95,11 +92,11 @@ const handleSubmit = async (e: React.FormEvent) => {
         return;
       }
       const response = await pacientesService.update(paciente.id_paciente, formData);
-      if (response) {
+      if (response?.success) {
         toast.success('Paciente actualizado exitosamente');
         onSuccess();
       } else {
-        toast.error('Error al actualizar paciente');
+        toast.error(response?.message || 'Error al actualizar paciente');
       }
     } catch (error) {
       toast.error('Error de conexiÃ³n al servidor');

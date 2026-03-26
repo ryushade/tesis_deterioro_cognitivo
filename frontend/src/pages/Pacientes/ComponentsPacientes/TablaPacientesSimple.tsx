@@ -7,8 +7,7 @@ import {
   Calendar,
   GraduationCap
 } from 'lucide-react';
-// import { type Paciente } from '@/services/pacientes.services';
-type Paciente = any;
+import { type Paciente } from '@/services/pacienteServices';
 
 interface TablaPacientesSimpleProps {
   pacientes: Paciente[];
@@ -44,6 +43,18 @@ export default function TablaPacientesSimple({
   const formatSexo = (sexo: string | null) => {
     if (!sexo) return 'No especificado';
     return sexo === 'M' ? 'Masculino' : 'Femenino';
+  };
+
+  const calculateEdad = (fecha_nacimiento: string | null) => {
+    if (!fecha_nacimiento) return '-';
+    const today = new Date();
+    const birthDate = new Date(fecha_nacimiento);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
   };
 
   if (loading) {
@@ -140,7 +151,9 @@ export default function TablaPacientesSimple({
                     </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className="text-sm text-gray-900">{paciente.edad} años</span>
+                    <span className="text-sm text-gray-900\">
+                      {paciente.edad ?? calculateEdad(paciente.fecha_nacimiento)} años
+                    </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
@@ -156,7 +169,7 @@ export default function TablaPacientesSimple({
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900">
                       <GraduationCap className="h-4 w-4 mr-2 text-gray-400" />
-                      {formatEscolaridad(paciente.escolaridad || null)}
+                      {paciente.escolaridad || 'No especificado'}
                     </div>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">

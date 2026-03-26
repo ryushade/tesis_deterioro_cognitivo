@@ -3,16 +3,13 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { authService } from '@/services/auth';
-// import { useGetPacientes } from '@/services/pacientes.services';
-const useGetPacientes = () => ({ pacientes: [], metadata: {}, loading: false, error: null, refetch: (a?:any,b?:any,c?:any) => {} });
+import { useGetPacientes } from '@/services/pacienteServices';
 import TablaPacientesSimple from './ComponentsPacientes/TablaPacientesSimple';
 import AddPacienteModal from './ComponentsPacientes/AddPaciente';
 import EditPacienteModal from './ComponentsPacientes/EditPaciente';
 import ViewPacienteModal from './ComponentsPacientes/ViewPaciente';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
-// import { pacientesService, type Paciente } from '@/services/pacientes.services';
-type Paciente = any;
-const pacientesService = { delete: async (id: any) => false };
+import { pacientesService, type Paciente } from '@/services/pacienteServices';
 import toast, { Toaster } from 'react-hot-toast';
 import PaginacionPacientes from './ComponentsPacientes/PaginacionPacientes';
 import {
@@ -76,7 +73,7 @@ function Pacientes() {
     if (selectedPaciente) {
       try {
         const response = await pacientesService.delete(selectedPaciente.id_paciente);
-        if (response) {
+        if (response?.success) {
           toast.success('Paciente eliminado exitosamente');
           refetch(currentPage, itemsPerPage, searchTerm);
         } else {

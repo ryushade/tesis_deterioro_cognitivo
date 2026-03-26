@@ -5,8 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DatePickerSimple } from '@/components/ui/date-birth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-// import { pacientesService } from '@/services/pacientes.services';
-const pacientesService = { create: async (p:any)=>({id_paciente: 1}) };
+import { pacientesService } from '@/services/pacienteServices';
 
 type Sexo = 'M' | 'F' | '';
 type Escolaridad = 'primaria_basica' | 'secundaria_completa' | 'superior_completa';
@@ -56,8 +55,8 @@ export function AddPaciente({ open, onClose, onSuccess }: AddPacienteProps) {
       if (sexo === 'M' || sexo === 'F') payload.sexo = sexo;
 
       const res = await pacientesService.create(payload as any);
-      if (!res) {
-        throw new Error('No se pudo crear el paciente');
+      if (!res?.success) {
+        throw new Error(res?.message || 'No se pudo crear el paciente');
       }
 
       reset();
