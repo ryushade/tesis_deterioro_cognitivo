@@ -55,25 +55,7 @@ export default function TablaPacientesSimple({
     );
   }
 
-  const formatEscolaridad = (escolaridad: string | null) => {
-    if (!escolaridad) return 'No especificado';
-    switch (escolaridad) {
-      case 'primaria_incompleta':
-        return 'Primaria incompleta';
-      case 'primaria_basica':
-        return 'Primaria básica';
-      case 'secundaria_incompleta':
-        return 'Secundaria incompleta';
-      case 'secundaria_completa':
-        return 'Secundaria completa';
-      case 'superior_incompleta':
-        return 'Superior incompleta';
-      case 'superior_completa':
-        return 'Superior completa';
-      default:
-        return escolaridad;
-    }
-  };
+  
 
   if (error) {
     return (
