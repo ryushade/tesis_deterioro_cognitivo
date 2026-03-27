@@ -5,19 +5,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { PruebaCognitiva } from '@/types/evaluaciones';
+import type { PruebaCreate } from '@/services/pruebaServices';
 
-type Modo = 'papel' | 'digital';
 
 interface AddPruebaProps {
   open: boolean;
   onClose: () => void;
-  onCreate: (data: Omit<PruebaCognitiva, 'id_prueba' | 'creado_en' | 'actualizado_en'>) => Promise<void> | void;
+  onCreate: (data: PruebaCreate) => Promise<void> | void;
 }
 
 export function AddPrueba({ open, onClose, onCreate }: AddPruebaProps) {
   const [codigo, setCodigo] = useState('');
   const [nombre, setNombre] = useState('');
+  const [descripcion, setDescripcion] = useState('');
   const [puntajeMaximo, setPuntajeMaximo] = useState<string>('');
   const [modoAplicacion, setModoAplicacion] = useState<Modo>('papel');
   const [activo, setActivo] = useState(true);
@@ -31,6 +31,7 @@ export function AddPrueba({ open, onClose, onCreate }: AddPruebaProps) {
     setNombre('');
     setPuntajeMaximo('');
     setModoAplicacion('papel');
+    setDescripcion('');
     setActivo(true);
     setError(null);
   };
@@ -40,14 +41,15 @@ export function AddPrueba({ open, onClose, onCreate }: AddPruebaProps) {
     setSubmitting(true);
     setError(null);
     try {
-      if (!codigo.trim() || !nombre.trim()) {
-        setError('Código y nombre son obligatorios');
+      if (!nombre.trim()) {
+        setError('El nombre de la prueba es obligatorio');
         setSubmitting(false);
         return;
       }
       const payload = {
         codigo: codigo.trim(),
         nombre: nombre.trim(),
+        descripcion: descripcion.trim(),
         puntaje_maximo: puntajeMaximo ? Number(puntajeMaximo) : undefined,
         modo_aplicacion: modoAplicacion,
         activo,
@@ -69,7 +71,7 @@ export function AddPrueba({ open, onClose, onCreate }: AddPruebaProps) {
     }}>
       <div className="bg-white w-full max-w-lg rounded-lg shadow-lg overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b">
-          <h3 className="text-lg font-semibold">Agregar prueba neuropsicológicas</h3>
+          <h3 className="text-lg font-semibold">Agregar prueba neuropsicológica</h3>
           <button onClick={onClose} className="p-1 rounded hover:bg-gray-100" aria-label="Cerrar">
             <X className="h-5 w-5" />
           </button>
@@ -94,7 +96,7 @@ export function AddPrueba({ open, onClose, onCreate }: AddPruebaProps) {
             <div>
               <Label>Descripción (opcional)</Label>
               <Textarea id="descripcion" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Descripción de la prueba" />
-                
+
             </div>
             <div className="flex items-center gap-2">
               <input id="activo" type="checkbox" checked={activo} onChange={(e) => setActivo(e.target.checked)} className="h-4 w-4" />

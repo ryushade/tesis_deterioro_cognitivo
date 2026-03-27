@@ -7,9 +7,8 @@ import { SidebarProvider, SidebarInset } from '../../components/ui/sidebar';
 import { Button } from '../../components/ui/button';
 import { authService } from '../../services/auth';
 
-import type { PruebaCognitiva } from '../../types/evaluaciones';
-// import pruebasCognitivasService from '../../services/pruebasCognitivas.service';
-const pruebasCognitivasService = { getAll: async (args?:any)=>({success: true, data: []}), create: async (p:any)=>({success: true}), delete: async (id:any)=>({success: true}) };
+import { useGetPruebas, pruebasService } from '../../services/pruebaServices';
+import type { Prueba } from '../../services/pruebaServices';
 
 import PaginacionEvaluacion from './ComponentsEvaluaciones/PaginacionEvaluacion';
 import { PruebasCognitivasTable } from './ComponentsEvaluaciones/PruebasCognitivasTable';
@@ -28,14 +27,14 @@ function Evaluaciones() {
   // Estado UI
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [selectedPrueba, setSelectedPrueba] = useState<PruebaCognitiva | null>(null);
+  const [selectedPrueba, setSelectedPrueba] = useState<Prueba | null>(null);
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   // Datos
-  const [pruebas, setPruebas] = useState<PruebaCognitiva[]>([]);
+  const [pruebas, setPruebas] = useState<Prueba[]>([]);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -53,7 +52,7 @@ function Evaluaciones() {
     try {
       setLoading(true);
       setError(null);
-      const res = await pruebasCognitivasService.getAll({ page, limit });
+      const res = await pruebasService.getAll(page, limit);
       if (res.success) {
         setPruebas(res.data || []);
         setTotal(res.metadata?.total || 0);
@@ -84,7 +83,7 @@ function Evaluaciones() {
   };
 
   const handleCreatePrueba = async (payload: any) => {
-    const res = await pruebasCognitivasService.create(payload);
+    const res = await pruebasService.create(payload);
     if (!res.success) {
       throw new Error(res.message || 'Error al crear prueba');
     }
@@ -94,18 +93,18 @@ function Evaluaciones() {
     await fetchPruebas(1, itemsPerPage);
   };
 
-  const handleViewPrueba = (prueba: PruebaCognitiva) => {
+  const handleViewPrueba = (prueba: Prueba) => {
     setSelectedPrueba(prueba);
     setShowViewModal(true);
   };
 
-  const handleEditPrueba = (prueba: PruebaCognitiva) => {
-    toast.success(`Editar prueba ${prueba.codigo}`);
+  const handleEditPrueba = (prueba: Prueba) => {
+    toast.success(`Editar prueba ${prueba.id_prueba}`);
   };
 
-  const handleDeletePrueba = async (prueba: PruebaCognitiva) => {
+  const handleDeletePrueba = async (prueba: Prueba) => {
     try {
-      const res = await pruebasCognitivasService.delete(prueba.id_prueba);
+      const res = await pruebasService.delete(prueba.id_prueba);
       if (res.success) {
         toast.success('Prueba desactivada');
         fetchPruebas(currentPage, itemsPerPage);

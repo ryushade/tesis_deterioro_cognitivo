@@ -7,7 +7,7 @@ def obtener_pruebas():
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
             # Agregué p.id_paciente, p.nombres y p.sexo como ejemplo
-            cursor.execute("SELECT id_prueba, nombre_prueba, puntaje_maximo, estado;")
+            cursor.execute("SELECT id_prueba, nombre_prueba, puntaje_maximo, estado FROM prueba_catalogo;")
             return cursor.fetchall()
     except Exception as e:
         print("Error", e)
