@@ -133,9 +133,6 @@ export default function TablaPacientesSimple({
                 
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center">
-                      <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
-                        <User className="h-4 w-4 text-blue-600" />
-                      </div>
                       <div>
                         <div className="text-sm font-medium text-gray-900">
                           {paciente.nombres} {paciente.apellidos}
@@ -146,7 +143,6 @@ export default function TablaPacientesSimple({
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900">
-                      <Calendar className="h-4 w-4 mr-2 text-gray-400" />
                       {formatDate(paciente.fecha_nacimiento)}
                     </div>
                   </td>
@@ -168,7 +164,6 @@ export default function TablaPacientesSimple({
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <div className="flex items-center text-sm text-gray-900">
-                      <GraduationCap className="h-4 w-4 mr-2 text-gray-400" />
                       {paciente.escolaridad || 'No especificado'}
                     </div>
                   </td>

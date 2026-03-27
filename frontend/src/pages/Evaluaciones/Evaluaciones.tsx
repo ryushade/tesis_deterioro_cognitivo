@@ -156,10 +156,10 @@ function Evaluaciones() {
               <div className="flex items-center gap-3">
                 <div className="mb-2">
                   <h1 className="font-black text-5xl text-blue-900 tracking-tight mb-3">
-                    Gestión de pruebas cognitivas
+                    Gestión de pruebas neuropsicológicas
                   </h1>
                   <p className="text-lg font-medium text-blue-700/80 leading-relaxed">
-                    Gestiona las pruebas cognitivas disponibles.
+                    Gestiona el catálogo de pruebas neuropsicológicas.
                   </p>
                 </div>
               </div>

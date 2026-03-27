@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { PruebaCognitiva } from '@/types/evaluaciones';
 
@@ -68,7 +69,7 @@ export function AddPrueba({ open, onClose, onCreate }: AddPruebaProps) {
     }}>
       <div className="bg-white w-full max-w-lg rounded-lg shadow-lg overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b">
-          <h3 className="text-lg font-semibold">Agregar prueba cognitiva</h3>
+          <h3 className="text-lg font-semibold">Agregar prueba neuropsicológicas</h3>
           <button onClick={onClose} className="p-1 rounded hover:bg-gray-100" aria-label="Cerrar">
             <X className="h-5 w-5" />
           </button>
@@ -78,10 +79,10 @@ export function AddPrueba({ open, onClose, onCreate }: AddPruebaProps) {
           {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>}
 
           <div className="grid grid-cols-1 gap-4">
-            <div>
+            {/* <div>
               <Label htmlFor="codigo">Código</Label>
               <Input id="codigo" value={codigo} onChange={(e) => setCodigo(e.target.value)} placeholder="Ej: MMSE" required />
-            </div>
+            </div> */}
             <div>
               <Label htmlFor="nombre">Nombre</Label>
               <Input id="nombre" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Nombre de la prueba" required />
@@ -91,16 +92,9 @@ export function AddPrueba({ open, onClose, onCreate }: AddPruebaProps) {
               <Input id="puntaje" type="number" step="0.01" min="0" value={puntajeMaximo} onChange={(e) => setPuntajeMaximo(e.target.value)} placeholder="Ej: 30" />
             </div>
             <div>
-              <Label>Modo de aplicación</Label>
-              <Select value={modoAplicacion} onValueChange={(v) => setModoAplicacion(v as Modo)}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Seleccione modo" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="papel">Papel</SelectItem>
-                  <SelectItem value="digital">Digital</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Descripción (opcional)</Label>
+              <Textarea id="descripcion" value={descripcion} onChange={(e) => setDescripcion(e.target.value)} placeholder="Descripción de la prueba" />
+                
             </div>
             <div className="flex items-center gap-2">
               <input id="activo" type="checkbox" checked={activo} onChange={(e) => setActivo(e.target.checked)} className="h-4 w-4" />
