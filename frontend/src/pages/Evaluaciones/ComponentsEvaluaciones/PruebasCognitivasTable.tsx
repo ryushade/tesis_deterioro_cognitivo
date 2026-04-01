@@ -59,12 +59,15 @@ export function PruebasCognitivasTable({ pruebas, loading, onView, onEdit, onDel
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex items-center gap-2">
-                        <Eye
-                          className="h-4 w-4 cursor-pointer text-blue-600 hover:text-blue-700"
-                          title="Indicaciones (neuropsicología)"
-                          onClick={() => onView(prueba)}
-                          aria-label="Ver indicaciones de la prueba"
-                        />
+                      <Button variant="ghost" size="sm" onClick={() => onView(prueba)} className="text-gray-600 hover:text-gray-800">
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => onEdit(prueba)} className="text-gray-600 hover:text-gray-800">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => onDelete(prueba)} className="text-red-600 hover:text-red-800">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </div>
                   </td>
                 </tr>
