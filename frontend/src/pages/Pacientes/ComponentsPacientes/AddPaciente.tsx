@@ -7,7 +7,7 @@ import { DatePickerSimple } from '@/components/ui/date-birth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { pacientesService } from '@/services/pacienteServices';
 
-type Sexo = 'M' | 'F' | '';
+type Sexo = '0' | '1' | '';
 type Escolaridad = 'primaria_basica' | 'secundaria_completa' | 'superior_completa';
 
 interface AddPacienteProps {
@@ -52,7 +52,20 @@ export function AddPaciente({ open, onClose, onSuccess }: AddPacienteProps) {
         fecha_nacimiento: fechaNacimiento,
         escolaridad,
       };
-      if (sexo === 'M' || sexo === 'F') payload.sexo = sexo;
+      
+      const hoy = new Date();
+      const year = hoy.getFullYear() - 65;
+      const month = String(hoy.getMonth() + 1).padStart(2, '0');
+      const day = String(hoy.getDate()).padStart(2, '0');
+      const dateLimite = `${year}-${month}-${day}`;
+
+      if (fechaNacimiento > dateLimite) {
+        setError('El paciente debe tener al menos 65 años');
+        setSubmitting(false);
+        return;
+      }
+
+      if (sexo === '0' || sexo === '1') payload.sexo = parseInt(sexo, 10);
 
       const res = await pacientesService.create(payload as any);
       if (!res?.success) {
@@ -106,8 +119,8 @@ export function AddPaciente({ open, onClose, onSuccess }: AddPacienteProps) {
                   <SelectValue placeholder="Seleccione sexo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="M">Masculino</SelectItem>
-                  <SelectItem value="F">Femenino</SelectItem>
+                  <SelectItem value="0">Masculino</SelectItem>
+                  <SelectItem value="1">Femenino</SelectItem>
                 </SelectContent>
               </Select>
             </div>

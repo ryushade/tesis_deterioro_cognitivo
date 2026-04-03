@@ -24,6 +24,8 @@ dist-ssr
 *.sw?
 .venv/
 \venv
+\backend\app\controllers\cdt_dataset
 
+backend\app\controllers\cdt_dataset
 backend/__pycache__/
 .backend

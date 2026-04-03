@@ -188,12 +188,12 @@ const handleSubmit = async (e: React.FormEvent) => {
               </Label>
               <select
                 value={formData.sexo || ''}
-                onChange={(e) => handleChange('sexo', e.target.value as 'M' | 'F' | undefined)}
+                onChange={(e) => handleChange('sexo', e.target.value ? parseInt(e.target.value, 10) : undefined)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">Seleccionar sexo</option>
-                <option value="M">Masculino</option>
-                <option value="F">Femenino</option>
+                <option value="0">Masculino</option>
+                <option value="1">Femenino</option>
               </select>
             </div>
             {/* Nivel Educativo */}
