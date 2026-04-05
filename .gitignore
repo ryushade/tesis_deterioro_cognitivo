@@ -23063,3 +23063,9 @@ backend/app/controllers/cdt_dataset/7/
 backend/app/controllers/cdt_dataset/8/
 backend/app/controllers/cdt_dataset/9/
 
+# Ignorar archivos autogenerados del modelo IA del Test del Reloj (CDT)
+backend/app/controllers/cdt_dataset/imagenes_procesadas_224/
+backend/app/controllers/cdt_dataset/*.csv
+backend/app/services/cdt_modelo/
+backend/app/services/*.pth
+backend/app/services/cdt_modelo.zip

@@ -26,6 +26,14 @@ dist-ssr
 \venv
 \backend\app\controllers\cdt_dataset
 
+*.backend/app/controllers/cdt_dataset/imagenes_procesadas_224/
+
 backend\app\controllers\cdt_dataset
 backend/__pycache__/
 .backend
+
+backend/app/controllers/cdt_dataset/imagenes_procesadas_224/
+backend/app/controllers/cdt_dataset/*.csv
+backend/app/services/cdt_modelo/
+backend/app/services/*.pth
+backend/app/services/cdt_modelo.zip
