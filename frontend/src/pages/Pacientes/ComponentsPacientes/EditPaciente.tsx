@@ -1,13 +1,15 @@
 import { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { pacientesService, type Paciente, type PacienteUpdate } from '@/services/pacienteServices';
-const NIVELES_EDUCATIVOS = ['primaria_basica', 'secundaria_completa', 'superior_completa'];
 import toast from 'react-hot-toast';
-import { X, User, Calendar, Users, GraduationCap } from 'lucide-react';
+
+type Sexo = '0' | '1' | '';
+type Escolaridad = 'primaria_basica' | 'secundaria_completa' | 'superior_completa' | '';
 
 interface EditPacienteModalProps {
   open: boolean;
@@ -17,36 +19,57 @@ interface EditPacienteModalProps {
 }
 
 export default function EditPacienteModal({ open, onClose, onSuccess, paciente }: EditPacienteModalProps) {
-  const [formData, setFormData] = useState<PacienteUpdate>({
-    nombres: '',
-    apellidos: '',
-    fecha_nacimiento: '',
-    sexo: undefined,
-    anos_escolaridad: undefined,
-  });
-  const [loading, setLoading] = useState(false);
+  const [nombres, setNombres] = useState('');
+  const [apellidos, setApellidos] = useState('');
+  const [fechaNacimiento, setFechaNacimiento] = useState('');
+  const [sexo, setSexo] = useState<Sexo>('');
+  const [escolaridad, setEscolaridad] = useState<Escolaridad>('');
+  const [submitting, setSubmitting] = useState(false);
 
   // Llenar el formulario cuando cambie el paciente
   useEffect(() => {
     if (paciente) {
-      setFormData({
-        nombres: paciente.nombres || '',
-        apellidos: paciente.apellidos || '',
-        fecha_nacimiento: paciente.fecha_nacimiento || '',
-        sexo: paciente.sexo || undefined,
-        anos_escolaridad: paciente.anos_escolaridad || undefined,
-      });
+      setNombres(paciente.nombres || '');
+      setApellidos(paciente.apellidos || '');
+      
+      // Aislar correctamente formato YYYY-MM-DD forzando compatibilidad en <Input type="date">
+      let parsedDate = '';
+      if (paciente.fecha_nacimiento) {
+        try {
+          const d = new Date(paciente.fecha_nacimiento);
+          if (!isNaN(d.getTime())) {
+            parsedDate = d.toISOString().split('T')[0];
+          }
+        } catch(e) {}
+      }
+      setFechaNacimiento(parsedDate);
+      
+      // Parsear sexo (en DB podría ser un string M/F o números enteros)
+      let parsedSexo: Sexo = '';
+      if (paciente.sexo !== undefined && paciente.sexo !== null) {
+          const val = String(paciente.sexo).toLowerCase();
+          if (val === '0' || val === 'masculino' || val === 'm' || val === 'false') parsedSexo = '0';
+          else if (val === '1' || val === 'femenino' || val === 'f' || val === 'true') parsedSexo = '1';
+      }
+      setSexo(parsedSexo);
+      
+      // La API nos devuelve el JOIN (Ej: "Primaria basica") o el ID directo.
+      let mappedEscolaridad: Escolaridad = '';
+      const scId = String((paciente as any).id_escolaridad);
+      const scName = String(paciente.escolaridad || '').toLowerCase();
+      
+      if (scId === '1' || scName.includes('primaria') || scName.includes('básica')) {
+          mappedEscolaridad = 'primaria_basica';
+      } else if (scId === '3' || scName.includes('superior') || scName.includes('universidad')) {
+          mappedEscolaridad = 'superior_completa';
+      } else if (scId === '2' || scName.includes('secundaria') || scName.includes('media')) {
+          mappedEscolaridad = 'secundaria_completa'; 
+      }
+      setEscolaridad(mappedEscolaridad);
     }
   }, [paciente]);
 
-  const handleChange = (field: keyof PacienteUpdate, value: string | number | undefined) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-    const calcularEdad = (fecha: string): number | null => {
+  const calcularEdad = (fecha: string): number | null => {
     const nacimiento = new Date(fecha);
     if (Number.isNaN(nacimiento.getTime())) return null;
     const hoy = new Date();
@@ -58,39 +81,49 @@ export default function EditPacienteModal({ open, onClose, onSuccess, paciente }
     return edad;
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!paciente) return;
-    setLoading(true);
+    setSubmitting(true);
+    
     try {
       // Validaciones
-      if (!formData.nombres?.trim()) {
-        toast.error('El nombre es requerido');
+      if (!nombres.trim() || !apellidos.trim() || !fechaNacimiento) {
+        toast.error('Nombres, apellidos y fecha de nacimiento son requeridos');
+        setSubmitting(false);
         return;
       }
-      if (!formData.apellidos?.trim()) {
-        toast.error('Los apellidos son requeridos');
-        return;
-      }
-      if (!formData.fecha_nacimiento) {
-        toast.error('La fecha de nacimiento es requerida');
-        return;
-      }
-      // Validación de edad para evitar valores negativos o irreales
-      const edad = calcularEdad(formData.fecha_nacimiento!);
+      
+      const edad = calcularEdad(fechaNacimiento);
       const hoyISO = new Date().toISOString().split('T')[0];
+      
       if (!edad && edad !== 0) {
         toast.error('Fecha de nacimiento inválida');
+        setSubmitting(false);
         return;
       }
-      if (formData.fecha_nacimiento! > hoyISO) {
+      if (fechaNacimiento > hoyISO) {
         toast.error('La fecha de nacimiento no puede ser futura');
+        setSubmitting(false);
         return;
       }
       if (edad < 0 || edad > 120) {
         toast.error('La edad debe estar entre 0 y 120 años');
+        setSubmitting(false);
         return;
       }
+
+      const formData: any = {
+        nombres: nombres.trim(),
+        apellidos: apellidos.trim(),
+        fecha_nacimiento: fechaNacimiento,
+        escolaridad: escolaridad || undefined
+      };
+      
+      if (sexo === '0' || sexo === '1') {
+        formData.sexo = sexo;
+      }
+
       const response = await pacientesService.update(paciente.id_paciente, formData);
       if (response?.success) {
         toast.success('Paciente actualizado exitosamente');
@@ -99,147 +132,83 @@ const handleSubmit = async (e: React.FormEvent) => {
         toast.error(response?.message || 'Error al actualizar paciente');
       }
     } catch (error) {
-      toast.error('Error de conexiÃ³n al servidor');
+      toast.error('Error de conexión al servidor');
       console.error('Error updating paciente:', error);
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   if (!open || !paciente) return null;
 
   return ReactDOM.createPortal(
-  <div 
-    className="fixed inset-0 flex items-center justify-center z-50 p-4"
-    style={{
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      backdropFilter: 'blur(8px) saturate(180%) brightness(0.8)',
-      WebkitBackdropFilter: 'blur(8px) saturate(180%) brightness(0.8)'
-    }}
-  >
-      <Card className="w-full max-w-md max-h-[90vh] overflow-y-auto">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between w-full gap-2">
-            <CardTitle className="text-xl font-semibold">Editar paciente</CardTitle>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              aria-label="Cerrar"
-              onClick={onClose}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* ID del Paciente */}
-           
-            {/* Nombres */}
-            <div className="space-y-2">
-              <Label htmlFor="nombres" className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Nombres *
-              </Label>
-              <Input
-                id="nombres"
-                value={formData.nombres}
-                onChange={(e) => handleChange('nombres', e.target.value)}
-                placeholder="Ingrese los nombres"
-                required
-              />
+    <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-12 overflow-y-auto" style={{
+      backgroundColor: 'rgba(0,0,0,0.5)',
+      backdropFilter: 'blur(8px) saturate(180%) brightness(0.9)'
+    }}>
+      <div className="bg-white w-full max-w-lg rounded-lg shadow-lg overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b">
+          <h3 className="text-lg font-semibold">Editar paciente</h3>
+          <button onClick={onClose} className="p-1 rounded hover:bg-gray-100" aria-label="Cerrar">
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="px-5 py-2 space-y-4">
+          <div className="grid grid-cols-1 gap-4">
+            <div>
+              <Label htmlFor="nombres">Nombres</Label>
+              <Input id="nombres" value={nombres} onChange={(e) => setNombres(e.target.value)} placeholder="Nombres" required />
             </div>
-            {/* Apellidos */}
-            <div className="space-y-2">
-              <Label htmlFor="apellidos" className="flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Apellidos *
-              </Label>
-              <Input
-                id="apellidos"
-                value={formData.apellidos}
-                onChange={(e) => handleChange('apellidos', e.target.value)}
-                placeholder="Ingrese los apellidos"
-                required
-              />
+            <div>
+              <Label htmlFor="apellidos">Apellidos</Label>
+              <Input id="apellidos" value={apellidos} onChange={(e) => setApellidos(e.target.value)} placeholder="Apellidos" required />
             </div>
-            {/* Fecha de Nacimiento */}
-            <div className="space-y-2">
-              <Label htmlFor="fecha_nacimiento" className="flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Fecha de Nacimiento *
-              </Label>
+            <div>
+              <Label htmlFor="fecha_nacimiento">Fecha de nacimiento</Label>
               <Input
                 id="fecha_nacimiento"
                 type="date"
-                value={formData.fecha_nacimiento}
-                onChange={(e) => handleChange('fecha_nacimiento', e.target.value)}
+                value={fechaNacimiento}
+                onChange={(e) => setFechaNacimiento(e.target.value)}
                 required
-                max={new Date().toISOString().split('T')[0]} // No permitir fechas futuras
+                max={new Date().toISOString().split('T')[0]}
               />
             </div>
-            {/* Sexo */}
-            <div className="space-y-2">
-              <Label className="flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Sexo
-              </Label>
-              <select
-                value={formData.sexo || ''}
-                onChange={(e) => handleChange('sexo', e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Seleccionar sexo</option>
-                <option value="0">Masculino</option>
-                <option value="1">Femenino</option>
-              </select>
+            <div>
+              <Label>Sexo</Label>
+              <Select value={sexo} onValueChange={(v) => setSexo(v as Sexo)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccione sexo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Masculino</SelectItem>
+                  <SelectItem value="1">Femenino</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            {/* Nivel Educativo */}
-            <div className="space-y-2">
-              <Label htmlFor="anos_escolaridad" className="flex items-center gap-2">
-                <GraduationCap className="w-4 h-4" />
-                Nivel Educativo
-              </Label>
-              <select
-                id="anos_escolaridad"
-                value={formData.anos_escolaridad || ''}
-                onChange={(e) => handleChange('anos_escolaridad', e.target.value || undefined)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">Seleccione un nivel</option>
-                {NIVELES_EDUCATIVOS.map((nivel) => (
-                  <option key={nivel} value={nivel}>
-                    {nivel}
-                  </option>
-                ))}
-              </select>
+            <div>
+              <Label>Escolaridad</Label>
+              <Select value={escolaridad} onValueChange={(v) => setEscolaridad(v as Escolaridad)}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccione escolaridad" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="primaria_basica">Primaria básica</SelectItem>
+                  <SelectItem value="secundaria_completa">Secundaria completa</SelectItem>
+                  <SelectItem value="superior_completa">Superior completa</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            {/* Botones */}
-            <div className="flex gap-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-                className="flex-1"
-                disabled={loading}
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                className="flex-1 bg-blue-600 hover:bg-blue-700"
-                disabled={loading}
-              >
-                {loading ? 'Guardando...' : 'Guardar'}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>Cancelar</Button>
+            <Button type="submit" disabled={submitting}>{submitting ? 'Guardando...' : 'Guardar'}</Button>
+          </div>
+        </form>
+      </div>
     </div>,
     document.body
   );
 }
-

@@ -7,6 +7,7 @@ import { authService} from '@/services/auth'
 import toast from 'react-hot-toast'
 
 export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: boolean; onClose: () => void; onSuccess?: () => void }) {
+  const [nombreyApellido, setNombreyApellido] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [password2, setPassword2] = useState('')
@@ -18,6 +19,7 @@ export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: 
   if (!open) return null
 
   const reset = () => {
+    setNombreyApellido('')
     setUsername('')
     setPassword('')
     setPassword2('')
@@ -29,7 +31,7 @@ export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: 
     setSubmitting(true)
     setError(null)
     try {
-      if (!username.trim() || !password) {
+      if (!nombreyApellido.trim() || !username.trim() || !password) {
         setError('Todos los campos son obligatorios')
         toast.error('Todos los campos son obligatorios')
         return
@@ -45,7 +47,7 @@ export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: 
         return
       }
       // Se pasa el rol 2 explícitamente porque es para registrar un neuropsicólogo
-      const reg = await authService.register({ username: username.trim(), password, role_id: 2 })
+      const reg = await authService.register({ nombreyApellido: nombreyApellido.trim(), username: username.trim(), password, role_id: 2 })
       if (!reg.success) throw new Error(reg.message || 'No se pudo crear el usuario')
       toast.success('Neuropsicólogo creado exitosamente')
       reset()
@@ -72,7 +74,7 @@ export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: 
           <div className="grid grid-cols-1 gap-4">
             <div>
               <Label htmlFor="username">Nombres y apellidos</Label>
-              <Input id="username" value={username} onChange={(e) => setUsername(e.target.value)} required />
+              <Input id="username" value={nombreyApellido} onChange={(e) => setNombreyApellido(e.target.value)} required />
             </div>
             <div>
               <Label htmlFor="username">Usuario</Label>

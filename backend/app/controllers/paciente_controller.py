@@ -7,7 +7,8 @@ def obtener_pacientes():
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
             # Agregué p.id_paciente, p.nombres y p.sexo como ejemplo
-            cursor.execute("SELECT p.id_paciente, p.nombres, p.apellidos, p.fecha_nacimiento, n.nom_escolaridad AS escolaridad, p.estado FROM paciente p INNER JOIN nivel_escolaridad n ON p.id_escolaridad = n.id_escolaridad;")
+            # Agregué selectores flat para sexo y id_escolaridad directamente de la entidad paciente
+            cursor.execute("SELECT p.id_paciente, p.nombres, p.apellidos, p.fecha_nacimiento, p.sexo, p.id_escolaridad, n.nom_escolaridad AS escolaridad, p.estado FROM paciente p INNER JOIN nivel_escolaridad n ON p.id_escolaridad = n.id_escolaridad;")
             return cursor.fetchall()
     except Exception as e:
         print("Error", e)
@@ -49,12 +50,12 @@ def registrar_paciente(nombres, apellidos, fecha_nacimiento, id_escolaridad, est
             conexion.close()
 
 
-def actualizar_paciente(id_paciente, nombres, apellidos, fecha_nacimiento, id_escolaridad, estado):
+def actualizar_paciente(id_paciente, nombres, apellidos, fecha_nacimiento, id_escolaridad, estado, sexo=None):
     conexion = None
     try:
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
-            cursor.execute("UPDATE paciente SET nombres = %s, apellidos = %s, fecha_nacimiento = %s, id_escolaridad = %s, estado = %s WHERE id_paciente = %s", (nombres, apellidos, fecha_nacimiento, id_escolaridad, estado, id_paciente))
+            cursor.execute("UPDATE paciente SET nombres = %s, apellidos = %s, fecha_nacimiento = %s, id_escolaridad = %s, estado = %s, sexo = %s WHERE id_paciente = %s", (nombres, apellidos, fecha_nacimiento, id_escolaridad, estado, sexo, id_paciente))
             conexion.commit()
             return True
     except Exception as e:

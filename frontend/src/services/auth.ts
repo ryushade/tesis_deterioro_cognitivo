@@ -31,6 +31,7 @@ export interface LoginResponse {
 }
 
 export interface RegisterRequest {
+  nombreyApellido: string;
   username: string;
   password: string;
   role_id?: number;

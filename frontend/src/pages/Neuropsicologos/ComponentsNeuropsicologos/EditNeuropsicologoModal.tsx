@@ -4,41 +4,25 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { type Neuropsicologo } from '@/services/neuropsicologosService'
-import { authService, type Role } from '@/services/auth'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { apiClient } from '@/services/api'
 
 export default function EditNeuropsicologo({ open, onClose, onSuccess, item }: { open: boolean; onClose: () => void; onSuccess: () => void; item: Neuropsicologo | null }) {
   const [username, setUsername] = useState('')
-  const [roleId, setRoleId] = useState<string>('')
-  const [roles, setRoles] = useState<Role[]>([])
+  const [estado, setEstado] = useState<string>('true')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (item) {
-      setUsername(item.usua || (item as any).usua || '')
-      const rid = (item as any).id_rol
-      setRoleId(rid !== undefined && rid !== null ? String(rid) : '')
+    if (item && open) {
+      // 1. Poblamos el campo de usuario
+      setUsername(item.usua || (item as any).username || '')
+      
+      // 2. Evaluamos el estado activo/inactivo (soporta múltiples formatos de backend)
+      const isActive = item.estado_usuario === 1 || (item as any).estado === true
+      setEstado(isActive ? 'true' : 'false')
     }
-  }, [item])
-
-  useEffect(() => {
-    if (!open) return
-    authService.getRoles().then((rs) => {
-      // Encontrar sólo el rol de Neuropsicólogo (variantes incluidas)
-      const neuro = rs.find(r => r.nom_rol === 'Neuropsicólogo')
-        || rs.find(r => r.nom_rol === 'Neuropsicologo')
-        || rs.find(r => (r.nom_rol || '').toLowerCase().includes('neuropsico'))
-
-      if (neuro) {
-        setRoles([neuro])
-        setRoleId(String(neuro.id_rol))
-      } else {
-        setRoles([])
-      }
-    })
-  }, [open])
+  }, [item, open])
 
   if (!open || !item) return null
 
@@ -47,15 +31,33 @@ export default function EditNeuropsicologo({ open, onClose, onSuccess, item }: {
     setLoading(true)
     setError(null)
     try {
-      if (!username.trim() || !roleId) {
-        setError('Usuario y rol son obligatorios')
+      if (!username.trim()) {
+        setError('El usuario es obligatorio')
         return
       }
-      const res = await apiClient.put(`/users/${item.id_neuropsicologo}`, { username: username.trim(), role_id: Number(roleId) })
-      if (!res.data?.success) throw new Error(res.data?.message || 'No se pudo actualizar')
+      
+      const isActive = estado === 'true'
+      
+      // Mapeamos el ID correcto dependiendo del JSON que envíe el servicio list_all
+      const idUsuario = (item as any).id_neuropsicologo || item.id_usuario
+
+      // Enviar la petición PUT con la propiedad correcta de Estado (Booleana o Numérica)
+      const payload = { 
+        username: username.trim(),
+        estado: isActive,
+        estado_usuario: isActive ? 1 : 0
+      }
+
+      // Consumimos el endpoint real /users/id que gestiona los accesos
+      const res = await apiClient.put(`/users/${idUsuario}`, payload)
+      
+      if (res.data && res.data.success === false) {
+        throw new Error(res.data.message || 'No se pudo actualizar el estado.')
+      }
+      
       onSuccess()
     } catch (err: any) {
-      setError(err?.message || 'Error al actualizar')
+      setError(err?.response?.data?.message || err?.message || 'Error al actualizar')
     } finally {
       setLoading(false)
     }
@@ -77,14 +79,13 @@ export default function EditNeuropsicologo({ open, onClose, onSuccess, item }: {
             </div>
             <div>
               <Label>Estado</Label>
-              <Select value={roleId} onValueChange={setRoleId}>
-                <SelectTrigger className="w-full" disabled>
-                  <SelectValue placeholder="Seleccione un rol" />
+              <Select value={estado} onValueChange={setEstado}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccione un estado" />
                 </SelectTrigger>
                 <SelectContent>
-                  {roles.map(r => (
-                    <SelectItem key={r.id_rol} value={String(r.id_rol)}>{r.nom_rol}</SelectItem>
-                  ))}
+                  <SelectItem value="true">Activo</SelectItem>
+                  <SelectItem value="false">Inactivo</SelectItem>
                 </SelectContent>
               </Select>
             </div>
