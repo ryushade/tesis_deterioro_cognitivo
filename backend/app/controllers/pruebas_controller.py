@@ -62,6 +62,8 @@ def eliminar_pruebas(id_prueba):
         return None
     finally:
         if conexion:
-            conexion.close()     
+            conexion.close()
+
+# def asignar_pruebas
 
 

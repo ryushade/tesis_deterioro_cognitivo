@@ -4,8 +4,8 @@ import {
   Edit, 
   Trash2, 
   User,
-  Calendar,
-  GraduationCap
+  ClipboardList 
+
 } from 'lucide-react';
 import { type Paciente } from '@/services/pacienteServices';
 
@@ -15,6 +15,7 @@ interface TablaPacientesSimpleProps {
   error: string | null;
   searchTerm: string;
   onSearch: (term: string) => void;
+  onAsignarPrueba: (paciente: Paciente) => void;
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
@@ -31,7 +32,9 @@ export default function TablaPacientesSimple({
   onSearch: _onSearch,
   onView,
   onEdit,
-  onDelete
+  onDelete,
+  onAsignarPrueba
+  
 }: TablaPacientesSimpleProps) {
 
   const formatDate = (dateString: string) => {
@@ -174,6 +177,15 @@ export default function TablaPacientesSimple({
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onAsignarPrueba(paciente)}
+                        className="text-green-600 hover:text-green-800"
+                      >
+                        <ClipboardList className="h-4 w-4" />
+                      </Button>
+
                       <Button
                         variant="ghost"
                         size="sm"

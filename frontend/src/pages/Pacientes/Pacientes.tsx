@@ -7,6 +7,7 @@ import { useGetPacientes } from '@/services/pacienteServices';
 import TablaPacientesSimple from './ComponentsPacientes/TablaPacientesSimple';
 import AddPacienteModal from './ComponentsPacientes/AddPaciente';
 import EditPacienteModal from './ComponentsPacientes/EditPaciente';
+import AsignarPruebaDialog from './ComponentsPacientes/AsignarPrueba';  
 import ViewPacienteModal from './ComponentsPacientes/ViewPaciente';
 import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { pacientesService, type Paciente } from '@/services/pacienteServices';
@@ -22,6 +23,7 @@ import {
 
 function Pacientes() {
   // Estados para los modales
+  const [showAsignarPruebaModal, setShowAsignarPruebaModal] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -52,6 +54,11 @@ function Pacientes() {
   // Handlers para modales
   const handleAddPaciente = () => {
     setShowAddModal(true);
+  };
+
+  const handleAsignarPrueba = (paciente: Paciente) => {
+    setSelectedPaciente(paciente);
+    setShowAsignarPruebaModal(true);
   };
 
   const handleViewPaciente = (paciente: Paciente) => {
@@ -154,6 +161,7 @@ function Pacientes() {
           currentPage={currentPage}
           totalPages={(metadata as any)?.total_pages ?? (metadata as any)?.totalPages ?? 1}
           onPageChange={handlePageChange}
+          onAsignarPrueba={handleAsignarPrueba}
           onView={handleViewPaciente}
           onEdit={handleEditPaciente}
           onDelete={handleDeletePaciente}
@@ -207,6 +215,17 @@ function Pacientes() {
             handleRefresh();
           }}
         />
+        {showAsignarPruebaModal && selectedPaciente && (
+          <AsignarPruebaDialog
+            open={showAsignarPruebaModal}
+            onClose={() => setShowAsignarPruebaModal(false)}
+            paciente={selectedPaciente}
+            onSuccess={() => {
+              setShowAsignarPruebaModal(false);
+              handleRefresh();
+            }}
+          />
+        )}
 
         {showEditModal && selectedPaciente && (
           <EditPacienteModal
