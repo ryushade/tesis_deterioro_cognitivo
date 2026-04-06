@@ -60,3 +60,41 @@ def registrar_neuropsicologo_2(usua, contra_encriptada, nombres, apellidos):
         if 'conexion' in locals() and conexion:
             conexion.rollback()
         return {"error": str(error)}
+
+#Borrado logico
+
+def desactivar_neuropsicologo(id_neuropsicologo):
+    conexion = None
+    try:
+        conexion = db.obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                UPDATE neuropsicologo SET estado = '0' WHERE id_neuropsicologo = %s
+            """, (id_neuropsicologo,))
+            conexion.commit()
+            return True
+    except Exception as e:
+        print("Error", e)
+        return False
+    finally:
+        if conexion:
+            conexion.close()
+
+
+# Borrado fisico
+def eliminar_neuropsicologo(id_neuropsicologo):
+    conexion = None
+    try:
+        conexion = db.obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                DELETE FROM neuropsicologo WHERE id_neuropsicologo = %s
+            """, (id_neuropsicologo,))
+            conexion.commit()
+            return True
+    except Exception as e:
+        print("Error", e)
+        return False
+    finally:
+        if conexion:
+            conexion.close()
