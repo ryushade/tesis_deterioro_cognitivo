@@ -9,7 +9,7 @@ def obtener_codigo_prueba():
             cursor.execute("""
                 SELECT ap.id_asignacion,
                        COALESCE(c.codigo_texto, 'SIN CÓDIGO') AS codigo_generado,
-                       COALESCE(c.estado_codigo, 'emitido') AS estado_codigo,
+                       c.estado_codigo AS estado_codigo,
                        CONCAT(p.nombres, ' ', p.apellidos) AS nombre_completo,
                        pc.nombre_prueba,
                        ap.fecha_asignacion,
@@ -27,17 +27,32 @@ def obtener_codigo_prueba():
         if conexion:
             conexion.close()
 
-def asignar_codigo_prueba(id_asignacion, codigo_texto, estado_codigo, fecha_generacion):
+def asignar_y_generar_codigo(id_paciente, id_prueba, codigo_texto):
+    conexion = None
     try:
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
-            cursor.execute("INSERT INTO codigo_acceso (id_asignacion, codigo_texto, estado_codigo, fecha_generacion) VALUES (%s,%s, %s, %s) ",
-            (id_asignacion, codigo_texto, estado_codigo, fecha_generacion))
-        conexion.commit()
-        
+            # 1. Registrar asignación asociando la prueba al paciente
+            cursor.execute("""
+                INSERT INTO asignacion_prueba (id_paciente, id_prueba) 
+                VALUES (%s, %s) RETURNING id_asignacion
+            """, (id_paciente, id_prueba))
+            res = cursor.fetchone()
+            id_asignacion = res['id_asignacion'] if isinstance(res, dict) else res[0]
+            
+            # 2. Generar código relacionado
+            cursor.execute("""
+                INSERT INTO codigo_acceso (id_asignacion, codigo_texto, estado_codigo, fecha_generacion) 
+                VALUES (%s, %s, 1, CURRENT_TIMESTAMP)
+            """, (id_asignacion, codigo_texto))
+            
+            conexion.commit()
+            return id_asignacion    
     except Exception as e:
-        print("Error", e)
-        return None 
+        print("Error en transaccion de codigo:", e)
+        if conexion:
+            conexion.rollback()
+        return None
     finally:
         if conexion:
-            conexion.close( )            
+            conexion.close()

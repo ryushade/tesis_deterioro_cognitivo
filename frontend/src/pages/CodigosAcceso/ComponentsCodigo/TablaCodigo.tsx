@@ -133,7 +133,7 @@ export default function TablaCodigo({
                   <td className="px-4 py-3 whitespace-nowrap">
                     {/* Generador condicional de Badges usando directamente el helper de tus Types */}
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${getEstadoColor(codigo.estado)}`}>
-                      {codigo.estado.charAt(0).toUpperCase() + codigo.estado.slice(1)}
+                      {codigo.estado ? String(codigo.estado).charAt(0).toUpperCase() + String(codigo.estado).slice(1) : 'Pendiente'}
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">

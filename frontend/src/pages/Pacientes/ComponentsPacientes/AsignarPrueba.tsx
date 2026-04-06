@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { type Paciente } from "@/services/pacienteServices";
 import { useGetPruebas } from "@/services/pruebaServices";
+import { codigosAccesoService } from "@/services/codigosAccesoService";
 
 interface AsignarPruebaProps {
   open: boolean;
@@ -29,12 +30,36 @@ export default function AsignarPruebaDialog({ open, onClose, onSuccess, paciente
   // Cargamos dinámicamente las pruebas reales de la base de datos
   const { pruebas } = useGetPruebas();
 
-  const handleGenerar = (e: React.FormEvent) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleGenerar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pruebaId) return;
-    setCodigoGenerado(generarCodigo());
-    toast.success("Código de acceso generado exitosamente");
-    // Opcional: Llama a onSuccess() si deseas que guarde la prueba enseguida.
+    
+    setIsSubmitting(true);
+    try {
+      const nuevoCodigoStr = generarCodigo();
+      const payload = {
+        id_paciente: paciente.id_paciente,
+        id_prueba: Number(pruebaId),
+        codigo: nuevoCodigoStr
+      };
+      
+      const response = await codigosAccesoService.create(payload as any);
+      
+      if (response.success) {
+        setCodigoGenerado(nuevoCodigoStr);
+        toast.success("Código de acceso generado y guardado en la Base de Datos exitosamente");
+        if (onSuccess) onSuccess();
+      } else {
+        toast.error(response.message || "Error al asignar la prueba");
+      }
+    } catch (error) {
+       console.error(error);
+       toast.error("Error de red al conectar con el servidor backend");
+    } finally {
+       setIsSubmitting(false);
+    }
   };
 
   const handleCopiar = () => {
@@ -126,8 +151,8 @@ export default function AsignarPruebaDialog({ open, onClose, onSuccess, paciente
                   <Button type="button" variant="outline" onClick={handleClose} className="flex-1">
                     Cancelar
                   </Button>
-                  <Button type="submit" disabled={!pruebaId} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                    Generar código
+                  <Button type="submit" disabled={!pruebaId || isSubmitting} className="flex-1 bg-blue-600 hover:bg-blue-700">
+                    {isSubmitting ? "Guardando..." : "Generar código"}
                   </Button>
                 </>
               ) : (

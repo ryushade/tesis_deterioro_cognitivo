@@ -21,7 +21,7 @@ export const codigosAccesoService = {
   },
 
   async create(payload: CodigoAccesoCreate): Promise<GenerarCodigoResponse> {
-    const { data } = await apiClient.post<GenerarCodigoResponse>(RESOURCE, payload);
+    const { data } = await apiClient.post<GenerarCodigoResponse>('/auth/generar_codigo', payload);
     return data;
   },
 
