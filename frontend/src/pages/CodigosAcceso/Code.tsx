@@ -2,8 +2,61 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { authService } from '@/services/auth';
+import TablaCodigo from './ComponentsCodigo/TablaCodigo';
+import PaginacionCodigo from './ComponentsCodigo/PaginacionCodigo';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+import { useState, useEffect } from 'react';
+import type { CodigoAcceso } from '@/types/codigosAcceso';
+import { codigosAccesoService } from '@/services/codigosAccesoService';
 
 function CodigosAcceso() {
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+  
+  const [codigosAcceso, setCodigosAcceso] = useState<CodigoAcceso[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchCodigos = async (page = currentPage, limit = itemsPerPage) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await codigosAccesoService.getAll({ page, limit });
+      if (res.success) {
+        setCodigosAcceso(res.data || []);
+        setTotal(res.metadata?.total || 0);
+        setTotalPages(res.metadata?.total_pages || 1);
+      } else {
+        setError(res.message || 'Fallo API Códigos');
+      }
+    } catch (e: any) {
+      setError(e?.message || 'Error conexión JSON');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchCodigos(currentPage, itemsPerPage);
+  }, [currentPage, itemsPerPage]);
+
+  const metadata = { total_pages: totalPages, total: total };
+  
+  const handlePageChange = (page: number) => setCurrentPage(page);
+  const handlePageSizeChange = (size: number) => {
+    setItemsPerPage(size);
+    setCurrentPage(1);
+  };
+
   // Obtener datos del usuario logueado para el DashboardLayout
   const currentUser = authService.getUserFromStorage();
   
@@ -28,24 +81,67 @@ function CodigosAcceso() {
           <div className="flex items-center gap-3">
             <div className="mb-2">
               <h1 className="font-black text-5xl text-blue-900 tracking-tight mb-3">
-                Gestión de códigos de acceso
+                Códigos de acceso
               </h1>
               <p className="text-lg font-medium text-blue-700/80 leading-relaxed">
-                Gestiona los códigos de acceso para las evaluaciones del deterioro cognitivo.
+                Gestiona los códigos temporales generados para las pruebas cognitivas.
               </p>
             </div>
           </div>
           
-          <Button
-            className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
-          >
-            <Plus className="h-4 w-4" />
-            Agregar código
-          </Button>
+          
         </div>
 
+        <TablaCodigo
+          codigos={codigosAcceso}
+          loading={loading}
+          error={error}
+          searchTerm=""
+          onSearch={() => {}}
+          onView={() => {}}
+          onEdit={() => {}}
+          onDelete={() => {}}
+          onAdministerTest={() => {}}
+        />
         {/* ... AQUÍ PUEDES COMENZAR A ESCRIBIR TU TABLA Y MODALES ... */}
         
+        {/* Paginación a la izquierda y texto centrado */}
+        <div className="mt-2 flex w-full items-center justify-between gap-2">
+          {/* Izquierda: paginación */}
+          <div className="flex items-center">
+            <PaginacionCodigo
+              currentPage={currentPage}
+              totalPages={(metadata as any)?.total_pages ?? (metadata as any)?.totalPages ?? 1}
+              onPageChange={handlePageChange}
+            />
+          </div>
+
+          {/* Centro: texto */}
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-sm text-gray-600">
+              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, (metadata as any)?.total ?? (metadata as any)?.totalItems ?? codigosAcceso.length)} de {(metadata as any)?.total ?? (metadata as any)?.totalItems ?? codigosAcceso.length} registros
+            </p>
+          </div>
+            
+          
+          {/* Derecha: espacio para balancear */}
+          <div className="flex items-center gap-3 text-sm text-gray-700">
+            <span className="whitespace-nowrap">Filas por página:</span>
+            <Select value={String(itemsPerPage)} onValueChange={(value) => handlePageSizeChange(Number(value))}>
+              <SelectTrigger className="w-28">
+                <SelectValue placeholder="Entradas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="5">5</SelectItem>
+                <SelectItem value="10">10</SelectItem>
+                <SelectItem value="20">20</SelectItem>
+                <SelectItem value="50">50</SelectItem>
+                <SelectItem value="100000000000">Todos</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
       </div>
     </DashboardLayout>
   );
