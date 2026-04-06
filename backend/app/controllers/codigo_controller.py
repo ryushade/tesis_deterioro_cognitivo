@@ -8,8 +8,8 @@ def obtener_codigo_prueba():
         with conexion.cursor() as cursor:
             cursor.execute("""
                 SELECT ap.id_asignacion,
-                       c.codigo_texto AS codigo_generado,
-                       c.estado_codigo,
+                       COALESCE(c.codigo_texto, 'SIN CÓDIGO') AS codigo_generado,
+                       COALESCE(c.estado_codigo, 'emitido') AS estado_codigo,
                        CONCAT(p.nombres, ' ', p.apellidos) AS nombre_completo,
                        pc.nombre_prueba,
                        ap.fecha_asignacion,
@@ -26,3 +26,18 @@ def obtener_codigo_prueba():
     finally:
         if conexion:
             conexion.close()
+
+def asignar_codigo_prueba(id_asignacion, codigo_texto, estado_codigo, fecha_generacion):
+    try:
+        conexion = db.obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute("INSERT INTO codigo_acceso (id_asignacion, codigo_texto, estado_codigo, fecha_generacion) VALUES (%s,%s, %s, %s) ",
+            (id_asignacion, codigo_texto, estado_codigo, fecha_generacion))
+        conexion.commit()
+        
+    except Exception as e:
+        print("Error", e)
+        return None 
+    finally:
+        if conexion:
+            conexion.close( )            
