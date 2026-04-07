@@ -42,7 +42,7 @@ def asignar_y_generar_codigo(id_paciente, id_prueba, codigo_texto):
                 INNER JOIN asignacion_prueba ap ON c.id_asignacion = ap.id_asignacion
                 WHERE ap.id_paciente = %s 
                   AND ap.id_prueba = %s 
-                  AND c.estado_codigo IN ('emitido', '1')
+                  AND c.estado_codigo = 1
             """, (id_paciente, id_prueba))
             if cursor.fetchone():
                 return {'error': 'El paciente ya cuenta con un código temporal activo para esta evaluación. Debe culminar dicha prueba antes de generarle uno nuevo.'}
