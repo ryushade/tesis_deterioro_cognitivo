@@ -42,12 +42,7 @@ export default function TablaPacientesSimple({
     const date = new Date(dateString);
     return date.toLocaleDateString('es-ES');
   };
-
-  const formatSexo = (sexo: string | null) => {
-    if (!sexo) return 'No especificado';
-    return sexo === 'M' ? 'Masculino' : 'Femenino';
-  };
-
+  
   const calculateEdad = (fecha_nacimiento: string | null) => {
     if (!fecha_nacimiento) return '-';
     const today = new Date();
@@ -156,13 +151,13 @@ export default function TablaPacientesSimple({
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      paciente.sexo === 'M'
+                      paciente.sexo === 0
                         ? 'text-blue-700 bg-blue-100'
-                        : paciente.sexo === 'F'
+                        : paciente.sexo === 1
                         ? 'text-purple-700 bg-purple-100'
                         : 'text-gray-700 bg-gray-100'
                     }`}>
-                      {formatSexo(paciente.sexo || null)}
+                      {paciente.sexo === 0 ? 'Masculino' : 'Femenino'}
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">

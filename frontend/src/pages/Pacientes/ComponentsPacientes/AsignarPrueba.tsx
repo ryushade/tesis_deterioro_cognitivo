@@ -31,11 +31,13 @@ export default function AsignarPruebaDialog({ open, onClose, onSuccess, paciente
   const { pruebas } = useGetPruebas();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const handleGenerar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!pruebaId) return;
     
+    setErrorMsg(null);
     setIsSubmitting(true);
     try {
       const nuevoCodigoStr = generarCodigo();
@@ -49,14 +51,15 @@ export default function AsignarPruebaDialog({ open, onClose, onSuccess, paciente
       
       if (response.success) {
         setCodigoGenerado(nuevoCodigoStr);
-        toast.success("Código de acceso generado y guardado en la Base de Datos exitosamente");
-        if (onSuccess) onSuccess();
+        toast.success("Código de acceso guardado en la Base de Datos exitosamente");
       } else {
         toast.error(response.message || "Error al asignar la prueba");
       }
-    } catch (error) {
+    } catch (error: any) {
        console.error(error);
-       toast.error("Error de red al conectar con el servidor backend");
+       const serverError = error.response?.data?.message || "Error de red al conectar con el servidor backend";
+       setErrorMsg(serverError);
+       toast.error(serverError);
     } finally {
        setIsSubmitting(false);
     }
@@ -73,9 +76,16 @@ export default function AsignarPruebaDialog({ open, onClose, onSuccess, paciente
 
   const handleClose = () => {
     setPruebaId("");
+    const seAsigno = codigoGenerado !== null;
     setCodigoGenerado(null);
     setCopiado(false);
-    onClose();
+    
+    // Disparar onSuccess recargando tablas solo si terminó exitosamente
+    if (seAsigno && onSuccess) {
+       onSuccess();
+    } else {
+       onClose();
+    }
   };
 
   if (!open || !paciente) return null;
@@ -122,6 +132,12 @@ export default function AsignarPruebaDialog({ open, onClose, onSuccess, paciente
               )}
             </div>
 
+            {errorMsg && (
+              <div className="rounded-md bg-red-50 p-3 border border-red-200 text-sm text-red-600 font-medium my-2">
+                {errorMsg}
+              </div>
+            )}
+
             {codigoGenerado && (
               <div className="rounded-xl border-2 border-dashed border-blue-200 bg-blue-50 p-5 text-center space-y-3">
                 <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
@@ -133,7 +149,7 @@ export default function AsignarPruebaDialog({ open, onClose, onSuccess, paciente
                 </p>
                 <div className="flex justify-center">
                   <Button type="button" variant="outline" size="sm" onClick={handleCopiar} className="gap-2">
-                    {copiado ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                    {copiado ? <Check className="w-4 h-4" /> : <Copy classAName="w-4 h-4" />}
                     {copiado ? "Copiado" : "Copiar código"}
                   </Button>
                 </div>

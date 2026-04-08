@@ -10,7 +10,7 @@ export interface Paciente {
   apellidos: string;
   fecha_nacimiento: string;
   edad: number;
-  sexo: string;
+  sexo: number;
   escolaridad: string;
   estado: number;
 }
@@ -40,7 +40,7 @@ export interface PacienteCreate {
   nombres: string;
   apellidos: string;
   fecha_nacimiento: string;
-  sexo?: string;
+  sexo?: number;
   id_escolaridad: number | string;
   estado?: number;
 }

@@ -1,6 +1,6 @@
 // Tipos para códigos de acceso
 
-export type EstadoCodigo = 'emitido' | 'usado' | 'vencido' | 'revocado';
+export type EstadoCodigo = 0 | 1 | 2;
 
 export type TipoEvaluacion = 'CDT' | 'MMSE' | 'MOCA' | 'ACE';
 
@@ -93,10 +93,9 @@ export interface CodigoAccesoFilters {
 
 // Opciones para selects
 export const ESTADOS_CODIGO: { value: EstadoCodigo; label: string; color: string }[] = [
-  { value: 'emitido', label: 'Emitido', color: 'bg-blue-100 text-blue-800' },
-  { value: 'usado', label: 'Usado', color: 'bg-green-100 text-green-800' },
-  { value: 'vencido', label: 'Vencido', color: 'bg-red-100 text-red-800' },
-  { value: 'revocado', label: 'Revocado', color: 'bg-gray-100 text-gray-800' }
+  { value: 1, label: 'Pendiente', color: 'bg-purple-100 text-purple-700' },
+  { value: 2, label: 'Vencido', color: 'bg-red-100 text-red-700' },
+  { value: 0, label: 'Cancelado', color: 'bg-gray-100 text-gray-700' }
 ];
 
 export const TIPOS_EVALUACION: { value: TipoEvaluacion; label: string; description: string }[] = [
@@ -110,6 +109,11 @@ export const TIPOS_EVALUACION: { value: TipoEvaluacion; label: string; descripti
 export const getEstadoColor = (estado: EstadoCodigo): string => {
   const estadoInfo = ESTADOS_CODIGO.find(e => e.value === estado);
   return estadoInfo?.color || 'bg-gray-100 text-gray-800';
+};
+
+export const getEstadoLabel = (estado: EstadoCodigo): string => {
+  const estadoInfo = ESTADOS_CODIGO.find(e => e.value === estado);
+  return estadoInfo?.label || 'Desconocido';
 };
 
 export const getTipoEvaluacionLabel = (tipo: TipoEvaluacion): string => {
@@ -140,5 +144,5 @@ export const esCodigoVencido = (codigo: CodigoAcceso): boolean => {
 };
 
 export const puedeUsarseCodigo = (codigo: CodigoAcceso): boolean => {
-  return codigo.estado === 'emitido' && !esCodigoVencido(codigo);
+  return codigo.estado === 1 && !esCodigoVencido(codigo);
 };

@@ -7,7 +7,7 @@ import {
   FileCode2
 } from 'lucide-react';
 import type { CodigoAcceso } from '@/types/codigosAcceso';
-import { getEstadoColor, getTipoEvaluacionLabel } from '@/types/codigosAcceso';
+import { getEstadoColor, getEstadoLabel, getTipoEvaluacionLabel } from '@/types/codigosAcceso';
 
 interface TablaCodigoProps {
   codigos: CodigoAcceso[];
@@ -133,7 +133,7 @@ export default function TablaCodigo({
                   <td className="px-4 py-3 whitespace-nowrap">
                     {/* Generador condicional de Badges usando directamente el helper de tus Types */}
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${getEstadoColor(codigo.estado)}`}>
-                      {codigo.estado ? String(codigo.estado).charAt(0).toUpperCase() + String(codigo.estado).slice(1) : 'Pendiente'}
+                      {getEstadoLabel(codigo.estado)}
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
