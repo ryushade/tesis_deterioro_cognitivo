@@ -7,7 +7,7 @@ warnings.filterwarnings('ignore') # Ocultar advertencias de librosa sobre MP3
 
 def predecir_nuevo_audio(ruta_audio, ruta_modelo="voz_modelo_rf.pkl"):
     print("="*50)
-    print(f"🕵️ INICIANDO DIAGNÓSTICO DEL AUDIO: {os.path.basename(ruta_audio)}")
+    print(f"-> INICIANDO DIAGNOSTICO DEL AUDIO: {os.path.basename(ruta_audio)}")
     print("="*50)
     
     # 1. Cargar el cerebro (modelo)
@@ -72,16 +72,16 @@ def predecir_nuevo_audio(ruta_audio, ruta_modelo="voz_modelo_rf.pkl"):
     
     # 6. Resultados
     print("\n" + "="*50)
-    print("📝 RESULTADOS DEL DIAGNÓSTICO")
+    print("RESULTADOS DEL DIAGNOSTICO")
     print("="*50)
     
     prob_sano = probabilidades[0] * 100
     prob_enfermo = probabilidades[1] * 100
     
     if prediccion == 0:
-        print(f"🟢 DIAGNÓSTICO PRINCIPAL: SANO (Control)")
+        print(f"[OK] DIAGNOSTICO PRINCIPAL: SANO (Control)")
     else:
-        print(f"🔴 DIAGNÓSTICO PRINCIPAL: POSIBLE DETERIORO COGNITIVO (Paciente)")
+        print(f"[ALERTA] DIAGNOSTICO PRINCIPAL: POSIBLE DETERIORO COGNITIVO (Paciente)")
         
     print("\nDetalle de Probabilidades del Modelo:")
     print(f"Probabilidad de ser SANO:      {prob_sano:.2f}%")
@@ -92,8 +92,15 @@ def predecir_nuevo_audio(ruta_audio, ruta_modelo="voz_modelo_rf.pkl"):
     print("="*50)
 
 if __name__ == "__main__":
+    import sys
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    Ruta_MP3 = os.path.join(BASE_DIR, "Recording.mp3")
+    
+    # Si se pasa un argumento por consola, usamos ese archivo; si no, buscamos Recording.mp3
+    if len(sys.argv) > 1:
+        Ruta_Audio = sys.argv[1]
+    else:
+        Ruta_Audio = os.path.join(BASE_DIR, "Recording.mp3")
+        
     Ruta_Modelo = os.path.join(BASE_DIR, "voz_modelo_rf.pkl")
     
-    predecir_nuevo_audio(Ruta_MP3, Ruta_Modelo)
+    predecir_nuevo_audio(Ruta_Audio, Ruta_Modelo)
