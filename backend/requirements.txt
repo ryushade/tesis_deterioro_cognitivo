@@ -14,3 +14,10 @@ python-dotenv==1.0.0
 
 # Development
 gunicorn==21.2.0
+
+# Analisis Voz ML
+librosa
+pandas
+scikit-learn
+imbalanced-learn
+soundfile

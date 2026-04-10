@@ -23070,3 +23070,4 @@ backend/app/services/cdt_modelo/
 backend/app/services/*.pth
 backend/app/services/cdt_modelo.zip
 backend/app/services/voz_dataset
+backend/app/services/voz_dataset_extraido
