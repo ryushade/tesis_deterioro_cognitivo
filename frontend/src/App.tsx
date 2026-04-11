@@ -15,6 +15,7 @@ import MMSEPausada from './pages/Evaluaciones/ComponentsEvaluaciones/Pruebas/MMS
 // import Pruebas from './pages/Pruebas/Pruebas';
 // import PruebaFinalizada from './pages/Pruebas/PruebaFinalizada';
 import Neuropsicologos from './pages/Neuropsicologos/Neuropsicologo';
+import Resultados from './pages/Resultados/Resultados';
 
 import MMSEConfiguracionPage from './pages/Admin/MMSEConfiguracion';
 // Components
@@ -130,6 +131,15 @@ function App() {
                   </ProtectedRoute>
                 }
               />
+              <Route
+               path="/resultados"
+               element={
+                 <ProtectedRoute requiredRoles={["Administrador", "Neuropsicologo"]}>
+                  <Resultados />
+                 </ProtectedRoute>
+               }
+               />
+
               {/* <Route
                 path="/evaluaciones"
                 element={
