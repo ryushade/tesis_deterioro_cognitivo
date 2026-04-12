@@ -41,11 +41,8 @@ export function AddPaciente({ open, onClose, onSuccess }: AddPacienteProps) {
     setSubmitting(true);
     setError(null);
     try {
-      if (!nombres.trim() || !apellidos.trim() || !fechaNacimiento) {
-        setError('Nombres, apellidos y fecha de nacimiento son obligatorios');
-        setSubmitting(false);
-        return;
-      }
+     
+     
       const payload: any = {
         nombres: nombres.trim(),
         apellidos: apellidos.trim(),
@@ -109,7 +106,10 @@ export function AddPaciente({ open, onClose, onSuccess }: AddPacienteProps) {
             </div>
             <div>
               <Label htmlFor="fecha_nacimiento">Fecha de nacimiento</Label>
-              <DatePickerSimple />
+              <DatePickerSimple 
+                value={fechaNacimiento} 
+                onChange={(val) => setFechaNacimiento(val)}
+              />
 
             </div>
             <div>

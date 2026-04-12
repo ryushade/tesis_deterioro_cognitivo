@@ -9,9 +9,21 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 
-export function DatePickerSimple() {
+interface DatePickerSimpleProps {
+  value?: string;
+  onChange?: (dateStr: string) => void;
+}
+
+export function DatePickerSimple({ value, onChange }: DatePickerSimpleProps) {
   const [open, setOpen] = React.useState(false)
-  const [date, setDate] = React.useState<Date | undefined>(undefined)
+  
+  let date: Date | undefined = undefined;
+  if (value) {
+    const parts = value.split('-');
+    if (parts.length === 3) {
+      date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    }
+  }
 
   return (
     <div className="w-full">
@@ -33,7 +45,14 @@ export function DatePickerSimple() {
             defaultMonth={date}
             captionLayout="dropdown"
             onSelect={(d) => {
-              setDate(d)
+              if (d && onChange) {
+                const yyyy = d.getFullYear();
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                onChange(`${yyyy}-${mm}-${dd}`);
+              } else if (!d && onChange) {
+                onChange("");
+              }
               setOpen(false)
             }}
           />

@@ -1,5 +1,7 @@
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { authService } from '@/services/auth';
+import ResultadosIndividuales from './ComponentsResultados/ResultadosIndividuales';
+import ResultadosGlobales from './ComponentsResultados/ResultadosGlobales';
 import { Plus } from 'lucide-react';
 import {
   Select,
@@ -95,12 +97,20 @@ function Resultados() {
           </Button>
         </div>
     </Card>
-        <Tabs defaultValue="overview" className="w-[400px]">
+        <Tabs defaultValue="resu_indi" className="w-full mt-6">
       <TabsList>
         <TabsTrigger value="resu_indi">Resultados individuales</TabsTrigger>
         <TabsTrigger value="resu_global">Resultados globales</TabsTrigger>
-        <TabsTrigger value="analitica">Analitica</TabsTrigger>
       </TabsList>
+      
+      <TabsContent value="resu_indi">
+        <ResultadosIndividuales />
+      </TabsContent>
+
+      <TabsContent value="resu_global">
+        <ResultadosGlobales />
+      </TabsContent>
+      
       </Tabs>
 
             

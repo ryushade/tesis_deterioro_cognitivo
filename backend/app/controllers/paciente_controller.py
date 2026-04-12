@@ -39,7 +39,7 @@ def registrar_paciente(nombres, apellidos, fecha_nacimiento, id_escolaridad, est
     try:
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
-            cursor.execute("INSERT INTO paciente (nombres, apellidos, fecha_nacimiento, id_escolaridad, estado, sexo) VALUES (%s, %s, %s, %s, %s)", (nombres, apellidos, fecha_nacimiento, id_escolaridad, estado, sexo))
+            cursor.execute("INSERT INTO paciente (nombres, apellidos, fecha_nacimiento, id_escolaridad, estado, sexo) VALUES (%s, %s, %s, %s, %s, %s)", (nombres, apellidos, fecha_nacimiento, id_escolaridad, estado, sexo))
             conexion.commit()
             return True
     except Exception as e:
