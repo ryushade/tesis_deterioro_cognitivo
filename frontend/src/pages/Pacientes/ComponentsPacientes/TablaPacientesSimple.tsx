@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Eye, 
@@ -5,7 +6,6 @@ import {
   Trash2, 
   User,
   ClipboardList 
-
 } from 'lucide-react';
 import { type Paciente } from '@/services/pacienteServices';
 
@@ -36,6 +36,7 @@ export default function TablaPacientesSimple({
   onAsignarPrueba
   
 }: TablaPacientesSimpleProps) {
+  const [pacienteToDelete, setPacienteToDelete] = useState<Paciente | null>(null);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'No especificada';
@@ -200,7 +201,10 @@ export default function TablaPacientesSimple({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onDelete(paciente)}
+                        onClick={() => {
+                          console.log("✅ Click en botón de basura. Paciente seleccionado:", paciente);
+                          setPacienteToDelete(paciente);
+                        }}
                         className="text-red-600 hover:text-red-800"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -215,6 +219,52 @@ export default function TablaPacientesSimple({
       </div>
 
       {/* La paginación se maneja en la página padre (PacientesSimple) */}
+
+      {pacienteToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-2">
+          <div className="bg-white fixed left-[50%] top-[50%] z-[101] grid w-full max-w-md translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-xl">
+            <div className="flex flex-col space-y-1 text-center items-center mt-2">
+              
+              {/* Media Icon - Exactamente como el diseño pedido */}
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-100/80 text-red-600 mb-2">
+                <Trash2 className="h-6 w-6" />
+              </div>
+              
+              {/* Titles */}
+              <h2 className="text-xl font-semibold tracking-tight text-gray-900">
+                ¿Eliminar paciente?
+              </h2>
+              <p className="text-[15px] pt-1 text-gray-600">
+                Esto borrará permanentemente de la clínica el registro de{" "}
+                <span className="font-semibold text-gray-900">
+                  {pacienteToDelete.nombres} {pacienteToDelete.apellidos}
+                </span>{" "}
+                y toda su información.
+              </p>
+            </div>
+            
+            {/* Footer */}
+            <div className="flex flex-col-reverse sm:flex-row sm:justify-center sm:space-x-2 mt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setPacienteToDelete(null)}
+                className="mt-2 sm:mt-0"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  onDelete(pacienteToDelete);
+                  setPacienteToDelete(null);
+                }}
+              >
+                Eliminar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { toast } from 'sonner';
 
 import { useState, useEffect } from 'react';
 import type { CodigoAcceso } from '@/types/codigosAcceso';
@@ -70,6 +71,20 @@ function CodigosAcceso() {
     window.location.href = '/login';
   };
 
+  const handleDelete = async (codigo: CodigoAcceso) => {
+    try {
+      const res = await codigosAccesoService.delete(codigo.id_codigo);
+      if (res.success) {
+        toast.success("Código revocado y eliminado permanentemente");
+        fetchCodigos(); // Recargar datos de la tabla
+      } else {
+        toast.error(res.message || "No se pudo revocar el código");
+      }
+    } catch (e: any) {
+      toast.error(e?.message || "Error al conectar con el servidor para revocar código");
+    }
+  };
+
   return (
     <DashboardLayout 
       user={sidebarUser}
@@ -100,7 +115,7 @@ function CodigosAcceso() {
           onSearch={() => {}}
           onView={() => {}}
           onEdit={() => {}}
-          onDelete={() => {}}
+          onDelete={handleDelete}
           onAdministerTest={() => {}}
         />
         {/* ... AQUÍ PUEDES COMENZAR A ESCRIBIR TU TABLA Y MODALES ... */}

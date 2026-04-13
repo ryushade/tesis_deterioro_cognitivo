@@ -34,12 +34,12 @@ def obtener_niveles_escolaridad():
             conexion.close()
 
 
-def registrar_paciente(nombres, apellidos, fecha_nacimiento, id_escolaridad, estado, sexo):
+def registrar_paciente(nombres, apellidos, fecha_nacimiento, id_escolaridad, estado, sexo, id_neuropsicologo):
     conexion = None
     try:
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
-            cursor.execute("INSERT INTO paciente (nombres, apellidos, fecha_nacimiento, id_escolaridad, estado, sexo) VALUES (%s, %s, %s, %s, %s, %s)", (nombres, apellidos, fecha_nacimiento, id_escolaridad, estado, sexo))
+            cursor.execute("INSERT INTO paciente (nombres, apellidos, fecha_nacimiento, id_escolaridad, estado, sexo, id_neuropsicologo) VALUES (%s, %s, %s, %s, %s, %s, %s)", (nombres, apellidos, fecha_nacimiento, id_escolaridad, estado, sexo, id_neuropsicologo))
             conexion.commit()
             return True
     except Exception as e:

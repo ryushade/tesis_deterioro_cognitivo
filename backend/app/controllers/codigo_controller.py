@@ -35,17 +35,16 @@ def asignar_y_generar_codigo(id_paciente, id_prueba, codigo_texto):
     try:
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
-            # 0. Verificación de seguridad: Evitar múltiples códigos activos (emitido o '1') para la misma prueba
+            # 0. Verificación de seguridad: Evitar cualquier código activo de cualquier prueba para ese paciente
             cursor.execute("""
                 SELECT c.codigo_texto
                 FROM codigo_acceso c
                 INNER JOIN asignacion_prueba ap ON c.id_asignacion = ap.id_asignacion
                 WHERE ap.id_paciente = %s 
-                  AND ap.id_prueba = %s 
                   AND c.estado_codigo = 1
-            """, (id_paciente, id_prueba))
+            """, (id_paciente, ))
             if cursor.fetchone():
-                return {'error': 'El paciente ya cuenta con un código temporal activo para esta evaluación. Debe culminar dicha prueba antes de generarle uno nuevo.'}
+                return {'error': 'El paciente ya cuenta con una evaluación activa. Debe culminar o cancelar la prueba actual antes de asignarle otra distinta.'}
 
             # 1. Registrar asignación asociando la prueba al paciente
             cursor.execute("""
@@ -90,18 +89,25 @@ def desactivar_codigo_acceso_prueba(id_asignacion):
             conexion.close()
 
 
-def eliminar_codigo(id_codigo):
+def eliminar_codigo(id_asignacion):
     conexion = None
     try:
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
+            # Primero eliminamos de codigo_acceso si existe
             cursor.execute("""
-                DELETE FROM codigo_acceso WHERE id_codigo = %s
-            """, (id_codigo,))
+                DELETE FROM codigo_acceso WHERE id_asignacion = %s
+            """, (id_asignacion,))
+            # Luego eliminamos la asignacion de la prueba
+            cursor.execute("""
+                DELETE FROM asignacion_prueba WHERE id_asignacion = %s
+            """, (id_asignacion,))
             conexion.commit()
             return True
     except Exception as e:
-        print("Error", e)
+        print("Error eliminando código/asignación:", e)
+        if conexion:
+            conexion.rollback()
         return False
     finally:
         if conexion:

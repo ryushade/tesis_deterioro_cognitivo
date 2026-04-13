@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   Eye, 
@@ -8,6 +9,7 @@ import {
 } from 'lucide-react';
 import type { CodigoAcceso } from '@/types/codigosAcceso';
 import { getEstadoColor, getEstadoLabel, getTipoEvaluacionLabel } from '@/types/codigosAcceso';
+import ConfirmationModal from '@/components/ui/ConfirmationModal';
 
 interface TablaCodigoProps {
   codigos: CodigoAcceso[];
@@ -32,6 +34,7 @@ export default function TablaCodigo({
   onDelete,
   onAdministerTest
 }: TablaCodigoProps) {
+  const [codigoToDelete, setCodigoToDelete] = useState<CodigoAcceso | null>(null);
 
   const formatDate = (dateString: string) => {
     if (!dateString) return 'No especificada';
@@ -171,7 +174,7 @@ export default function TablaCodigo({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onDelete(codigo)}
+                        onClick={() => setCodigoToDelete(codigo)}
                         className="text-red-600 hover:text-red-800"
                         title="Revocar código"
                       >
@@ -185,6 +188,22 @@ export default function TablaCodigo({
           </tbody>
         </table>
       </div>
+
+      <ConfirmationModal
+        isOpen={!!codigoToDelete}
+        onClose={() => setCodigoToDelete(null)}
+        onConfirm={() => {
+          if (codigoToDelete) {
+            onDelete(codigoToDelete);
+            setCodigoToDelete(null);
+          }
+        }}
+        title="¿Revocar código de acceso?"
+        message={`Esta acción invalidará permanentemente el código de evaluación temporal "${codigoToDelete?.codigo}" perteneciente a ${codigoToDelete?.nombre_paciente}.`}
+        type="danger"
+        confirmText="Revocar"
+        cancelText="Cancelar"
+      />
     </div>
   );
 }
