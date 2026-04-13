@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 import { useState, useEffect } from 'react';
 import type { CodigoAcceso } from '@/types/codigosAcceso';
@@ -20,6 +21,7 @@ import { codigosAccesoService } from '@/services/codigosAccesoService';
 function CodigosAcceso() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const navigate = useNavigate();
   
   const [codigosAcceso, setCodigosAcceso] = useState<CodigoAcceso[]>([]);
   const [total, setTotal] = useState(0);
@@ -116,7 +118,9 @@ function CodigosAcceso() {
           onView={() => {}}
           onEdit={() => {}}
           onDelete={handleDelete}
-          onAdministerTest={() => {}}
+          onAdministerTest={(codigo) => {
+            navigate(`/evaluaciones/cdt/${codigo.id_codigo}`);
+          }}
         />
         {/* ... AQUÍ PUEDES COMENZAR A ESCRIBIR TU TABLA Y MODALES ... */}
         

@@ -3,14 +3,12 @@ import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DashboardLayout } from "@/components/layout/DashboardLayout"
 import { authService } from "@/services/auth"
-import { useGetNeuropsicologos, type Neuropsicologo } from "@/services/neuropsicologosService"
+import { useGetNeuropsicologos, neuropsicologosService, type Neuropsicologo } from "@/services/neuropsicologosService"
 import TablaNeuropsicologos from "./ComponentsNeuropsicologos/TablaNeuropsicologos"
 import AddNeuropsicologo from "./ComponentsNeuropsicologos/AddNeuropsicologoModal"
 import EditNeuropsicologo from "./ComponentsNeuropsicologos/EditNeuropsicologoModal"
 // import ViewNeuropsicologo from "./ComponentsNeuropsicologos/ViewNeuropsicologoModal"
 import toast, { Toaster } from 'react-hot-toast'
-// import { userService } from '@/services/userService'
-const userService = { deleteUser: async (id: any) => ({ success: false, message: 'Servicio en mantenimiento' }) };
 import PaginacionPacientes from '../Pacientes/ComponentsPacientes/PaginacionPacientes';
 import ConfirmationModal from './ComponentsNeuropsicologos/ConfirmationModal'
 import {
@@ -46,11 +44,12 @@ function Neuropsicologos() {
   const confirmDelete = async () => {
     if (!selectedItem) return
     try {
-      const res = await userService.deleteUser(selectedItem.id_neuropsicologo)
-      if (res.success) { toast.success("Neuropsicólogo eliminado exitosamente"); refetch(currentPage, itemsPerPage, searchTerm) }
+      const res = await neuropsicologosService.delete(selectedItem.id_usuario)
+      if (res.success) { toast.success("Neuropsicólogo eliminado exitosamente"); refetch(1, itemsPerPage, searchTerm) }
       else { toast.error(res.message || "Error al eliminar neuropsicólogo") }
-    } catch (e) {
-      toast.error("Error de conexión al servidor")
+    } catch (e: any) {
+      console.error("Error capturado en frontend dev:", e);
+      toast.error("Error local o de red: " + (e?.message || "Servidor inaccesible"))
     }
     setShowDeleteDialog(false); setSelectedItem(null)
   }
@@ -104,7 +103,7 @@ function Neuropsicologos() {
           {/* Centro: texto */}
           <div className="flex-1 flex items-center justify-center">
             <p className="text-sm text-gray-600">
-              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, (metadata as any)?.total ?? (metadata as any)?.totalItems ?? pacientes.length)} de {(metadata as any)?.total ?? (metadata as any)?.totalItems ?? pacientes.length} registros
+              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, (metadata as any)?.total ?? neuropsicologos.length)} de {(metadata as any)?.total ?? neuropsicologos.length} registros
             </p>
           </div>
             

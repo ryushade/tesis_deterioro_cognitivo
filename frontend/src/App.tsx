@@ -22,6 +22,7 @@ import MMSEConfiguracionPage from './pages/Admin/MMSEConfiguracion';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthorizationService } from './services/auth.middleware';
 // import InicioPrueba from './pages/InicioPrueba/InicioPrueba';
+import CDTAdminister from './pages/CDT/CDTAdminister';
 
 const queryClient = new QueryClient();
 
@@ -159,6 +160,14 @@ function App() {
                 }
               />
               */}
+              <Route
+                path="/evaluaciones/cdt/:id_codigo"
+                element={
+                  <ProtectedRoute>
+                    <CDTAdminister />
+                  </ProtectedRoute>
+                }
+              />
               {/* <Route
                 path="/pruebas"
                 element={

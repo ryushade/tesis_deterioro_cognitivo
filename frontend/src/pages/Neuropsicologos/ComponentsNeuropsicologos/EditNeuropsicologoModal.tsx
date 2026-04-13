@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label'
 import { type Neuropsicologo } from '@/services/neuropsicologosService'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { apiClient } from '@/services/api'
+import toast from 'react-hot-toast'
 
 export default function EditNeuropsicologo({ open, onClose, onSuccess, item }: { open: boolean; onClose: () => void; onSuccess: () => void; item: Neuropsicologo | null }) {
   const [username, setUsername] = useState('')
@@ -55,6 +56,7 @@ export default function EditNeuropsicologo({ open, onClose, onSuccess, item }: {
         throw new Error(res.data.message || 'No se pudo actualizar el estado.')
       }
       
+      toast.success('Neuropsicologo actualizado correctamente')
       onSuccess()
     } catch (err: any) {
       setError(err?.response?.data?.message || err?.message || 'Error al actualizar')

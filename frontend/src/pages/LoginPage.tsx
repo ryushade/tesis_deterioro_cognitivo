@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -74,8 +74,15 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+
+    // Reconstruir el código para que coincida con DB (AAA-BBBB) y en mayúsculas
+    let formattedCode = accessCode.toUpperCase();
+    if (formattedCode.length === 7 && !formattedCode.includes("-")) {
+      formattedCode = `${formattedCode.slice(0, 3)}-${formattedCode.slice(3)}`;
+    }
+
     try {
-      const response = await authService.patientLogin({ access_code: accessCode });
+      const response = await authService.patientLogin({ access_code: formattedCode });
       if (response.success) {
         window.dispatchEvent(new CustomEvent("loginSuccess"));
         
@@ -83,16 +90,17 @@ export default function LoginPage() {
         let target = "/pruebas";
         
         if (response.codigo_info) {
-          const { codigo, tipo_evaluacion } = response.codigo_info;
+          const { codigo, tipo_evaluacion, id_codigo } = response.codigo_info;
           localStorage.setItem("accessCode", codigo);
           localStorage.setItem("tipoEvaluacion", tipo_evaluacion);
+          localStorage.setItem("idCodigo", String(id_codigo));
           
           switch ((tipo_evaluacion || "").toUpperCase()) {
             case "CDT":
-              target = "/cdt-test";
+              target = `/evaluaciones/cdt/${id_codigo}`;
               break;
             case "MMSE":
-              target = "/mmse";
+              target = `/evaluaciones/mmse/${id_codigo}`;
               break;
             default:
               target = "/pruebas";
@@ -248,26 +256,24 @@ export default function LoginPage() {
                   >Codigo de acceso</Label>
                   
                  <InputOTP
-                  maxLength={8}
+                  maxLength={7}
                   value={accessCode}
                   onChange={setAccessCode}
                   pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
                   containerClassName="justify-center"
                   
                 >
-                  <InputOTPGroup
-                  >
+                  <InputOTPGroup>
                     <InputOTPSlot index={0} />
                     <InputOTPSlot index={1} />
                     <InputOTPSlot index={2} />
-                    <InputOTPSlot index={3} />
                   </InputOTPGroup>
                   <InputOTPSeparator />
                   <InputOTPGroup>
+                    <InputOTPSlot index={3} />
                     <InputOTPSlot index={4} />
                     <InputOTPSlot index={5} />
                     <InputOTPSlot index={6} />
-                    <InputOTPSlot index={7} />
                   </InputOTPGroup>
                 </InputOTP>
                 </div>

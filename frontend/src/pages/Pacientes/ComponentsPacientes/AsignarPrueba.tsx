@@ -147,17 +147,6 @@ export default function AsignarPruebaDialog({ open, onClose, onSuccess, paciente
                 <p className="text-3xl font-extrabold tracking-[0.2em] text-blue-600 font-mono">
                   {codigoGenerado}
                 </p>
-                <div className="flex justify-center">
-                  <Button type="button" variant="outline" size="sm" onClick={handleCopiar} className="gap-2">
-                    {copiado ? <Check className="w-4 h-4" /> : <Copy classAName="w-4 h-4" />}
-                    {copiado ? "Copiado" : "Copiar código"}
-                  </Button>
-                </div>
-                <div className="pt-2">
-                  <Badge variant="secondary" className="bg-green-100 text-green-700 border-0">
-                    {pruebaSeleccionada?.nombre_prueba}
-                  </Badge>
-                </div>
               </div>
             )}
 

@@ -82,18 +82,25 @@ def desactivar_neuropsicologo(id_neuropsicologo):
 
 
 # Borrado fisico
-def eliminar_neuropsicologo(id_neuropsicologo):
+def eliminar_neuropsicologo(id_usuario):
     conexion = None
     try:
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
+            # Primero borramos de la tabla hija
             cursor.execute("""
-                DELETE FROM neuropsicologo WHERE id_neuropsicologo = %s
-            """, (id_neuropsicologo,))
+                DELETE FROM neuropsicologo WHERE id_usuario = %s
+            """, (id_usuario,))
+            # Luego de la tabla padre
+            cursor.execute("""
+                DELETE FROM usuario WHERE id_usuario = %s
+            """, (id_usuario,))
             conexion.commit()
             return True
     except Exception as e:
-        print("Error", e)
+        print("Error eliminando neuropsicologo:", e)
+        if conexion:
+            conexion.rollback()
         return False
     finally:
         if conexion:

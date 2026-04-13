@@ -135,7 +135,7 @@ export const neuropsicologosService = {
     return data
   },
   async delete(id: number): Promise<NeuropsicologoResponse> {
-    const { data } = await apiClient.delete<NeuropsicologoResponse>(`${RESOURCE}/${id}`)
+    const { data } = await apiClient.delete<NeuropsicologoResponse>(`/auth/eliminar_neuropsicologo/${id}`)
     return data
   },
   async restore(id: number): Promise<NeuropsicologoResponse> {
