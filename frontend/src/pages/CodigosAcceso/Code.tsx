@@ -5,6 +5,7 @@ import { authService } from '@/services/auth';
 import TablaCodigo from './ComponentsCodigo/TablaCodigo';
 import PaginacionCodigo from './ComponentsCodigo/PaginacionCodigo';
 import EditCodigoModal from './ComponentsCodigo/EditCodigoModal';
+import ViewCodigo from './ComponentsCodigo/ViewCodigo';
 import {
   Select,
   SelectContent,
@@ -120,7 +121,10 @@ function CodigosAcceso() {
           error={error}
           searchTerm=""
           onSearch={() => {}}
-          onView={() => {}}
+          onView={(codigo) => {
+            setSelectedCodigo(codigo);
+            setIsViewModalOpen(true);
+          }}
           onEdit={(codigo) => {
             setSelectedCodigo(codigo);
             setIsEditModalOpen(true);
@@ -138,7 +142,15 @@ function CodigosAcceso() {
             }
           }}
         />
-        {/* ... AQUÍ PUEDES COMENZAR A ESCRIBIR TU TABLA Y MODALES ... */}
+
+        {isViewModalOpen && selectedCodigo && (
+          <ViewCodigo
+            open={isViewModalOpen}
+            onClose={() => setIsViewModalOpen(false)}
+            codigo={selectedCodigo}
+          />
+        )}
+
         {isEditModalOpen && selectedCodigo && (
           <EditCodigoModal 
             open={isEditModalOpen} 

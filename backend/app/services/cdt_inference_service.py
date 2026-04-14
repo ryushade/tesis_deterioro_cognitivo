@@ -152,9 +152,9 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
         mask = np.zeros_like(img_gray)
         cv2.circle(mask, (int(x), int(y)), int(r * 1.3), 255, -1)
         
-        # Umbral mucho más estricto (115) para ignorar ruido de fondo y ver solo el trazo
-        tinta_total = float(np.sum(img_gray < 115))
-        tinta_dentro = float(np.sum((img_gray < 115) & (mask == 255)))
+        # Umbral equilibrado (135) para ignorar ruido de fondo pero captar trazos reales
+        tinta_total = float(np.sum(img_gray < 135))
+        tinta_dentro = float(np.sum((img_gray < 135) & (mask == 255)))
         
         pct_tinta_dentro = tinta_dentro / max(tinta_total, 1)
 
@@ -247,8 +247,8 @@ def predecir_reloj(ruta_imagen_fisica: str) -> dict:
         mask_interior = np.zeros_like(img_original)
         cv2.circle(mask_interior, (int(x_c), int(y_c)), int(r * 0.95), 255, -1)
         
-        # Pixeles de trazo real (Umbral 115 para ignorar sombras/grano suaves)
-        trazos_coords = np.where((img_original < 115) & (mask_interior == 255))
+        # Umbral equilibrado (135) para ignorar ruido de fondo pero captar trazos reales
+        trazos_coords = np.where((img_original < 135) & (mask_interior == 255))
         total_trazos = len(trazos_coords[0])
         
         # 1. ANALISIS DE SIMETRIA AVANZADO (Hemisferios y Vacíos)
@@ -278,14 +278,14 @@ def predecir_reloj(ruta_imagen_fisica: str) -> dict:
         # 2. ANALISIS DE CENTRO (Manecillas)
         mask_centro = np.zeros_like(img_original)
         cv2.circle(mask_centro, (int(x_c), int(y_c)), int(r * 0.25), 255, -1)
-        trazos_centro = np.sum((img_original < 115) & (mask_centro == 255))
+        trazos_centro = np.sum((img_original < 135) & (mask_centro == 255))
         # Para ser manecilla, el trazo central debe ser significativo
         hay_trazos_centro = trazos_centro > (total_ink * 0.05) 
         
         # 4b. Chequeo de densidad total (Reloj vacío)
         densidad_interna = total_ink / np.sum(mask_interior == 255)
         
-        if densidad_interna < 0.003:
+        if densidad_interna < 0.001:
             return {
                 "puntaje": 0, "confianza": 99.0, "error": False,
                 "observaciones_ia": "El reloj tiene contenido insuficiente (solo esfera o trazos mínimos)."
@@ -307,22 +307,23 @@ def predecir_reloj(ruta_imagen_fisica: str) -> dict:
         confianza_absoluta, indice_vencedor = torch.max(probabilidades, 0)
         puntaje_final = int(indice_vencedor.item())
 
-    # Aplicar correcciones clínicas finales (Protección de Falsos Positivos)
+    # Aplicar correcciones clínicas finales (Equilibrio entre IA y Sensores)
     obs_extra = ""
-    # Solo penalizamos si el modelo ya detectó que el reloj no es perfecto (Puntaje <= 3)
-    # Si el modelo dio 4 o 5, confiamos en su visión global para no dar falsos negativos.
-    if 1 <= puntaje_final <= 3:
-        # Para puntajes bajos, somos mucho más estrictos (80% en lugar de 90%)
-        asimetria_critica = (max(derecha_pct, izquierda_pct, arriba_pct, abajo_pct) > 0.80) or \
-                            (np.min(pcts) < 0.01)
+    # Si el modelo dio 5 (Perfecto), confiamos en su visión global.
+    # Si dio de 1 a 4, permitimos que los sensores clínicos intervengan para corregir sesgos.
+    if 1 <= puntaje_final <= 4:
+        # Para puntajes bajos o limítrofes, detectamos asimetría significativa (82%)
+        asimetria_critica = (max(derecha_pct, izquierda_pct, arriba_pct, abajo_pct) > 0.82) or \
+                            (np.min(pcts) < 0.015)
 
         if asimetria_critica:
-            # Si hay asimetría crítica en un reloj ya deteriorado, bajamos a 0
-            puntaje_final = 0
-            obs_extra = " Se detectó una asimetría clínica crítica (negligencia espacial). Puntaje ajustado a 0."
+            # CLINICO: Bajamos un nivel si es 4, o más si la asimetría es muy grave.
+            penalizacion = 2 if puntaje_final <= 3 else 1
+            puntaje_final = max(1, puntaje_final - penalizacion)
+            obs_extra = " Se detectó una asimetría clínica compatible con errores de planificación visuoespacial."
         elif penalizar_por_manecillas:
-            # Si no hay manecillas palpables en un reloj ya deteriorado
-            puntaje_final = max(0, puntaje_final - 1)
+            # Si no hay manecillas palpables
+            puntaje_final = max(1, puntaje_final - 1)
             obs_extra = " No se detectaron manecillas claras en el centro del reloj."
 
     return {
