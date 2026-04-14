@@ -31,7 +31,9 @@ export interface LoginResponse {
 }
 
 export interface RegisterRequest {
-  nombreyApellido: string;
+  nombres?: string;
+  apellidos?: string;
+  nombreyApellido?: string;
   username: string;
   password: string;
   role_id?: number;

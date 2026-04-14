@@ -4,6 +4,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { authService } from '@/services/auth';
 import TablaCodigo from './ComponentsCodigo/TablaCodigo';
 import PaginacionCodigo from './ComponentsCodigo/PaginacionCodigo';
+import EditCodigoModal from './ComponentsCodigo/EditCodigoModal';
 import {
   Select,
   SelectContent,
@@ -28,6 +29,10 @@ function CodigosAcceso() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [selectedCodigo, setSelectedCodigo] = useState<CodigoAcceso | null>(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const fetchCodigos = async (page = currentPage, limit = itemsPerPage) => {
     try {
@@ -116,10 +121,17 @@ function CodigosAcceso() {
           searchTerm=""
           onSearch={() => {}}
           onView={() => {}}
-          onEdit={() => {}}
+          onEdit={(codigo) => {
+            setSelectedCodigo(codigo);
+            setIsEditModalOpen(true);
+          }}
           onDelete={handleDelete}
           onAdministerTest={(codigo) => {
-            if (codigo.tipo_evaluacion === 'VOZ' || (codigo as any).nombre_prueba?.includes('Fluidez') || (codigo as any).nombre_prueba?.includes('Voz')) {
+            // Buscamos cualquier rastro de la palabra 'fluidez' o 'voz' en las propiedades de este objeto (independientemente de cómo el backend las nombre)
+            const objStr = JSON.stringify(codigo).toLowerCase();
+            const isVoiceTest = objStr.includes('fluidez') || objStr.includes('voz');
+            
+            if (isVoiceTest) {
               navigate(`/evaluaciones/voz/${codigo.id_codigo}`);
             } else {
               navigate(`/evaluaciones/cdt/${codigo.id_codigo}`);
@@ -127,6 +139,17 @@ function CodigosAcceso() {
           }}
         />
         {/* ... AQUÍ PUEDES COMENZAR A ESCRIBIR TU TABLA Y MODALES ... */}
+        {isEditModalOpen && selectedCodigo && (
+          <EditCodigoModal 
+            open={isEditModalOpen} 
+            onClose={() => setIsEditModalOpen(false)} 
+            codigo={selectedCodigo}
+            onSuccess={() => {
+              setIsEditModalOpen(false);
+              fetchCodigos();
+            }} 
+          />
+        )}
         
         {/* Paginación a la izquierda y texto centrado */}
         <div className="mt-2 flex w-full items-center justify-between gap-2">

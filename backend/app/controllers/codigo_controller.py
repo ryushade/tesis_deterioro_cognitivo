@@ -89,6 +89,34 @@ def desactivar_codigo_acceso_prueba(id_asignacion):
             conexion.close()
 
 
+def actualizar_codigo(id_asignacion, estado_codigo, id_prueba=None):
+    conexion = None
+    try:
+        conexion = db.obtener_conexion()
+        with conexion.cursor() as cursor:
+            # Actualizar estado
+            if estado_codigo is not None:
+                cursor.execute("""
+                    UPDATE codigo_acceso SET estado_codigo = %s WHERE id_asignacion = %s
+                """, (estado_codigo, id_asignacion))
+            
+            # Actualizar prueba asignada
+            if id_prueba is not None:
+                cursor.execute("""
+                    UPDATE asignacion_prueba SET id_prueba = %s WHERE id_asignacion = %s
+                """, (id_prueba, id_asignacion))
+            
+            conexion.commit()
+            return True
+    except Exception as e:
+        print("Error en actualizar_codigo:", e)
+        if conexion:
+            conexion.rollback()
+        return False
+    finally:
+        if conexion:
+            conexion.close()
+
 def eliminar_codigo(id_asignacion):
     conexion = None
     try:

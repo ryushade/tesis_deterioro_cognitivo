@@ -25,6 +25,11 @@ export const codigosAccesoService = {
     return data;
   },
 
+  async update(id: number, payload: CodigoAccesoUpdate): Promise<CodigoAccesoResponse> {
+    const { data } = await apiClient.put<CodigoAccesoResponse>(`${RESOURCE}/${id}`, payload);
+    return data;
+  },
+
   async delete(id: number): Promise<CodigoAccesoResponse> {
     const { data } = await apiClient.delete<CodigoAccesoResponse>(`${RESOURCE}/${id}`);
     return data;

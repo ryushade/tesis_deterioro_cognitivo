@@ -103,6 +103,9 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     tinta_gruesa = cv2.erode(mask_tinta, kernel_grosor, iterations=1)
     pct_tinta_gruesa = float(np.sum(tinta_gruesa > 0)) / img_gray.size
 
+    # Detección de "excesiva tinta" indicativa de fotografías vs dibujos lineales
+    pct_tinta_total = float(np.sum(img_gray < 150)) / img_gray.size
+
     # Deteccion de lineas rectas (para descartar carnets, QR, pantallazos con mucho texto)
     min_dim = min(h_img, w_img)
     lineas = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=40, minLineLength=min_dim*0.08, maxLineGap=5)
@@ -145,9 +148,10 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     print(f"  > Saturacion: {saturacion_media:.1f} (Max: 30)")
     print(f"  > Brillo: {brillo_medio:.1f} (Min: 130)")
     print(f"  > Fondo blanco: {pixeles_claros*100:.1f}% (Min: 45%)")
-    print(f"  > Densidad bordes: {densidad_bordes*100:.2f}% (Max: 10%)")
+    print(f"  > Densidad bordes: {densidad_bordes*100:.2f}% (Max: 8%)")
     print(f"  > Lineas rectas (Texto/QR): {num_lineas} (Max: 45)")
     print(f"  > Tinta gruesa/relleno: {pct_tinta_gruesa*100:.2f}% (Max: 0.5%)")
+    print(f"  > Tinta total (Líneas vs Foto): {pct_tinta_total*100:.2f}% (Max: 10%)")
     print(f"  > Circulo detectado: {'SI' if hay_circulo else 'NO'} (Requerido)")
     if hay_circulo:
         print(f"  > Tinta en circulo: {pct_tinta_dentro*100:.1f}% (Min: 40%)")
@@ -179,10 +183,16 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
             "Fotografíe el dibujo con la hoja bien visible en el encuadre."
         )
 
-    if densidad_bordes > 0.10:
+    if densidad_bordes > 0.08:
         return False, (
             "La imagen tiene demasiada textura, sombras o detalles no propios de un dibujo simple. "
             "Asegúrese de subir solo el dibujo sobre una hoja blanca limpia, sin fotografiar animales, personas u otros objetos."
+        )
+
+    if pct_tinta_total > 0.10:
+        return False, (
+            "La imagen contiene demasiados elementos oscuros, sombras o colores sólidos. "
+            "Los dibujos de relojes clínicos constan de trazos de lápiz finos, no de fotografías de objetos tridimensionales ni animales."
         )
         
     if num_lineas > 45:

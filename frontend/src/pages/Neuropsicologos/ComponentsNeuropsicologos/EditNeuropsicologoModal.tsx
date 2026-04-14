@@ -9,6 +9,8 @@ import { apiClient } from '@/services/api'
 import toast from 'react-hot-toast'
 
 export default function EditNeuropsicologo({ open, onClose, onSuccess, item }: { open: boolean; onClose: () => void; onSuccess: () => void; item: Neuropsicologo | null }) {
+  const [nombres, setNombres] = useState('')
+  const [apellidos, setApellidos] = useState('')
   const [username, setUsername] = useState('')
   const [estado, setEstado] = useState<string>('true')
   const [loading, setLoading] = useState(false)
@@ -17,6 +19,8 @@ export default function EditNeuropsicologo({ open, onClose, onSuccess, item }: {
   useEffect(() => {
     if (item && open) {
       // 1. Poblamos el campo de usuario
+      setNombres(item.nombres || '')
+      setApellidos(item.apellidos || '')
       setUsername(item.usua || (item as any).username || '')
       
       // 2. Evaluamos el estado activo/inactivo (soporta múltiples formatos de backend)
@@ -44,6 +48,8 @@ export default function EditNeuropsicologo({ open, onClose, onSuccess, item }: {
 
       // Enviar la petición PUT con la propiedad correcta de Estado (Booleana o Numérica)
       const payload = { 
+        nombres: nombres.trim(),
+        apellidos: apellidos.trim(),
         username: username.trim(),
         estado: isActive,
         estado_usuario: isActive ? 1 : 0
@@ -75,6 +81,14 @@ export default function EditNeuropsicologo({ open, onClose, onSuccess, item }: {
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
           {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>}
           <div className="grid grid-cols-1 gap-4">
+            <div>
+              <Label>Nombres</Label>
+              <Input value={nombres} onChange={(e) => setNombres(e.target.value)} required />
+            </div>
+            <div>
+              <Label>Apellidos</Label>
+              <Input value={apellidos} onChange={(e) => setApellidos(e.target.value)} required />
+            </div>
             <div>
               <Label>Usuario</Label>
               <Input value={username} onChange={(e) => setUsername(e.target.value)} />

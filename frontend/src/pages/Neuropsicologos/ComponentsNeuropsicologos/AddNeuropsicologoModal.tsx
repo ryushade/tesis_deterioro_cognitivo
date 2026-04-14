@@ -7,7 +7,8 @@ import { authService} from '@/services/auth'
 import toast from 'react-hot-toast'
 
 export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: boolean; onClose: () => void; onSuccess?: () => void }) {
-  const [nombreyApellido, setNombreyApellido] = useState('')
+  const [nombres, setNombres] = useState('')
+  const [apellidos, setApellidos] = useState('')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [password2, setPassword2] = useState('')
@@ -19,7 +20,8 @@ export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: 
   if (!open) return null
 
   const reset = () => {
-    setNombreyApellido('')
+    setNombres('')
+    setApellidos('')
     setUsername('')
     setPassword('')
     setPassword2('')
@@ -31,7 +33,7 @@ export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: 
     setSubmitting(true)
     setError(null)
     try {
-      if (!nombreyApellido.trim() || !username.trim() || !password) {
+      if (!nombres.trim() || !apellidos.trim() || !username.trim() || !password) {
         setError('Todos los campos son obligatorios')
         toast.error('Todos los campos son obligatorios')
         return
@@ -47,7 +49,7 @@ export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: 
         return
       }
       // Se pasa el rol 2 explícitamente porque es para registrar un neuropsicólogo
-      const reg = await authService.register({ nombreyApellido: nombreyApellido.trim(), username: username.trim(), password, role_id: 2 })
+      const reg = await authService.register({ nombres: nombres.trim(), apellidos: apellidos.trim(), username: username.trim(), password, role_id: 2 } as any)
       if (!reg.success) throw new Error(reg.message || 'No se pudo crear el usuario')
       toast.success('Neuropsicólogo creado exitosamente')
       reset()
@@ -73,8 +75,12 @@ export default function AddNeuropsicologo({ open, onClose, onSuccess }: { open: 
           {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>}
           <div className="grid grid-cols-1 gap-4">
             <div>
-              <Label htmlFor="username">Nombres y apellidos</Label>
-              <Input id="username" value={nombreyApellido} onChange={(e) => setNombreyApellido(e.target.value)} required />
+              <Label htmlFor="nombres">Nombres</Label>
+              <Input id="nombres" value={nombres} onChange={(e) => setNombres(e.target.value)} required />
+            </div>
+            <div>
+              <Label htmlFor="apellidos">Apellidos</Label>
+              <Input id="apellidos" value={apellidos} onChange={(e) => setApellidos(e.target.value)} required />
             </div>
             <div>
               <Label htmlFor="username">Usuario</Label>
