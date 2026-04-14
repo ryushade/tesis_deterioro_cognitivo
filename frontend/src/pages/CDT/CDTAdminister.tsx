@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import InstruccionesCDT from "./InstruccionesCDT";
 import UploadCDT from "./UploadCDT";
 import ResultadosCDT from "./ResultadosCDT";
@@ -8,6 +8,7 @@ import { apiClient } from "@/services/api";
 
 export default function CDTAdminister() {
   const { id_codigo } = useParams();
+  const navigate = useNavigate();
   
   const [step, setStep] = useState(1);
   const [pacienteNombre, setPacienteNombre] = useState<string>("Paciente");
@@ -64,7 +65,7 @@ export default function CDTAdminister() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="min-h-screen flex items-center justify-center p-4">
-        {step === 1 && <InstruccionesCDT nombrePaciente={pacienteNombre} onNext={handleNextInstruction} />}
+        {step === 1 && <InstruccionesCDT nombrePaciente={pacienteNombre} onNext={handleNextInstruction} onBack={() => navigate(-1)} />}
         
         {step === 2 && (
           <div className="w-full relative">
@@ -80,6 +81,7 @@ export default function CDTAdminister() {
               onNext={handleFileUpload}
               error={uploadError}
               onClearError={() => setUploadError(null)}
+              onBack={() => setStep(1)}
             />
           </div>
         )}

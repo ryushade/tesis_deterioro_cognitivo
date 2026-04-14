@@ -113,10 +113,9 @@ export default function ResultadosCDT({ nombrePaciente, resultado }: { nombrePac
         <div className="mt-5">
           <Button
             onClick={handleFinalizar}
-            variant="outline"
+            variant="destructive"
             className="w-full border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 rounded-xl py-6 text-base font-semibold flex items-center justify-center gap-2"
           >
-            <LogOut className="w-4 h-4" />
             Finalizar y cerrar sesión
           </Button>
         </div>

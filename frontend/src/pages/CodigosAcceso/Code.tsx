@@ -119,7 +119,11 @@ function CodigosAcceso() {
           onEdit={() => {}}
           onDelete={handleDelete}
           onAdministerTest={(codigo) => {
-            navigate(`/evaluaciones/cdt/${codigo.id_codigo}`);
+            if (codigo.tipo_evaluacion === 'VOZ' || (codigo as any).nombre_prueba?.includes('Fluidez') || (codigo as any).nombre_prueba?.includes('Voz')) {
+              navigate(`/evaluaciones/voz/${codigo.id_codigo}`);
+            } else {
+              navigate(`/evaluaciones/cdt/${codigo.id_codigo}`);
+            }
           }}
         />
         {/* ... AQUÍ PUEDES COMENZAR A ESCRIBIR TU TABLA Y MODALES ... */}

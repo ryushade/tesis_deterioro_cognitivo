@@ -105,7 +105,7 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
 
     # Deteccion de lineas rectas (para descartar carnets, QR, pantallazos con mucho texto)
     min_dim = min(h_img, w_img)
-    lineas = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=40, minLineLength=min_dim*0.05, maxLineGap=5)
+    lineas = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=40, minLineLength=min_dim*0.08, maxLineGap=5)
     num_lineas = len(lineas) if lineas is not None else 0
 
     # --- DETECCION DE CIRCULO (Hough Transform) ---
@@ -146,7 +146,7 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     print(f"  > Brillo: {brillo_medio:.1f} (Min: 130)")
     print(f"  > Fondo blanco: {pixeles_claros*100:.1f}% (Min: 45%)")
     print(f"  > Densidad bordes: {densidad_bordes*100:.2f}% (Max: 10%)")
-    print(f"  > Lineas rectas (Texto/QR): {num_lineas} (Max: 15)")
+    print(f"  > Lineas rectas (Texto/QR): {num_lineas} (Max: 45)")
     print(f"  > Tinta gruesa/relleno: {pct_tinta_gruesa*100:.2f}% (Max: 0.5%)")
     print(f"  > Circulo detectado: {'SI' if hay_circulo else 'NO'} (Requerido)")
     if hay_circulo:
@@ -185,7 +185,7 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
             "Asegúrese de subir solo el dibujo sobre una hoja blanca limpia, sin fotografiar animales, personas u otros objetos."
         )
         
-    if num_lineas > 15:
+    if num_lineas > 45:
         return False, (
             "La imagen tiene demasiadas líneas rectas o patrones geométricos. "
             "Parece una captura de pantalla, documento o carnet. Por favor suba únicamente una fotografía del dibujo."

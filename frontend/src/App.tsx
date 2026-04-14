@@ -23,6 +23,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthorizationService } from './services/auth.middleware';
 // import InicioPrueba from './pages/InicioPrueba/InicioPrueba';
 import CDTAdminister from './pages/CDT/CDTAdminister';
+import VoiceTestAdminister from './pages/VoiceTest/VoiceTestAdminister';
 
 const queryClient = new QueryClient();
 
@@ -163,6 +164,10 @@ function App() {
               <Route
                 path="/evaluaciones/cdt/:id_codigo"
                 element={<CDTAdminister />}
+              />
+              <Route
+                path="/evaluaciones/voz/:id_codigo"
+                element={<VoiceTestAdminister />}
               />
               {/* <Route
                 path="/pruebas"

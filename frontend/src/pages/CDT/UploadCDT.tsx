@@ -7,9 +7,10 @@ interface UploadCDTProps {
   onNext: (file: File) => void;
   error?: string | null;        // error desde el padre (backend)
   onClearError?: () => void;    // para limpiar el error al reintentar
+  onBack?: () => void;          // botón para retroceder
 }
 
-export default function UploadCDT({ nombrePaciente, onNext, error, onClearError }: UploadCDTProps) {
+export default function UploadCDT({ nombrePaciente, onNext, error, onClearError, onBack }: UploadCDTProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
@@ -100,12 +101,21 @@ export default function UploadCDT({ nombrePaciente, onNext, error, onClearError 
           )}
         </div>
 
-        {/* Submit */}
-        <div className="mt-8">
+        {/* Actions */}
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          {onBack && (
+            <Button
+              variant="outline"
+              onClick={onBack}
+              className="w-full sm:w-1/3 py-7 text-lg font-semibold rounded-2xl border-orange-200 bg-orange-50 text-orange-600 hover:bg-orange-100 hover:text-orange-700 hover:border-orange-300 transition-colors"
+            >
+              Retroceder
+            </Button>
+          )}
           <Button
             onClick={handleEnviar}
             disabled={!selectedFile}
-            className={`w-full py-7 text-lg font-bold flex items-center justify-center gap-2 rounded-2xl transition-all ${
+            className={`w-full ${onBack ? 'sm:w-2/3' : ''} py-7 text-lg font-bold flex items-center justify-center gap-2 rounded-2xl transition-all ${
               selectedFile
                 ? "bg-[#3b5bdb] hover:bg-[#324fbe] text-white shadow-lg shadow-blue-600/20 hover:translate-y-[-2px]"
                 : "bg-blue-200 text-white cursor-not-allowed"
