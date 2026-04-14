@@ -6,7 +6,8 @@ import cv2
 import numpy as np
 import os
 
-RUPA_MODELO = r"C:\Users\marco\Desktop\INVESTIGACION\tesis_deterioro_cognitivo\backend\app\services\modelo_resnet18_cdt.pth"
+# Ruta relativa al modelo final entrenado
+RUTA_MODELO = os.path.join(os.path.dirname(__file__), 'modelo_cdt_resnet18_final.pth')
 NUM_CLASSES = 6
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -51,12 +52,13 @@ def cargar_modelo():
         modelo.fc = nn.Linear(modelo.fc.in_features, NUM_CLASSES)
         
         # 'map_location' es crítico por si el backend se corre en una laptop sin GPU usando weights_only para seguridad.
-        estado = torch.load(RUPA_MODELO, map_location=device, weights_only=True)
+        estado = torch.load(RUTA_MODELO, map_location=device, weights_only=True)
         modelo.load_state_dict(estado)
         modelo.to(device)
         
         # Modo evaluación apaga características de entrenamiento como BatchNormalization.
         modelo.eval()
+        print(f"[CDT IA] Modelo cargado correctamente desde: {RUTA_MODELO} | Hardware: {device}")
         return modelo
     except Exception as e:
         print(f"Error fatal cargando el modelo de relojes: {e}")

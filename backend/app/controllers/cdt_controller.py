@@ -3,6 +3,17 @@ import os
 import json
 import uuid
 from datetime import datetime
+from app.services import cdt_inference_service
+
+# Mapeo de clases (0-5) a clasificaciones clínicas
+CLASIFICACION = {
+    0: "Deterioro severo",
+    1: "Deterioro severo",
+    2: "Deterioro moderado",
+    3: "Deterioro leve",
+    4: "Límite",
+    5: "Normal"
+}
 
 # Directorio local donde se guardan las imágenes
 UPLOAD_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'uploads', 'pacientes', 'relojes')

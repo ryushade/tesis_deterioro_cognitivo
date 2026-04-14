@@ -1,16 +1,25 @@
-import { CheckCircle2, Brain, LogOut } from "lucide-react";
+import { CheckCircle2, AlertTriangle, LogOut } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
+// Colores clínicos según nivel de puntaje (escala 0-5, Shulman et al., 1986)
+function getColorPuntaje(puntaje: number) {
+  if (puntaje >= 4) return { bar: "bg-green-500", text: "text-green-700", bg: "bg-green-100" };
+  if (puntaje === 3) return { bar: "bg-yellow-400", text: "text-yellow-700", bg: "bg-yellow-100" };
+  if (puntaje === 2) return { bar: "bg-orange-500", text: "text-orange-700", bg: "bg-orange-100" };
+  return { bar: "bg-red-500", text: "text-red-700", bg: "bg-red-100" };
+}
+
 export default function ResultadosCDT({ nombrePaciente, resultado }: { nombrePaciente: string; resultado: any }) {
   const navigate = useNavigate();
-  const puntaje = resultado?.puntuacion || 8;
-  const puntajeMax = 10;
-  const porcentaje = (puntaje / puntajeMax) * 100;
+  const puntaje = resultado?.puntuacion ?? 0;
+  const puntajeMax = resultado?.puntaje_max ?? 5;
+  const porcentaje = Math.round((puntaje / puntajeMax) * 100);
+  const conAlerta = resultado?.alerta ?? puntaje < 4;
+  const colores = getColorPuntaje(puntaje);
 
   const handleFinalizar = () => {
-    // Limpiar sesión del paciente y volver al login
     ["isAuthenticated","user","authToken","userType","nombrePaciente","accessCode","tipoEvaluacion","idCodigo"].forEach(k => localStorage.removeItem(k));
     navigate("/login", { replace: true });
   };
@@ -19,67 +28,93 @@ export default function ResultadosCDT({ nombrePaciente, resultado }: { nombrePac
     <div className="flex items-center justify-center p-4 font-sans animate-in fade-in duration-500 w-full">
       <div className="bg-white max-w-2xl w-full rounded-2xl shadow-xl border border-gray-100 p-8 sm:p-10">
 
-        {/* Success Header */}
-        <div className="flex flex-col items-center justify-center text-center space-y-4 mb-8">
-          <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mb-1">
-            <CheckCircle2 className="w-8 h-8 text-green-500" strokeWidth={2.5} />
+        {/* Header */}
+        <div className="flex flex-col items-center text-center space-y-3 mb-8">
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center ${conAlerta ? 'bg-orange-50' : 'bg-green-50'}`}>
+            {conAlerta
+              ? <AlertTriangle className="w-8 h-8 text-orange-500" strokeWidth={2.5} />
+              : <CheckCircle2 className="w-8 h-8 text-green-500" strokeWidth={2.5} />
+            }
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1a2b4b]">
-              ¡Prueba completada!
+              {conAlerta ? "Evaluación completada - Requiere revisión" : "Evaluación completada"}
             </h1>
-            <p className="text-slate-500 font-medium mt-2">
-              Prueba del Reloj — {nombrePaciente}
+            <p className="text-slate-500 font-medium mt-1">
+              Prueba del reloj - {nombrePaciente}
             </p>
           </div>
         </div>
 
-        {/* Results Box */}
-        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 sm:p-8 space-y-6">
-          <div className="flex items-center gap-2 mb-2">
-            <Brain className="w-5 h-5 text-blue-600" />
-            <h2 className="text-sm font-bold text-[#1a2b4b]">Resultado del análisis</h2>
-          </div>
+        {/* Score box */}
+        <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 sm:p-8 space-y-5">
 
-          <div className="space-y-3">
-            <div className="flex justify-between items-end">
-              <span className="text-slate-500 font-medium text-sm">Puntuación</span>
-              <span className="text-2xl font-bold text-[#1a2b4b]">{puntaje}/{puntajeMax}</span>
+          {/* Puntaje */}
+          <div className="flex justify-between items-end">
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide mb-1">
+                Puntaje Obtenido
+              </p>
+              <p className="text-4xl font-black text-[#1a2b4b]">
+                {puntaje}
+                <span className="text-xl font-medium text-slate-400">/{puntajeMax}</span>
+              </p>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-              <div
-                className="bg-[#3b5bdb] h-2.5 rounded-full transition-all duration-700"
-                style={{ width: `${porcentaje}%` }}
-              ></div>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center py-4 border-b border-gray-200">
-            <span className="text-slate-500 font-medium text-sm">Clasificación</span>
-            <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-0 font-bold px-3 py-1">
-              {resultado?.clasificacion || "Normal"}
+            <Badge className={`${colores.bg} ${colores.text} border-0 font-bold px-4 py-1.5 text-sm`}>
+              {resultado?.clasificacion || "Sin clasificar"}
             </Badge>
           </div>
 
-          <div className="space-y-2 pt-2">
-            <span className="text-slate-500 font-medium text-[13px]">Observaciones de la IA</span>
-            <p className="text-[#1a2b4b] leading-relaxed text-[15px]">
-              {resultado?.observaciones || "Círculo bien definido, números correctamente ubicados. Manecillas apuntan correctamente a las 11:10."}
+          {/* Barra de progreso */}
+          <div>
+            <div className="flex justify-between text-xs text-slate-400 mb-1.5">
+              <span>Deterioro cognitivo grave</span>
+              <span>Normal</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+              <div
+                className={`${colores.bar} h-3 rounded-full transition-all duration-700`}
+                style={{ width: `${porcentaje}%` }}
+              />
+            </div>
+            {/* Escala de referencia */}
+            <div className="flex justify-between text-[10px] text-slate-300 mt-1 px-0.5">
+              {[0,1,2,3,4,5].map(n => (
+                <span key={n} className={n === puntaje ? `${colores.text} font-bold text-xs` : ''}>{n}</span>
+              ))}
+            </div>
+          </div>
+
+          {/* Observaciones clínicas */}
+          <div className="space-y-2 pt-2 border-t border-slate-100">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
+                Observaciones clínicas
+              </span>
+              {conAlerta && (
+                <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-full">
+                  ⚠ Requiere atención
+                </span>
+              )}
+            </div>
+            <p className="text-[#1a2b4b] leading-relaxed text-[14px] sm:text-[15px]">
+              {resultado?.observaciones || "Sin observaciones disponibles."}
             </p>
           </div>
         </div>
 
-        {/* Footer note */}
-        <div className="mt-6 bg-slate-50 text-slate-500 text-[13px] sm:text-sm text-center p-4 rounded-xl font-medium leading-relaxed border border-slate-100">
-          Este resultado ha sido registrado automáticamente. Tu neuropsicólogo podrá revisarlo en su panel.
+        {/* Metodología */}
+        <div className="mt-5 bg-slate-50 text-slate-400 text-[12px] text-center p-3 rounded-xl border border-slate-100">
+          Evaluación automática basada en criterios NHATS. 
+          El resultado ha sido registrado y está disponible para el neuropsicólogo.
         </div>
 
-        {/* Exit */}
-        <div className="mt-6">
+        {/* Botón salida */}
+        <div className="mt-5">
           <Button
             onClick={handleFinalizar}
             variant="outline"
-            className="w-full border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 rounded-xl py-6 text-base font-semibold flex items-center justify-center gap-2 transition-all"
+            className="w-full border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 rounded-xl py-6 text-base font-semibold flex items-center justify-center gap-2"
           >
             <LogOut className="w-4 h-4" />
             Finalizar y cerrar sesión

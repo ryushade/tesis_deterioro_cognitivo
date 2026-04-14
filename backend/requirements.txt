@@ -21,3 +21,9 @@ pandas
 scikit-learn
 imbalanced-learn
 soundfile
+
+# CDT Vision AI
+torch
+torchvision
+opencv-python-headless
+Pillow

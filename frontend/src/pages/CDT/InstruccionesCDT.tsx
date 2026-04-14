@@ -8,9 +8,6 @@ export default function InstruccionesCDT({ nombrePaciente, onNext }: { nombrePac
         
         {/* Header */}
         <div className="flex items-center gap-5 border-b pb-6 border-gray-100">
-          <div className="bg-blue-50/80 text-blue-600 p-4 rounded-2xl flex items-center justify-center">
-            <Clock className="w-8 h-8" strokeWidth={2.5} />
-          </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-[#1a2b4b] tracking-tight">
               Prueba del Reloj
@@ -60,9 +57,7 @@ export default function InstruccionesCDT({ nombrePaciente, onNext }: { nombrePac
             onClick={onNext}
             className="w-full bg-[#3b5bdb] hover:bg-[#324fbe] text-white rounded-2xl py-7 text-lg font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 transition-all hover:translate-y-[-2px]"
           >
-            <Camera className="w-5 h-5" />
             Continuar
-            <ArrowRight className="w-5 h-5 ml-1" />
           </Button>
         </div>
 
