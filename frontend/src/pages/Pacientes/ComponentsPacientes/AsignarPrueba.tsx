@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { type Paciente } from "@/services/pacienteServices";
 import { useGetPruebas } from "@/services/pruebaServices";
 import { codigosAccesoService } from "@/services/codigosAccesoService";
+import { useNavigate } from "react-router-dom";
 
 interface AsignarPruebaProps {
   open: boolean;
@@ -26,6 +27,7 @@ export default function AsignarPruebaDialog({ open, onClose, onSuccess, paciente
   const [pruebaId, setPruebaId] = useState("");
   const [codigoGenerado, setCodigoGenerado] = useState<string | null>(null);
   const [copiado, setCopiado] = useState(false);
+  const navigate = useNavigate();
   
   // Cargamos dinámicamente las pruebas reales de la base de datos
   const { pruebas } = useGetPruebas();
@@ -83,6 +85,7 @@ export default function AsignarPruebaDialog({ open, onClose, onSuccess, paciente
     // Disparar onSuccess recargando tablas solo si terminó exitosamente
     if (seAsigno && onSuccess) {
        onSuccess();
+       navigate('/codigos-acceso');
     } else {
        onClose();
     }
@@ -161,8 +164,8 @@ export default function AsignarPruebaDialog({ open, onClose, onSuccess, paciente
                   </Button>
                 </>
               ) : (
-                <Button type="button" variant="outline" onClick={handleClose} className="w-full">
-                  Cerrar
+                <Button type="button" variant="default" onClick={handleClose} className="w-full">
+                  Ir a la lista de codigos
                 </Button>
               )}
             </div>

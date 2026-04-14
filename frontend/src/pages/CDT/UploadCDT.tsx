@@ -69,7 +69,7 @@ export default function UploadCDT({ nombrePaciente, onNext, error, onClearError 
                 onChange={handleFileChange}
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
               />
-              <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-4 ${error ? 'bg-red-50 text-red-400' : 'bg-blue-50 text-[#3b5bdb]'}`}>
+              <div className={`w-14 h-14 rounded-full flex items-center justify-center mb-5`}>
                 {error
                   ? <RefreshCw className="w-6 h-6" strokeWidth={2} />
                   : <Upload className="w-6 h-6" strokeWidth={2} />

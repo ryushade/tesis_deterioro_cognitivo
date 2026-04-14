@@ -30,7 +30,7 @@ export default function ResultadosCDT({ nombrePaciente, resultado }: { nombrePac
 
         {/* Header */}
         <div className="flex flex-col items-center text-center space-y-3 mb-8">
-          <div className={`w-16 h-16 rounded-full flex items-center justify-center ${conAlerta ? 'bg-orange-50' : 'bg-green-50'}`}>
+          <div className={`w-24 h-10 rounded-full flex items-center justify-center`}>
             {conAlerta
               ? <AlertTriangle className="w-8 h-8 text-orange-500" strokeWidth={2.5} />
               : <CheckCircle2 className="w-8 h-8 text-green-500" strokeWidth={2.5} />

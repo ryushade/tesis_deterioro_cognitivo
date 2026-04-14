@@ -96,9 +96,19 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     edges = cv2.Canny(img_gray, 50, 150)
     densidad_bordes = float(np.sum(edges > 0)) / edges.size
 
-    # --- DETECCION DE CIRCULO (Hough Transform) ---
-    # Buscar circulos con radios entre 15% y 48% de la imagen menor dimension
+    # Deteccion de regiones rellenas (Trazos muy gruesos o parches negros)
+    # Un dibujo de reloj a lapiz/lapicero solo tiene lineas finas.
+    kernel_grosor = np.ones((9, 9), np.uint8)
+    mask_tinta = (img_gray < 100).astype(np.uint8) * 255
+    tinta_gruesa = cv2.erode(mask_tinta, kernel_grosor, iterations=1)
+    pct_tinta_gruesa = float(np.sum(tinta_gruesa > 0)) / img_gray.size
+
+    # Deteccion de lineas rectas (para descartar carnets, QR, pantallazos con mucho texto)
     min_dim = min(h_img, w_img)
+    lineas = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=40, minLineLength=min_dim*0.05, maxLineGap=5)
+    num_lineas = len(lineas) if lineas is not None else 0
+
+    # --- DETECCION DE CIRCULO (Hough Transform) ---
     min_r = int(min_dim * 0.15)
     max_r = int(min_dim * 0.48)
     img_blur = cv2.GaussianBlur(img_gray, (9, 9), 2)
@@ -112,7 +122,23 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
         minRadius=min_r,
         maxRadius=max_r
     )
-    hay_circulo = circulos is not None and len(circulos[0]) >= 1
+    hay_circulo = False
+    mejor_circulo = None
+    if circulos is not None and len(circulos[0]) >= 1:
+        hay_circulo = True
+        mejor_circulo = circulos[0][0]
+
+    pct_tinta_dentro = 0.0
+    if hay_circulo:
+        x, y, r = mejor_circulo
+        # Crear máscara del círculo con un margen de 30% para incluir números dibujados un poco por fuera
+        mask = np.zeros_like(img_gray)
+        cv2.circle(mask, (int(x), int(y)), int(r * 1.3), 255, -1)
+        
+        tinta_total = float(np.sum(img_gray < 150))
+        tinta_dentro = float(np.sum((img_gray < 150) & (mask == 255)))
+        
+        pct_tinta_dentro = tinta_dentro / max(tinta_total, 1)
 
     print("\n" + "="*55)
     print(f"[IA VALIDATION] {os.path.basename(ruta_imagen)}")
@@ -120,14 +146,18 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     print(f"  > Brillo: {brillo_medio:.1f} (Min: 130)")
     print(f"  > Fondo blanco: {pixeles_claros*100:.1f}% (Min: 45%)")
     print(f"  > Densidad bordes: {densidad_bordes*100:.2f}% (Max: 10%)")
+    print(f"  > Lineas rectas (Texto/QR): {num_lineas} (Max: 15)")
+    print(f"  > Tinta gruesa/relleno: {pct_tinta_gruesa*100:.2f}% (Max: 0.5%)")
     print(f"  > Circulo detectado: {'SI' if hay_circulo else 'NO'} (Requerido)")
+    if hay_circulo:
+        print(f"  > Tinta en circulo: {pct_tinta_dentro*100:.1f}% (Min: 40%)")
     print("="*55 + "\n")
 
     # Validaciones en orden de importancia
     if not hay_circulo:
         return False, (
             "No se detectó un círculo en la imagen. "
-            "El Test del Reloj requiere que el paciente dibuje un círculo claramente visible sobre papel blanco. "
+            "La prueba del reloj requiere que el paciente dibuje un círculo claramente visible sobre papel blanco. "
             "Por favor fotografíe únicamente el dibujo del reloj."
         )
 
@@ -151,8 +181,26 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
 
     if densidad_bordes > 0.10:
         return False, (
-            "La imagen tiene demasiados detalles o texto. "
-            "Suba únicamente una fotografía del dibujo del reloj sobre papel liso."
+            "La imagen tiene demasiada textura, sombras o detalles no propios de un dibujo simple. "
+            "Asegúrese de subir solo el dibujo sobre una hoja blanca limpia, sin fotografiar animales, personas u otros objetos."
+        )
+        
+    if num_lineas > 15:
+        return False, (
+            "La imagen tiene demasiadas líneas rectas o patrones geométricos. "
+            "Parece una captura de pantalla, documento o carnet. Por favor suba únicamente una fotografía del dibujo."
+        )
+
+    if hay_circulo and pct_tinta_dentro < 0.40:
+        return False, (
+            "El dibujo no parece un reloj. La mayor parte de los trazos están fuera o muy lejos del círculo principal. "
+            "Asegúrese de que sea únicamente la prueba del reloj."
+        )
+
+    if pct_tinta_gruesa > 0.005: # 0.5%
+        return False, (
+            "La imagen contiene regiones completamente pintadas de negro o trazos antinaturalmente gruesos. "
+            "La prueba del reloj debe ser dibujado únicamente con líneas de bolígrafo o lápiz, sin rellenos."
         )
 
     return True, ""

@@ -92,11 +92,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       }}
     >
       <Card className={`w-full max-w-md ${colors.border} border-2`}>
-        <CardHeader className={`${colors.bg} rounded-t-lg`}>
-          <div className="flex items-center gap-3">
-            <div className={`${colors.icon} p-3 rounded-full`}>
-              {getIcon()}
-            </div>
+                    <CardHeader className="text-center">
+            
             <div>
               <CardTitle className="text-lg text-gray-900">{title}</CardTitle>
               {patientName && (
@@ -105,8 +102,8 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
                 </CardDescription>
               )}
             </div>
-          </div>
-        </CardHeader>
+                    </CardHeader>
+            
 
         <CardContent className="p-1">
           <div className="space-y-2">
@@ -114,7 +111,6 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
             {details.length > 0 && (
               <div className="bg-gray-50 p-3 rounded-md">
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Detalles:</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
                   {details.map((detail, index) => (
                     <li key={index} className="flex items-start">
@@ -129,7 +125,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
            
           </div>
 
-          <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200">
+          <div className="flex gap-4 mt-4 pt-2  border-gray-200 text">
             <Button
               variant="outline"
               onClick={onClose}
