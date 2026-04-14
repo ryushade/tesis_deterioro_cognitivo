@@ -7,10 +7,10 @@ from app.services import cdt_inference_service
 
 # Mapeo de clases (0-5) a clasificaciones clínicas
 CLASIFICACION = {
-    0: "Deterioro severo",
-    1: "Deterioro severo",
-    2: "Deterioro moderado",
-    3: "Deterioro leve",
+    0: "Deterioro cognitivo severo",
+    1: "Deterioro cognitivo severo",
+    2: "Deterioro cognitivo moderado",
+    3: "Deterioro cognitivo leve",
     4: "Límite",
     5: "Normal"
 }

@@ -12,12 +12,20 @@ NUM_CLASSES = 6
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def procesar_imagen_cdt_inferencia(ruta_img: str):
-    """Metodología original del paper adaptada a memoria (Grises -> Otsu -> Bounding Box -> Padding 224x224)"""
+    """Metodología original del paper adaptada a memoria (Grises -> CLAHE -> Blur -> Otsu -> Bounding Box -> Padding 224x224)"""
     img = cv2.imread(ruta_img, cv2.IMREAD_GRAYSCALE)
     if img is None:
         return None
         
-    _, umbral = cv2.threshold(img, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
+    # Ecualización Adaptativa (CLAHE) para corregir iluminación irregular y sombras
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    img_clahe = clahe.apply(img)
+    
+    # Suavizado gaussiano para eliminar ruido del papel y evitar trazos dentados
+    img_blur = cv2.GaussianBlur(img_clahe, (5, 5), 0)
+    
+    # Binarización Otsu mejorada gracias al pre-procesamiento
+    _, umbral = cv2.threshold(img_blur, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
     contornos, _ = cv2.findContours(umbral, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     
     if not contornos:
@@ -46,7 +54,7 @@ def procesar_imagen_cdt_inferencia(ruta_img: str):
     return cv2.resize(img_cuadrada, (224, 224), interpolation=cv2.INTER_AREA)
 
 def cargar_modelo():
-    """Carga el cerebro de ResNet18 entrenado en Colab globalmente en memoria del servidor."""
+    """Carga el cerebro de ResNet18 entrenado globalmente en memoria del servidor."""
     try:
         modelo = models.resnet18()
         modelo.fc = nn.Linear(modelo.fc.in_features, NUM_CLASSES)
@@ -74,12 +82,7 @@ transformacion_inferencia = transforms.Compose([
 
 def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     """
-    Valida que la imagen sea un dibujo del Test del Reloj.
-    Estrategia:
-      1. Hough Circle Transform: un reloj SIEMPRE tiene un circulo prominente.
-      2. Fondo claro: papel blanco domina la imagen.
-      3. Baja saturacion: trazos en lapiz/boligrafo son monocromaticos.
-      4. Densidad de bordes no excesiva: descarta texturas complejas.
+    Valida exhaustivamente que la imagen sea un dibujo fotografiado real.
     """
     img_bgr = cv2.imread(ruta_imagen)
     if img_bgr is None:
@@ -88,7 +91,7 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     h_img, w_img = img_bgr.shape[:2]
     img_gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
 
-    # --- METRICAS ---
+    # --- METRICAS BASICAS ---
     img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
     saturacion_media = float(img_hsv[:, :, 1].mean())
     brillo_medio = float(img_gray.mean())
@@ -96,8 +99,18 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     edges = cv2.Canny(img_gray, 50, 150)
     densidad_bordes = float(np.sum(edges > 0)) / edges.size
 
+    # --- METRICA ANTI-DIGITAL 1: Tonos Únicos ---
+    tonos_unicos = len(np.unique(img_gray))
+
+    # --- METRICA ANTI-DIGITAL 2: Micro-Textura (Ruido de Fondo) ---
+    # Tomamos los píxeles más claros (fondo) y medimos su variabilidad.
+    pixeles_claros_vals = img_gray[img_gray > 220]
+    if len(pixeles_claros_vals) > 100:
+        variabilidad_fondo = float(np.std(pixeles_claros_vals))
+    else:
+        variabilidad_fondo = 5.0
+
     # Deteccion de regiones rellenas (Trazos muy gruesos o parches negros)
-    # Un dibujo de reloj a lapiz/lapicero solo tiene lineas finas.
     kernel_grosor = np.ones((9, 9), np.uint8)
     mask_tinta = (img_gray < 100).astype(np.uint8) * 255
     tinta_gruesa = cv2.erode(mask_tinta, kernel_grosor, iterations=1)
@@ -114,17 +127,18 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     # --- DETECCION DE CIRCULO (Hough Transform) ---
     min_r = int(min_dim * 0.15)
     max_r = int(min_dim * 0.48)
-    img_blur = cv2.GaussianBlur(img_gray, (9, 9), 2)
+    img_blur_circles = cv2.GaussianBlur(img_gray, (9, 9), 2)
     circulos = cv2.HoughCircles(
-        img_blur,
+        img_blur_circles,
         cv2.HOUGH_GRADIENT,
         dp=1.2,
         minDist=min_dim * 0.3,
         param1=60,
-        param2=35,       # Umbral acumulador más relajado
+        param2=35,       
         minRadius=min_r,
         maxRadius=max_r
     )
+    
     hay_circulo = False
     mejor_circulo = None
     if circulos is not None and len(circulos[0]) >= 1:
@@ -134,17 +148,20 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     pct_tinta_dentro = 0.0
     if hay_circulo:
         x, y, r = mejor_circulo
-        # Crear máscara del círculo con un margen de 30% para incluir números dibujados un poco por fuera
+        # Máscara con margen del 30% para incluir números
         mask = np.zeros_like(img_gray)
         cv2.circle(mask, (int(x), int(y)), int(r * 1.3), 255, -1)
         
-        tinta_total = float(np.sum(img_gray < 150))
-        tinta_dentro = float(np.sum((img_gray < 150) & (mask == 255)))
+        # Umbral mucho más estricto (115) para ignorar ruido de fondo y ver solo el trazo
+        tinta_total = float(np.sum(img_gray < 115))
+        tinta_dentro = float(np.sum((img_gray < 115) & (mask == 255)))
         
         pct_tinta_dentro = tinta_dentro / max(tinta_total, 1)
 
     print("\n" + "="*55)
     print(f"[IA VALIDATION] {os.path.basename(ruta_imagen)}")
+    print(f"  > Tonos Únicos: {tonos_unicos} (Min: 120)")
+    print(f"  > Variabilidad Fondo: {variabilidad_fondo:.2f} (Min: 2.0)")
     print(f"  > Densidad bordes: {densidad_bordes*100:.2f}% (Max: 12%)")
     print(f"  > Lineas rectas (Texto/QR): {num_lineas} (Max: 45)")
     print(f"  > Tinta gruesa/relleno: {pct_tinta_gruesa*100:.2f}% (Max: 0.5%)")
@@ -154,12 +171,20 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
         print(f"  > Tinta en circulo: {pct_tinta_dentro*100:.1f}% (Min: 40%)")
     print("="*55 + "\n")
 
-    # Validaciones en orden de importancia
+    # --- REGLAS DE RECHAZO ---
+    # Rechazo independiente por textura (Variabilidad < 1.5 es digital/escaneado sin textura real)
+    # Rechazo independiente por colores (Tonos < 120 es digital con degradados limitados)
+    if variabilidad_fondo < 1.5 or tonos_unicos < 120:
+        return False, (
+            "Se detectó una imagen digital o procesada. Una fotografía real presenta "
+            "variaciones de micro-textura (ruido de sensor) que no se encuentran aquí. "
+            "Por favor, suba una fotografía clara del dibujo hecho a mano (evite usar apps de escaneo)."
+        )
+
     if not hay_circulo:
         return False, (
             "No se detectó un círculo en la imagen. "
-            "La prueba del reloj requiere que el paciente dibuje un círculo claramente visible sobre papel blanco. "
-            "Por favor fotografíe únicamente el dibujo del reloj."
+            "La prueba del reloj requiere que el paciente dibuje un círculo claramente visible sobre papel blanco."
         )
 
     if saturacion_media > 30:
@@ -169,46 +194,22 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
         )
 
     if brillo_medio < 130:
-        return False, (
-            "La imagen es muy oscura. Asegúrese de tener buena iluminación "
-            "y colocar el papel sobre una superficie clara."
-        )
+        return False, "La imagen es muy oscura. Asegúrese de tener buena iluminación."
 
     if pixeles_claros < 0.45:
-        return False, (
-            "No se detecta suficiente fondo blanco. "
-            "Fotografíe el dibujo con la hoja bien visible en el encuadre."
-        )
+        return False, "No se detecta suficiente fondo blanco. Fotografíe la hoja bien visible."
 
-    if densidad_bordes > 0.12:
-        return False, (
-            "La imagen tiene demasiada textura, sombras o detalles no propios de un dibujo simple. "
-            "Asegúrese de subir solo el dibujo sobre una hoja blanca limpia, sin fotografiar animales, personas u otros objetos."
-        )
-
-    if pct_tinta_total > 0.15:
-        return False, (
-            "La imagen contiene demasiados elementos oscuros, sombras o colores sólidos. "
-            "Los dibujos de relojes clínicos constan de trazos de lápiz finos, no de fotografías de objetos tridimensionales ni animales."
-        )
+    if densidad_bordes > 0.12 or pct_tinta_total > 0.15:
+        return False, "La imagen tiene demasiada textura, sombras o elementos que no son trazos simples."
         
     if num_lineas > 45:
-        return False, (
-            "La imagen tiene demasiadas líneas rectas o patrones geométricos. "
-            "Parece una captura de pantalla, documento o carnet. Por favor suba únicamente una fotografía del dibujo."
-        )
+        return False, "La imagen tiene demasiadas líneas rectas. Por favor, suba la foto del reloj dibujado por el paciente."
 
     if hay_circulo and pct_tinta_dentro < 0.40:
-        return False, (
-            "El dibujo no parece un reloj. La mayor parte de los trazos están fuera o muy lejos del círculo principal. "
-            "Asegúrese de que sea únicamente la prueba del reloj."
-        )
+        return False, "El dibujo no parece un reloj. La mayor parte de los trazos están muy lejos del círculo."
 
-    if pct_tinta_gruesa > 0.005: # 0.5%
-        return False, (
-            "La imagen contiene regiones completamente pintadas de negro o trazos antinaturalmente gruesos. "
-            "La prueba del reloj debe ser dibujado únicamente con líneas de bolígrafo o lápiz, sin rellenos."
-        )
+    if pct_tinta_gruesa > 0.005: 
+        return False, "La imagen contiene regiones completamente pintadas o trazos antinaturalmente gruesos."
 
     return True, ""
 
@@ -220,14 +221,79 @@ def predecir_reloj(ruta_imagen_fisica: str) -> dict:
     if MODELO_CDT is None:
         raise RuntimeError("La IA del Test del Reloj (CDT) no esta cargada.")
 
-    # Pre-validacion: verificar que sea un dibujo sobre papel
+    # Pre-validacion: verificar que sea un dibujo sobre papel real
     es_valida, motivo_rechazo = es_dibujo_sobre_papel(ruta_imagen_fisica)
     if not es_valida:
         return {"puntaje": 0, "confianza": 0.0, "error": True, "motivo": motivo_rechazo}
 
     img_procesada = procesar_imagen_cdt_inferencia(ruta_imagen_fisica)
     if img_procesada is None:
-        return {"puntaje": 0, "confianza": 0.0, "error": True}
+        return {"puntaje": 0, "confianza": 0.0, "error": True, "motivo": "Fallo al pre-procesar la imagen"}
+
+    # 4. Chequeo de Contenido Mínimo: ¿Hay algo dibujado dentro del círculo?
+    # Si detectamos un círculo pero el interior está vacío, forzamos puntaje 0.
+    h, w = img_procesada.shape
+    # En img_procesada (binarizada), los trazos son blancos (255) y el fondo es negro (0)
+    # Buscamos el círculo en la imagen original para ser precisos
+    img_original = cv2.imread(ruta_imagen_fisica, cv2.IMREAD_GRAYSCALE)
+    img_blur = cv2.GaussianBlur(img_original, (9, 9), 2)
+    min_dim = min(img_original.shape[:2])
+    circulos = cv2.HoughCircles(img_blur, cv2.HOUGH_GRADIENT, dp=1.2, minDist=min_dim*0.3, 
+                                param1=60, param2=35, minRadius=int(min_dim*0.15), maxRadius=int(min_dim*0.48))
+    
+    if circulos is not None:
+        x_c, y_c, r = circulos[0][0]
+        # Crear máscara del interior
+        mask_interior = np.zeros_like(img_original)
+        cv2.circle(mask_interior, (int(x_c), int(y_c)), int(r * 0.95), 255, -1)
+        
+        # Pixeles de trazo real (Umbral 115 para ignorar sombras/grano suaves)
+        trazos_coords = np.where((img_original < 115) & (mask_interior == 255))
+        total_trazos = len(trazos_coords[0])
+        
+        # 1. ANALISIS DE SIMETRIA AVANZADO (Hemisferios y Vacíos)
+        y_coords, x_coords = trazos_coords
+        count_q1 = np.sum((x_coords > x_c) & (y_coords < y_c)) # NE
+        count_q2 = np.sum((x_coords < x_c) & (y_coords < y_c)) # NW
+        count_q3 = np.sum((x_coords < x_c) & (y_coords > y_c)) # SW
+        count_q4 = np.sum((x_coords > x_c) & (y_coords > y_c)) # SE
+        
+        counts = np.array([count_q1, count_q2, count_q3, count_q4])
+        total_ink = max(np.sum(counts), 1)
+        
+        # Proporciones por cuadrante
+        pcts = counts / total_ink
+        
+        # Dominancia Hemisférica (Izquierda vs Derecha, Arriba vs Abajo)
+        derecha_pct = (count_q1 + count_q4) / total_ink
+        izquierda_pct = (count_q2 + count_q3) / total_ink
+        arriba_pct = (count_q1 + count_q2) / total_ink
+        abajo_pct = (count_q3 + count_q4) / total_ink
+        
+        # Criterios de Asimetría Severa (Clínicos)
+        # Endurecemos para puntajes bajos: si un cuadrante tiene < 5% de tinta, es vacío.
+        asimetria_severa = (max(derecha_pct, izquierda_pct, arriba_pct, abajo_pct) > 0.80) or \
+                           (np.min(pcts) < 0.05)
+        
+        # 2. ANALISIS DE CENTRO (Manecillas)
+        mask_centro = np.zeros_like(img_original)
+        cv2.circle(mask_centro, (int(x_c), int(y_c)), int(r * 0.25), 255, -1)
+        trazos_centro = np.sum((img_original < 115) & (mask_centro == 255))
+        # Para ser manecilla, el trazo central debe ser significativo
+        hay_trazos_centro = trazos_centro > (total_ink * 0.05) 
+        
+        # 4b. Chequeo de densidad total (Reloj vacío)
+        densidad_interna = total_ink / np.sum(mask_interior == 255)
+        
+        if densidad_interna < 0.003:
+            return {
+                "puntaje": 0, "confianza": 99.0, "error": False,
+                "observaciones_ia": "El reloj tiene contenido insuficiente (solo esfera o trazos mínimos)."
+            }
+        
+        # 4c. Determinar penalizaciones
+        penalizar_por_asimetria = asimetria_severa
+        penalizar_por_manecillas = not hay_trazos_centro
 
     # El modelo PyTorch necesita los 3 canales RGB aunque la imagen sea B&N
     img_color = cv2.cvtColor(img_procesada, cv2.COLOR_GRAY2RGB)
@@ -239,11 +305,31 @@ def predecir_reloj(ruta_imagen_fisica: str) -> dict:
         salidas = MODELO_CDT(tensor_img)
         probabilidades = torch.nn.functional.softmax(salidas[0], dim=0)
         confianza_absoluta, indice_vencedor = torch.max(probabilidades, 0)
+        puntaje_final = int(indice_vencedor.item())
+
+    # Aplicar correcciones clínicas finales (Protección de Falsos Positivos)
+    obs_extra = ""
+    # Solo penalizamos si el modelo ya detectó que el reloj no es perfecto (Puntaje <= 3)
+    # Si el modelo dio 4 o 5, confiamos en su visión global para no dar falsos negativos.
+    if 1 <= puntaje_final <= 3:
+        # Para puntajes bajos, somos mucho más estrictos (80% en lugar de 90%)
+        asimetria_critica = (max(derecha_pct, izquierda_pct, arriba_pct, abajo_pct) > 0.80) or \
+                            (np.min(pcts) < 0.01)
+
+        if asimetria_critica:
+            # Si hay asimetría crítica en un reloj ya deteriorado, bajamos a 0
+            puntaje_final = 0
+            obs_extra = " Se detectó una asimetría clínica crítica (negligencia espacial). Puntaje ajustado a 0."
+        elif penalizar_por_manecillas:
+            # Si no hay manecillas palpables en un reloj ya deteriorado
+            puntaje_final = max(0, puntaje_final - 1)
+            obs_extra = " No se detectaron manecillas claras en el centro del reloj."
 
     return {
-        "puntaje": int(indice_vencedor.item()),
+        "puntaje": puntaje_final,
         "confianza": float(round(confianza_absoluta.item() * 100, 2)),
-        "error": False
+        "error": False,
+        "observaciones_ia": obs_extra if obs_extra else None
     }
 
 if __name__ == '__main__':
@@ -253,6 +339,7 @@ if __name__ == '__main__':
     import glob
     import random
     
+    # IMPORTANTE: Asegúrate de que esta ruta apunte a tu carpeta local de pruebas
     ruta_test_local = r"C:\Users\marco\Desktop\INVESTIGACION\tesis_deterioro_cognitivo\backend\app\services\cdt_modelo\test"
     
     # Elegir 3 clases al azar para probar
@@ -269,7 +356,7 @@ if __name__ == '__main__':
             resultado = predecir_reloj(img_prueba)
             
             if resultado["error"]:
-                print("  ❌ Error de lectura de imagen.")
+                print(f"  ❌ Rechazado/Error: {resultado.get('motivo', 'Fallo en lectura')}")
                 continue
                 
             puntaje_ia = resultado["puntaje"]
