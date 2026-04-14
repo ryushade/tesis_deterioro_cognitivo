@@ -19,7 +19,7 @@ def obtener_resultados_paciente_prueba(id_paciente: int, id_prueba: int = None):
                     ec.estado_evaluacion,
                     p.nombres, p.apellidos,
                     pc.id_prueba, pc.nombre_prueba,
-                    av.id_analisis, av.url_imagen, av.puntaje_ia, ec.diagnostico_ia, av.detalles_ia
+                    av.id_analisis, av.url_imagen, av.puntaje_ia, ec.diagnostico_ia, ec.observaciones, av.detalles_ia
                 FROM evaluacion_cognitiva ec
                 JOIN asignacion_prueba ap ON ec.id_asignacion = ap.id_asignacion
                 JOIN paciente p ON ap.id_paciente = p.id_paciente

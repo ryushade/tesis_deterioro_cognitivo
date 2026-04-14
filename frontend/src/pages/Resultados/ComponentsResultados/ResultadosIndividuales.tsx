@@ -30,7 +30,7 @@ function CardCDT({ ev }: { ev: EvaluacionResultado }) {
   const porcentaje = Math.round((puntaje / puntajeMax) * 100);
   const colores = getColorCDT(puntaje);
   const clasificacion = ev.clasificacion_ia || (ev.detalles_ia_jsonb?.clasificacion) || '—';
-  const observaciones = ev.detalles_ia_jsonb?.observaciones || '—';
+  const observaciones = ev.observaciones_ia || ev.detalles_ia_jsonb?.observaciones || '—';
   const conAlerta = puntaje < 4;
 
   // La imagen se sirve desde el backend directamente
@@ -61,8 +61,7 @@ function CardCDT({ ev }: { ev: EvaluacionResultado }) {
           <div className="flex items-start justify-between gap-2">
             <div>
               <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-slate-400" />
-                <h3 className="font-bold text-slate-800 text-base">Prueba del Reloj (CDT)</h3>
+                <h3 className="font-bold text-slate-800 text-base">Prueba del Reloj</h3>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">{formatDate(ev.fecha_evaluacion)}</p>
             </div>
@@ -114,7 +113,6 @@ export default function ResultadosIndividuales({ resultados, loading, error, mos
   if (mostrandoTodos) {
     return (
       <div className="mt-6 flex flex-col items-center justify-center py-16 text-center text-slate-400 space-y-2">
-        <Clock className="w-10 h-10 opacity-30" />
         <p className="font-medium">Selecciona un paciente para ver sus resultados.</p>
       </div>
     );
@@ -140,7 +138,7 @@ export default function ResultadosIndividuales({ resultados, loading, error, mos
   if (resultados.length === 0) {
     return (
       <div className="mt-6 flex flex-col items-center justify-center py-16 text-center text-slate-400 space-y-2">
-        <p className="font-medium">El paciente no ha realizado dicha evaluación.</p>
+        <p className="font-medium">El paciente no tiene registros de evaluaciones o no ha realizado dicha prueba.</p>
       </div>
     );
   }

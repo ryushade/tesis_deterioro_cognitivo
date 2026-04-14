@@ -44,13 +44,23 @@ def _crear_tablas_si_no_existen(cursor):
         CREATE TABLE IF NOT EXISTS evaluacion_cognitiva (
             id_evaluacion SERIAL PRIMARY KEY,
             id_asignacion INTEGER NOT NULL,
+            id_neuropsicologo INTEGER,
             fecha_evaluacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            estado VARCHAR(50) DEFAULT 'completada',
+            estado_evaluacion INTEGER DEFAULT 2, -- 2: Completado
+            diagnostico_ia TEXT,
             CONSTRAINT fk_ec_asignacion FOREIGN KEY (id_asignacion)
                 REFERENCES asignacion_prueba(id_asignacion)
                 ON UPDATE CASCADE ON DELETE CASCADE
         );
     """)
+
+    # Intentar agregar id_neuropsicologo si no existe (por si se creó con esquema viejo)
+    try:
+        cursor.execute("ALTER TABLE evaluacion_cognitiva ADD COLUMN IF NOT EXISTS id_neuropsicologo INTEGER")
+        cursor.execute("ALTER TABLE evaluacion_cognitiva ADD COLUMN IF NOT EXISTS estado_evaluacion INTEGER DEFAULT 2")
+        cursor.execute("ALTER TABLE evaluacion_cognitiva ADD COLUMN IF NOT EXISTS diagnostico_ia TEXT")
+    except: pass
+
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS analisis_visual (
             id_analisis SERIAL PRIMARY KEY,
@@ -66,6 +76,12 @@ def _crear_tablas_si_no_existen(cursor):
                 ON UPDATE CASCADE ON DELETE CASCADE
         );
     """)
+
+    # Compatibilidad: Asegurar que existe detalles_ia_jsonb si se creó como detalles_ia antes
+    try:
+        cursor.execute("ALTER TABLE analisis_visual ADD COLUMN IF NOT EXISTS clasificacion_ia VARCHAR(50)")
+        cursor.execute("ALTER TABLE analisis_visual ADD COLUMN IF NOT EXISTS detalles_ia_jsonb JSONB")
+    except: pass
 
 
 def procesar_evaluacion_cdt(id_asignacion: int, url_imagen: str, resultado_ia: dict) -> dict:
@@ -95,16 +111,23 @@ def procesar_evaluacion_cdt(id_asignacion: int, url_imagen: str, resultado_ia: d
             if not id_neuropsicologo:
                 return {'success': False, 'error': 'No se encontró el neuropsicólogo asociado al paciente'}
 
-            # Registrar la evaluación principal
+            # Registrar la evaluación principal (con diagnostico y observaciones)
             cursor.execute("""
-                INSERT INTO evaluacion_cognitiva (id_asignacion, id_neuropsicologo, estado_evaluacion)
-                VALUES (%s, %s, 2)
+                INSERT INTO evaluacion_cognitiva 
+                    (id_asignacion, id_neuropsicologo, estado_evaluacion, diagnostico_ia, observaciones, puntaje_total)
+                VALUES (%s, %s, 2, %s, %s, %s)
                 RETURNING id_evaluacion
-            """, (id_asignacion, id_neuropsicologo))
+            """, (
+                id_asignacion, 
+                id_neuropsicologo, 
+                resultado_ia.get('clasificacion', 'Sin clasificar'),
+                resultado_ia.get('observaciones', ''),
+                resultado_ia.get('puntuacion', 0)
+            ))
             row = cursor.fetchone()
             id_evaluacion = row['id_evaluacion'] if isinstance(row, dict) else row[0]
 
-            # Paso C: Insertar resultados del análisis visual
+            # Paso C: Insertar resultados del análisis visual (esquema real: detalles_ia)
             detalles_json = json.dumps(resultado_ia.get('detalles', {}))
             cursor.execute("""
                 INSERT INTO analisis_visual

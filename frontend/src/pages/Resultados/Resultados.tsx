@@ -3,7 +3,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { authService } from '@/services/auth';
 import ResultadosIndividuales from './ComponentsResultados/ResultadosIndividuales';
 import ResultadosGlobales from './ComponentsResultados/ResultadosGlobales';
-import { Plus } from 'lucide-react';
+import { Search } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -119,7 +119,7 @@ function Resultados() {
             disabled={!selectedPacienteId || loadingResultados}
             className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500"
           >
-            <Plus className="h-4 w-4" />
+            <Search className="h-4 w-4" />
             {loadingResultados ? 'Buscando...' : 'Buscar resultados'}
           </Button>
         </div>
