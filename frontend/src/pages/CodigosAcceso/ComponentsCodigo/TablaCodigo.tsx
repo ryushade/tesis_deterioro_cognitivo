@@ -95,8 +95,7 @@ export default function TablaCodigo({
           <tbody className="bg-white divide-y divide-gray-200">
             {codigos.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                  <Code className="h-12 w-12 mx-auto mb-2 text-gray-300" />
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
                   <p>No se encontraron códigos de acceso</p>
                   {searchTerm && (
                     <p className="text-sm mt-1 text-gray-400">

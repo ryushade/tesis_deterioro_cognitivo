@@ -72,29 +72,119 @@ transformacion_inferencia = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
+def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
+    """
+    Valida que la imagen sea un dibujo del Test del Reloj.
+    Estrategia:
+      1. Hough Circle Transform: un reloj SIEMPRE tiene un circulo prominente.
+      2. Fondo claro: papel blanco domina la imagen.
+      3. Baja saturacion: trazos en lapiz/boligrafo son monocromaticos.
+      4. Densidad de bordes no excesiva: descarta texturas complejas.
+    """
+    img_bgr = cv2.imread(ruta_imagen)
+    if img_bgr is None:
+        return False, "No se pudo leer la imagen."
+
+    h_img, w_img = img_bgr.shape[:2]
+    img_gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+
+    # --- METRICAS ---
+    img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
+    saturacion_media = float(img_hsv[:, :, 1].mean())
+    brillo_medio = float(img_gray.mean())
+    pixeles_claros = float(np.sum(img_gray > 200)) / img_gray.size
+    edges = cv2.Canny(img_gray, 50, 150)
+    densidad_bordes = float(np.sum(edges > 0)) / edges.size
+
+    # --- DETECCION DE CIRCULO (Hough Transform) ---
+    # Buscar circulos con radios entre 15% y 48% de la imagen menor dimension
+    min_dim = min(h_img, w_img)
+    min_r = int(min_dim * 0.15)
+    max_r = int(min_dim * 0.48)
+    img_blur = cv2.GaussianBlur(img_gray, (9, 9), 2)
+    circulos = cv2.HoughCircles(
+        img_blur,
+        cv2.HOUGH_GRADIENT,
+        dp=1.2,
+        minDist=min_dim * 0.3,
+        param1=60,
+        param2=35,       # Umbral acumulador más relajado
+        minRadius=min_r,
+        maxRadius=max_r
+    )
+    hay_circulo = circulos is not None and len(circulos[0]) >= 1
+
+    print("\n" + "="*55)
+    print(f"[IA VALIDATION] {os.path.basename(ruta_imagen)}")
+    print(f"  > Saturacion: {saturacion_media:.1f} (Max: 30)")
+    print(f"  > Brillo: {brillo_medio:.1f} (Min: 130)")
+    print(f"  > Fondo blanco: {pixeles_claros*100:.1f}% (Min: 45%)")
+    print(f"  > Densidad bordes: {densidad_bordes*100:.2f}% (Max: 10%)")
+    print(f"  > Circulo detectado: {'SI' if hay_circulo else 'NO'} (Requerido)")
+    print("="*55 + "\n")
+
+    # Validaciones en orden de importancia
+    if not hay_circulo:
+        return False, (
+            "No se detectó un círculo en la imagen. "
+            "El Test del Reloj requiere que el paciente dibuje un círculo claramente visible sobre papel blanco. "
+            "Por favor fotografíe únicamente el dibujo del reloj."
+        )
+
+    if saturacion_media > 30:
+        return False, (
+            "La imagen tiene colores. El dibujo del reloj debe ser "
+            "trazos en lápiz o bolígrafo sobre papel blanco."
+        )
+
+    if brillo_medio < 130:
+        return False, (
+            "La imagen es muy oscura. Asegúrese de tener buena iluminación "
+            "y colocar el papel sobre una superficie clara."
+        )
+
+    if pixeles_claros < 0.45:
+        return False, (
+            "No se detecta suficiente fondo blanco. "
+            "Fotografíe el dibujo con la hoja bien visible en el encuadre."
+        )
+
+    if densidad_bordes > 0.10:
+        return False, (
+            "La imagen tiene demasiados detalles o texto. "
+            "Suba únicamente una fotografía del dibujo del reloj sobre papel liso."
+        )
+
+    return True, ""
+
+
 def predecir_reloj(ruta_imagen_fisica: str) -> dict:
     """
-    Función endpoint: Ingresa una ruta, retorna el puntaje y porcentaje de precisión.
+    Funcion endpoint: Ingresa una ruta, retorna el puntaje y porcentaje de precision.
     """
     if MODELO_CDT is None:
-        raise RuntimeError("La IA del Test del Reloj (CDT) no está cargada.")
-        
+        raise RuntimeError("La IA del Test del Reloj (CDT) no esta cargada.")
+
+    # Pre-validacion: verificar que sea un dibujo sobre papel
+    es_valida, motivo_rechazo = es_dibujo_sobre_papel(ruta_imagen_fisica)
+    if not es_valida:
+        return {"puntaje": 0, "confianza": 0.0, "error": True, "motivo": motivo_rechazo}
+
     img_procesada = procesar_imagen_cdt_inferencia(ruta_imagen_fisica)
     if img_procesada is None:
         return {"puntaje": 0, "confianza": 0.0, "error": True}
-        
-    # El modelo PyTorch necesita los 3 canales de color simulados (RGB) a pesar de ser blanco y negro.
+
+    # El modelo PyTorch necesita los 3 canales RGB aunque la imagen sea B&N
     img_color = cv2.cvtColor(img_procesada, cv2.COLOR_GRAY2RGB)
     img_pil = Image.fromarray(img_color)
-    
+
     tensor_img = transformacion_inferencia(img_pil).unsqueeze(0).to(device)
-    
+
     with torch.no_grad():
         salidas = MODELO_CDT(tensor_img)
-        # Extraemos la curva de probabilidad para cada uno de los 6 puntajes simulando 0 a 100%
         probabilidades = torch.nn.functional.softmax(salidas[0], dim=0)
         confianza_absoluta, indice_vencedor = torch.max(probabilidades, 0)
-        
+
     return {
         "puntaje": int(indice_vencedor.item()),
         "confianza": float(round(confianza_absoluta.item() * 100, 2)),

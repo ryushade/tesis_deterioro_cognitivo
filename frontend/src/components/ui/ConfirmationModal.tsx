@@ -84,7 +84,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
 
   return (
     <div 
-      className="fixed inset-0 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 flex items-center justify-center z-50"
       style={{
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
         backdropFilter: 'blur(8px) saturate(180%) brightness(0.8)',
@@ -92,29 +92,22 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       }}
     >
       <Card className={`w-full max-w-md ${colors.border} border-2`}>
-        <CardHeader className={`${colors.bg} rounded-t-lg`}>
-          <div className="flex items-center gap-3">
-            <div className={`${colors.icon} p-3 rounded-full`}>
-              {getIcon()}
-            </div>
-            <div>
-              <CardTitle className="text-lg text-gray-900">{title}</CardTitle>
-              {patientName && (
-                <CardDescription className="text-sm text-gray-600">
-                  Paciente: <span className="font-medium">{patientName}</span>
-                </CardDescription>
-              )}
-            </div>
-          </div>
+        <CardHeader className="text-center">
+          <CardTitle className="text-xl text-gray-900">{title}</CardTitle>
+          {patientName && (
+            <CardDescription className="text-sm text-gray-600">
+              Paciente: <span className="font-medium">{patientName}</span>
+            </CardDescription>
+          )}
         </CardHeader>
 
-        <CardContent className="p-6">
-          <div className="space-y-4">
+        <CardContent className="p-2">
+          <div className="space-y-2">
             <p className="text-gray-700 leading-relaxed">{message}</p>
 
             {details.length > 0 && (
-              <div className="bg-gray-50 p-3 rounded-md">
-                <h4 className="text-sm font-medium text-gray-900 mb-2">Detalles:</h4>
+              <div className="bg-gray-50 p-2 rounded-md">
+                <h4 className="text-sm font-medium text-gray-900">Detalles:</h4>
                 <ul className="text-sm text-gray-600 space-y-1">
                   {details.map((detail, index) => (
                     <li key={index} className="flex items-start">
@@ -126,20 +119,10 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               </div>
             )}
 
-            {type === 'danger' && (
-              <div className="bg-red-50 border border-red-200 rounded-md p-3">
-                <div className="flex items-start">
-                  <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" />
-                  <div className="text-sm text-red-700">
-                    <p className="font-medium">¡Atención!</p>
-                    <p>Esta acción no se puede deshacer. Los datos del paciente se marcarán como inactivos en el sistema.</p>
-                  </div>
-                </div>
-              </div>
-            )}
+            
           </div>
 
-          <div className="flex gap-3 mt-6 pt-4 border-t border-gray-200">
+          <div className="flex gap-4 mt-4 pt-2">
             <Button
               variant="outline"
               onClick={onClose}

@@ -10,10 +10,10 @@ export default function CDTAdminister() {
   const { id_codigo } = useParams();
   
   const [step, setStep] = useState(1);
-  // Tomamos el nombre del paciente directamente del localStorage (guardado en el login)
   const [pacienteNombre, setPacienteNombre] = useState<string>("Paciente");
   const [resultadoMock, setResultadoMock] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
     // El nombre viene del backend al hacer login, lo guardamos en localStorage
@@ -44,13 +44,18 @@ export default function CDTAdminister() {
       
       if (response.data && response.data.success) {
         setResultadoMock(response.data.resultado);
+        setUploadError(null);
         toast.success("Foto procesada con éxito", { id: "uploading" });
         setStep(3);
       } else {
-        throw new Error(response.data.message || "Fallo en IA");
+        const msg = response.data?.message || "Error al procesar la imagen";
+        setUploadError(msg);
+        toast.dismiss("uploading");
       }
     } catch (e: any) {
-      toast.error("Error al procesar: " + (e?.message || ""), { id: "uploading" });
+      const mensaje = e?.response?.data?.message || e?.message || "Error al procesar la imagen";
+      setUploadError(mensaje);
+      toast.dismiss("uploading");
     } finally {
       setIsUploading(false);
     }
@@ -70,7 +75,12 @@ export default function CDTAdminister() {
                  <p className="text-sm text-gray-500">Nuestros modelos están analizando los trazos</p>
               </div>
             )}
-            <UploadCDT nombrePaciente={pacienteNombre} onNext={handleFileUpload} />
+            <UploadCDT
+              nombrePaciente={pacienteNombre}
+              onNext={handleFileUpload}
+              error={uploadError}
+              onClearError={() => setUploadError(null)}
+            />
           </div>
         )}
 
