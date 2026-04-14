@@ -145,8 +145,9 @@ export default function TablaCodigo({
                         variant="ghost"
                         size="sm"
                         onClick={() => onAdministerTest(codigo)}
-                        className="text-green-600 hover:text-green-800"
-                        title="Administrar prueba al paciente"
+                        className={`text-green-600 ${codigo.estado !== 1 && codigo.estado !== 3 ? 'opacity-40 cursor-not-allowed hover:text-green-600' : 'hover:text-green-800'}`}
+                        title={codigo.estado === 2 ? "Prueba ya completada" : codigo.estado === 0 ? "Código inactivo/cancelado" : "Administrar prueba al paciente"}
+                        disabled={codigo.estado !== 1 && codigo.estado !== 3}
                       >
                         <FileCode2 className="h-4 w-4" />
                       </Button>

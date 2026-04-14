@@ -21,6 +21,7 @@ export default function ResultadosCDT({ nombrePaciente, resultado }: { nombrePac
 
   const handleFinalizar = () => {
     ["isAuthenticated","user","authToken","userType","nombrePaciente","accessCode","tipoEvaluacion","idCodigo"].forEach(k => localStorage.removeItem(k));
+    window.dispatchEvent(new Event('authStateChanged'));
     navigate("/login", { replace: true });
   };
 
