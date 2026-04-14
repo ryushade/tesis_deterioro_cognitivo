@@ -1,6 +1,6 @@
 // Tipos para códigos de acceso
 
-export type EstadoCodigo = 0 | 1 | 2;
+export type EstadoCodigo = 0 | 1 | 2 | 3;
 
 export type TipoEvaluacion = 'CDT' | 'MMSE' | 'MOCA' | 'ACE';
 
@@ -93,9 +93,10 @@ export interface CodigoAccesoFilters {
 
 // Opciones para selects
 export const ESTADOS_CODIGO: { value: EstadoCodigo; label: string; color: string }[] = [
-  { value: 1, label: 'Pendiente', color: 'bg-purple-100 text-purple-700' },
-  { value: 2, label: 'Vencido', color: 'bg-red-100 text-red-700' },
-  { value: 0, label: 'Cancelado', color: 'bg-gray-100 text-gray-700' }
+  { value: 1, label: 'Pendiente',    color: 'bg-purple-100 text-purple-700' },
+  { value: 3, label: 'En progreso',  color: 'bg-yellow-100 text-yellow-700' },
+  { value: 2, label: 'Completado',   color: 'bg-green-100 text-green-700' },
+  { value: 0, label: 'Cancelado',    color: 'bg-gray-100 text-gray-700' }
 ];
 
 export const TIPOS_EVALUACION: { value: TipoEvaluacion; label: string; description: string }[] = [
