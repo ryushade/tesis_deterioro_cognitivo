@@ -38,3 +38,4 @@ backend/app/services/cdt_modelo/
 backend/app/services/*.pth
 backend/app/services/cdt_modelo.zip
 backend/app/services/voz_dataset
+backend/uploads/pacientes/relojes

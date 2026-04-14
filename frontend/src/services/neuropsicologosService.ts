@@ -9,6 +9,9 @@ export interface Neuropsicologo {
   usua: string;
   contra: string;
   estado_usuario: number;
+  nombres?: string;
+  apellidos?: string;
+  estado?: number;
 }
 
 export interface NeuropsicologoCreate {

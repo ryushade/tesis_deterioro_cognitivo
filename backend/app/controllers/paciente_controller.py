@@ -1,20 +1,31 @@
 import db.database as db
 
 
-def obtener_pacientes():
+def obtener_pacientes(id_neuropsicologo=None):
     conexion = None
     try:
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
-            # Agregué p.id_paciente, p.nombres y p.sexo como ejemplo
-            # Agregué selectores flat para sexo y id_escolaridad directamente de la entidad paciente
-            cursor.execute("SELECT p.id_paciente, p.nombres, p.apellidos, p.fecha_nacimiento, p.sexo, p.id_escolaridad, n.nom_escolaridad AS escolaridad, p.estado FROM paciente p INNER JOIN nivel_escolaridad n ON p.id_escolaridad = n.id_escolaridad;")
+            if id_neuropsicologo:
+                cursor.execute("""
+                    SELECT p.id_paciente, p.nombres, p.apellidos, p.fecha_nacimiento,
+                           p.sexo, p.id_escolaridad, n.nom_escolaridad AS escolaridad, p.estado
+                    FROM paciente p
+                    INNER JOIN nivel_escolaridad n ON p.id_escolaridad = n.id_escolaridad
+                    WHERE p.id_neuropsicologo = %s
+                """, (id_neuropsicologo,))
+            else:
+                cursor.execute("""
+                    SELECT p.id_paciente, p.nombres, p.apellidos, p.fecha_nacimiento,
+                           p.sexo, p.id_escolaridad, n.nom_escolaridad AS escolaridad, p.estado
+                    FROM paciente p
+                    INNER JOIN nivel_escolaridad n ON p.id_escolaridad = n.id_escolaridad
+                """)
             return cursor.fetchall()
     except Exception as e:
         print("Error", e)
-        return None 
+        return None
     finally:
-        # Se asegura de siempre cerrar la conexión si es que llegó a abrirse
         if conexion:
             conexion.close()
 

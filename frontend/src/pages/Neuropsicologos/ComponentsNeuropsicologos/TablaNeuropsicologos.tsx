@@ -43,7 +43,8 @@ export default function TablaNeuropsicologos({ items, loading, error, searchTerm
           <thead className="bg-gray-50">
             <tr>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">USUARIO</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CONTRASEÑA</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NOMBRES</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">APELLIDOS</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ESTADO</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ACCIONES</th>
             </tr>
@@ -61,17 +62,16 @@ export default function TablaNeuropsicologos({ items, loading, error, searchTerm
               items.map((it) => (
                 <tr key={it.id_usuario} className="hover:bg-gray-50">
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <div className="flex items-center text-sm text-gray-900">
-                      {it.usua}
-                    </div>
+                      <span className="text-sm font-medium text-gray-900">{it.usua}</span>
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                    {it.nombres || <span className="text-gray-400 italic">—</span>}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                    {it.apellidos || <span className="text-gray-400 italic">—</span>}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <Badge variant="default" className="!bg-blue-600 !text-white !border-transparent hover:!bg-blue-700">
-                      {it.contra}
-                    </Badge>
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${it.estado ? 'text-green-700 bg-green-100' : 'text-gray-700 bg-gray-100'}`}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${it.estado_usuario ? 'text-green-700 bg-green-100' : 'text-gray-700 bg-gray-100'}`}>
                       {it.estado_usuario ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>

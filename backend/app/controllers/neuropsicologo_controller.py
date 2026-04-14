@@ -5,7 +5,13 @@ def obtener_neuropsicologo():
     try:
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
-            cursor.execute("SELECT * FROM usuario WHERE id_rol = 2")
+            cursor.execute("""
+                SELECT u.id_usuario, u.usua, u.contra, u.estado_usuario,
+                       n.nombres, n.apellidos, n.estado
+                FROM usuario u
+                LEFT JOIN neuropsicologo n ON n.id_usuario = u.id_usuario
+                WHERE u.id_rol = 2
+            """)
             return cursor.fetchall()
     except Exception as e:
         print("Error", e)

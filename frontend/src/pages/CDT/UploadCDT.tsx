@@ -34,7 +34,7 @@ export default function UploadCDT({ nombrePaciente, onNext }: { nombrePaciente: 
             Subir dibujo
           </h1>
           <p className="text-gray-500 font-medium mt-1 text-sm sm:text-base">
-            Prueba del Reloj — {nombrePaciente}
+            Prueba del reloj - {nombrePaciente}
           </p>
         </div>
 
@@ -88,7 +88,6 @@ export default function UploadCDT({ nombrePaciente, onNext }: { nombrePaciente: 
                 : "bg-blue-200 text-white cursor-not-allowed"
             }`}
           >
-            <Send className="w-5 h-5 -rotate-45 mb-1" />
             Enviar prueba
           </Button>
         </div>

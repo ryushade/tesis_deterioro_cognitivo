@@ -71,12 +71,25 @@ def procesar_evaluacion_cdt(id_asignacion: int, url_imagen: str, resultado_ia: d
             # Asegurar que las tablas existen
             _crear_tablas_si_no_existen(cursor)
 
-            # Paso A: Registrar la evaluación principal
+            # Paso A: Obtener el id_neuropsicologo del paciente asociado a esta asignación
             cursor.execute("""
-                INSERT INTO evaluacion_cognitiva (id_asignacion, estado)
-                VALUES (%s, 'completada')
-                RETURNING id_evaluacion
+                SELECT p.id_neuropsicologo
+                FROM asignacion_prueba ap
+                JOIN paciente p ON ap.id_paciente = p.id_paciente
+                WHERE ap.id_asignacion = %s
             """, (id_asignacion,))
+            neuro_row = cursor.fetchone()
+            id_neuropsicologo = neuro_row['id_neuropsicologo'] if isinstance(neuro_row, dict) else (neuro_row[0] if neuro_row else None)
+
+            if not id_neuropsicologo:
+                return {'success': False, 'error': 'No se encontró el neuropsicólogo asociado al paciente'}
+
+            # Registrar la evaluación principal
+            cursor.execute("""
+                INSERT INTO evaluacion_cognitiva (id_asignacion, id_neuropsicologo, estado_evaluacion)
+                VALUES (%s, %s, 2)
+                RETURNING id_evaluacion
+            """, (id_asignacion, id_neuropsicologo))
             row = cursor.fetchone()
             id_evaluacion = row['id_evaluacion'] if isinstance(row, dict) else row[0]
 
@@ -84,14 +97,13 @@ def procesar_evaluacion_cdt(id_asignacion: int, url_imagen: str, resultado_ia: d
             detalles_json = json.dumps(resultado_ia.get('detalles', {}))
             cursor.execute("""
                 INSERT INTO analisis_visual
-                    (id_evaluacion, tipo_dibujo, url_imagen, puntaje_ia, clasificacion_ia, detalles_ia_jsonb)
-                VALUES (%s, %s, %s, %s, %s, %s)
+                    (id_evaluacion, tipo_dibujo, url_imagen, puntaje_ia, detalles_ia)
+                VALUES (%s, %s, %s, %s, %s)
             """, (
                 id_evaluacion,
                 'Test del Reloj',
                 url_imagen,
                 resultado_ia.get('puntuacion', 0),
-                resultado_ia.get('clasificacion', 'Sin clasificar'),
                 detalles_json
             ))
 
