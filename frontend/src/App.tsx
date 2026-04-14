@@ -84,7 +84,7 @@ function App() {
               <Route
                 path="/login"
                 element={
-                  isAuthenticated ? (
+                  (isAuthenticated && localStorage.getItem('userType') !== 'paciente') ? (
                     <Navigate to={AuthorizationService.getDefaultRoute()} replace />
                   ) : (
                     <LoginPage />
@@ -162,11 +162,7 @@ function App() {
               */}
               <Route
                 path="/evaluaciones/cdt/:id_codigo"
-                element={
-                  <ProtectedRoute>
-                    <CDTAdminister />
-                  </ProtectedRoute>
-                }
+                element={<CDTAdminister />}
               />
               {/* <Route
                 path="/pruebas"

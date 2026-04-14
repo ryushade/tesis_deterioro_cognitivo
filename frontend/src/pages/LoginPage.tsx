@@ -87,24 +87,29 @@ export default function LoginPage() {
         window.dispatchEvent(new CustomEvent("loginSuccess"));
         
         // El backend ahora devuelve la información del código en response.codigo_info
-        let target = "/pruebas";
+        let target = "/inicio";
         
         if (response.codigo_info) {
           const { codigo, tipo_evaluacion, id_codigo } = response.codigo_info;
           localStorage.setItem("accessCode", codigo);
           localStorage.setItem("tipoEvaluacion", tipo_evaluacion);
           localStorage.setItem("idCodigo", String(id_codigo));
-          
-          switch ((tipo_evaluacion || "").toUpperCase()) {
-            case "CDT":
-              target = `/evaluaciones/cdt/${id_codigo}`;
-              break;
-            case "MMSE":
-              target = `/evaluaciones/mmse/${id_codigo}`;
-              break;
-            default:
-              target = "/pruebas";
-              break;
+          // Marcar que este usuario ingresó como paciente (sin rol en BD)
+          localStorage.setItem("userType", "paciente");
+
+          const pruebaNormalizada = (tipo_evaluacion || "").toLowerCase();
+          console.log("[PatientLogin] tipo_evaluacion:", tipo_evaluacion, "id_codigo:", id_codigo);
+          // Guardamos el nombre del paciente para usarlo en las pantallas de la prueba
+          if (response.codigo_info.nombre_paciente) {
+            localStorage.setItem("nombrePaciente", response.codigo_info.nombre_paciente);
+          }
+
+          if (pruebaNormalizada.includes("reloj") || pruebaNormalizada.includes("cdt")) {
+            target = `/evaluaciones/cdt/${id_codigo}`;
+          } else if (pruebaNormalizada.includes("mmse") || pruebaNormalizada.includes("mini-mental") || pruebaNormalizada.includes("mini mental")) {
+            target = `/evaluaciones/mmse/${id_codigo}`;
+          } else {
+            target = "/inicio";
           }
         }
         

@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { authService } from "@/services/auth";
-import { codigosAccesoService } from "@/services/codigosAccesoService";
+import { useParams } from "react-router-dom";
 import InstruccionesCDT from "./InstruccionesCDT";
 import UploadCDT from "./UploadCDT";
 import ResultadosCDT from "./ResultadosCDT";
@@ -11,45 +8,20 @@ import { apiClient } from "@/services/api";
 
 export default function CDTAdminister() {
   const { id_codigo } = useParams();
-  const navigate = useNavigate();
   
   const [step, setStep] = useState(1);
-  const [pacienteNombre, setPacienteNombre] = useState<string>("Cargando...");
+  // Tomamos el nombre del paciente directamente del localStorage (guardado en el login)
+  const [pacienteNombre, setPacienteNombre] = useState<string>("Paciente");
   const [resultadoMock, setResultadoMock] = useState<any>(null);
   const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    async function loadData() {
-      // Como workaround en este MVP, pediremos todos los codigos y buscaremos el que coincida
-      // ya que el backend no parece tener /auth/obtener_codigos/:id
-      try {
-        const res = await codigosAccesoService.getAll({ limit: 1000 });
-        if (res.success && res.data) {
-          const matched = res.data.find(c => String(c.id_codigo) === String(id_codigo));
-          if (matched) {
-            setPacienteNombre(`${matched.nombres} ${matched.apellidos}`);
-          } else {
-            toast.error("Código no encontrado");
-            navigate("/codigos-acceso");
-          }
-        }
-      } catch (e) {
-        toast.error("Error al cargar paciente");
-      }
+    // El nombre viene del backend al hacer login, lo guardamos en localStorage
+    const nombre = localStorage.getItem("nombrePaciente");
+    if (nombre) {
+      setPacienteNombre(nombre);
     }
-    loadData();
-  }, [id_codigo, navigate]);
-
-  const currentUser = authService.getUserFromStorage();
-  const sidebarUser = { 
-    name: currentUser?.username || 'Usuario', 
-    email: currentUser?.role?.name || 'Rol no definido' 
-  };
-
-  const handleLogout = async () => {
-    await authService.logout();
-    window.location.href = '/login';
-  };
+  }, []);
 
   const handleNextInstruction = () => setStep(2);
   
@@ -57,9 +29,12 @@ export default function CDTAdminister() {
     setIsUploading(true);
     toast.loading("Analizando dibujo con IA...", { id: "uploading" });
     try {
-      // Enviar la imagen
       const formData = new FormData();
       formData.append("file", file);
+      // Enviamos el id_asignacion para que el backend asocie la evaluación
+      if (id_codigo) {
+        formData.append("id_asignacion", id_codigo);
+      }
       
       const response = await apiClient.post("/cdt/upload", formData, {
         headers: {
@@ -82,8 +57,8 @@ export default function CDTAdminister() {
   };
 
   return (
-    <DashboardLayout user={sidebarUser} onLogout={handleLogout}>
-      <div className="min-h-[85vh] bg-gray-50/50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen flex items-center justify-center p-4">
         {step === 1 && <InstruccionesCDT nombrePaciente={pacienteNombre} onNext={handleNextInstruction} />}
         
         {step === 2 && (
@@ -101,6 +76,6 @@ export default function CDTAdminister() {
 
         {step === 3 && <ResultadosCDT nombrePaciente={pacienteNombre} resultado={resultadoMock} />}
       </div>
-    </DashboardLayout>
+    </div>
   );
 }

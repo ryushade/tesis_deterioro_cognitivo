@@ -113,6 +113,11 @@ class AuthService {
       localStorage.removeItem('isAuthenticated');
       localStorage.removeItem('user');
       localStorage.removeItem('authToken');
+      localStorage.removeItem('userType');
+      localStorage.removeItem('nombrePaciente');
+      localStorage.removeItem('accessCode');
+      localStorage.removeItem('tipoEvaluacion');
+      localStorage.removeItem('idCodigo');
       
       // Trigger auth state change event
       window.dispatchEvent(new CustomEvent('authStateChanged'));
