@@ -103,12 +103,22 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     tonos_unicos = len(np.unique(img_gray))
 
     # --- METRICA ANTI-DIGITAL 2: Micro-Textura (Ruido de Fondo) ---
-    # Tomamos los píxeles más claros (fondo) y medimos su variabilidad.
     pixeles_claros_vals = img_gray[img_gray > 220]
     if len(pixeles_claros_vals) > 100:
         variabilidad_fondo = float(np.std(pixeles_claros_vals))
     else:
         variabilidad_fondo = 5.0
+
+    # --- METRICA ANTI-OBJETO 1: Reflejos Especulares (Vidrio/Cristal) ---
+    # Un reloj real tiene tapa de cristal; el papel es mate.
+    # Buscamos cúmulos de píxeles casi blancos puros (>252) que indican reflejos de luz.
+    _, mask_brillo = cv2.threshold(img_gray, 252, 255, cv2.THRESH_BINARY)
+    num_labels, _, stats, _ = cv2.connectedComponentsWithStats(mask_brillo)
+    # Contamos "destellos" de tamaño pequeño/mediano (glare)
+    destellos = 0
+    for i in range(1, num_labels):
+        if 5 < stats[i, cv2.CC_STAT_AREA] < 500:
+            destellos += 1
 
     # Deteccion de regiones rellenas (Trazos muy gruesos o parches negros)
     kernel_grosor = np.ones((9, 9), np.uint8)
@@ -141,9 +151,29 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     
     hay_circulo = False
     mejor_circulo = None
+    circularidad = 0.0
     if circulos is not None and len(circulos[0]) >= 1:
         hay_circulo = True
         mejor_circulo = circulos[0][0]
+        
+        # --- METRICA ANTI-OBJETO 2: Análisis de Circularidad ---
+        # Los relojes reales son círculos matemáticamente perfectos.
+        # Los dibujos a mano tienen imperfecciones locales apreciables.
+        x, y, r = mejor_circulo
+        roi_margin = 10
+        y1, y2 = max(0, int(y-r-roi_margin)), min(h_img, int(y+r+roi_margin))
+        x1, x2 = max(0, int(x-r-roi_margin)), min(w_img, int(x+r+roi_margin))
+        roi = img_gray[y1:y2, x1:x2]
+        
+        # Detectar el contorno real que generó el círculo
+        roi_edges = cv2.Canny(roi, 50, 150)
+        cnts, _ = cv2.findContours(roi_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if cnts:
+            c_max = max(cnts, key=cv2.contourArea)
+            area = cv2.contourArea(c_max)
+            perimetro = cv2.arcLength(c_max, True)
+            if perimetro > 0:
+                circularidad = (4 * np.pi * area) / (perimetro ** 2)
 
     pct_tinta_dentro = 0.0
     if hay_circulo:
@@ -166,8 +196,10 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     print(f"  > Lineas rectas (Texto/QR): {num_lineas} (Max: 45)")
     print(f"  > Tinta gruesa/relleno: {pct_tinta_gruesa*100:.2f}% (Max: 0.5%)")
     print(f"  > Tinta total (Líneas vs Foto): {pct_tinta_total*100:.2f}% (Max: 15%)")
+    print(f"  > Reflejos detectados: {destellos} (Max: 3)")
     print(f"  > Circulo detectado: {'SI' if hay_circulo else 'NO'} (Requerido)")
     if hay_circulo:
+        print(f"  > Circularidad: {circularidad:.3f} (Max Humano: 0.88)")
         print(f"  > Tinta en circulo: {pct_tinta_dentro*100:.1f}% (Min: 40%)")
     print("="*55 + "\n")
 
@@ -207,6 +239,18 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
 
     if hay_circulo and pct_tinta_dentro < 0.40:
         return False, "El dibujo no parece un reloj. La mayor parte de los trazos están muy lejos del círculo."
+
+    if destellos > 3:
+        return False, (
+            "Se detectaron reflejos especulares típicos de vidrio o superficies plásticas. "
+            "El dibujo debe ser realizado sobre papel mate (sin brillo)."
+        )
+
+    if hay_circulo and circularidad > 0.88:
+        return False, (
+            "El círculo detectado es geométricamente perfecto (Industrial). "
+            "El test del reloj debe ser dibujado íntegramente a mano alzada por el paciente."
+        )
 
     if pct_tinta_gruesa > 0.005: 
         return False, "La imagen contiene regiones completamente pintadas o trazos antinaturalmente gruesos."

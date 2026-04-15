@@ -10,6 +10,7 @@ export interface CodigoAcceso {
   id_paciente: number;
   nombre_paciente: string;
   nombres: string;
+  nombre_prueba: string;
   apellidos: string;
   tipo_evaluacion: TipoEvaluacion;
   vence_at: string;
