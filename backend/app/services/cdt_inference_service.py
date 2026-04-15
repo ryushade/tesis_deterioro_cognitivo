@@ -111,13 +111,14 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
 
     # --- METRICA ANTI-OBJETO 1: Reflejos Especulares (Vidrio/Cristal) ---
     # Un reloj real tiene tapa de cristal; el papel es mate.
-    # Buscamos cúmulos de píxeles casi blancos puros (>252) que indican reflejos de luz.
-    _, mask_brillo = cv2.threshold(img_gray, 252, 255, cv2.THRESH_BINARY)
+    # Buscamos cúmulos de píxeles casi blancos puros (>254) que indican reflejos de luz.
+    # Aumentamos el umbral (254) y el área mínima (15) para evitar fallos por papel muy blanco.
+    _, mask_brillo = cv2.threshold(img_gray, 254, 255, cv2.THRESH_BINARY)
     num_labels, _, stats, _ = cv2.connectedComponentsWithStats(mask_brillo)
     # Contamos "destellos" de tamaño pequeño/mediano (glare)
     destellos = 0
     for i in range(1, num_labels):
-        if 5 < stats[i, cv2.CC_STAT_AREA] < 500:
+        if 15 < stats[i, cv2.CC_STAT_AREA] < 800:
             destellos += 1
 
     # Deteccion de regiones rellenas (Trazos muy gruesos o parches negros)
@@ -196,10 +197,10 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     print(f"  > Lineas rectas (Texto/QR): {num_lineas} (Max: 45)")
     print(f"  > Tinta gruesa/relleno: {pct_tinta_gruesa*100:.2f}% (Max: 0.5%)")
     print(f"  > Tinta total (Líneas vs Foto): {pct_tinta_total*100:.2f}% (Max: 15%)")
-    print(f"  > Reflejos detectados: {destellos} (Max: 3)")
+    print(f"  > Reflejos detectados: {destellos} (Max: 8)")
     print(f"  > Circulo detectado: {'SI' if hay_circulo else 'NO'} (Requerido)")
     if hay_circulo:
-        print(f"  > Circularidad: {circularidad:.3f} (Max Humano: 0.88)")
+        print(f"  > Circularidad: {circularidad:.3f} (Max Humano: 0.94)")
         print(f"  > Tinta en circulo: {pct_tinta_dentro*100:.1f}% (Min: 40%)")
     print("="*55 + "\n")
 
@@ -240,16 +241,16 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     if hay_circulo and pct_tinta_dentro < 0.40:
         return False, "El dibujo no parece un reloj. La mayor parte de los trazos están muy lejos del círculo."
 
-    if destellos > 3:
+    if destellos > 8:
         return False, (
-            "Se detectaron reflejos especulares típicos de vidrio o superficies plásticas. "
-            "El dibujo debe ser realizado sobre papel mate (sin brillo)."
+            "Se detectaron demasiados reflejos especulares. "
+            "Asegúrese de tomar la foto sin flash y sobre una superficie mate."
         )
 
-    if hay_circulo and circularidad > 0.88:
+    if hay_circulo and circularidad > 0.94:
         return False, (
-            "El círculo detectado es geométricamente perfecto (Industrial). "
-            "El test del reloj debe ser dibujado íntegramente a mano alzada por el paciente."
+            "El círculo detectado es excesivamente perfecto (Industrial). "
+            "Recuerde que el reloj debe ser dibujado íntegramente a mano alzada."
         )
 
     if pct_tinta_gruesa > 0.005: 

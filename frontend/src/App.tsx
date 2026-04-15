@@ -9,19 +9,12 @@ import { HomePage } from './pages/HomePage';
 import Pacientes from './pages/Pacientes/Pacientes';
 import CodigosAcceso from './pages/CodigosAcceso/Code';
 import Evaluaciones from './pages/Evaluaciones/Evaluaciones';
-
-import MMSEPatient from './pages/Evaluaciones/ComponentsEvaluaciones/Pruebas/MMSE/MMSE';
-import MMSEPausada from './pages/Evaluaciones/ComponentsEvaluaciones/Pruebas/MMSE/MMSEPausada';
-// import Pruebas from './pages/Pruebas/Pruebas';
-// import PruebaFinalizada from './pages/Pruebas/PruebaFinalizada';
 import Neuropsicologos from './pages/Neuropsicologos/Neuropsicologo';
 import Resultados from './pages/Resultados/Resultados';
 
-import MMSEConfiguracionPage from './pages/Admin/MMSEConfiguracion';
 // Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthorizationService } from './services/auth.middleware';
-// import InicioPrueba from './pages/InicioPrueba/InicioPrueba';
 import CDTAdminister from './pages/CDT/CDTAdminister';
 import VoiceTestAdminister from './pages/VoiceTest/VoiceTestAdminister';
 
@@ -142,25 +135,7 @@ function App() {
                }
                />
 
-              {/* <Route
-                path="/evaluaciones"
-                element={
-                  <ProtectedRoute requiredRoles={["Neuropsicologo"]}>
-                    <InicioPrueba />
-                  </ProtectedRoute>
-                }
-              /> */}
-
-              {/*
-              <Route
-                path="/cdt-test"
-                element={
-                  <ProtectedRoute>
-                    <CDTTestPage />
-                  </ProtectedRoute>
-                }
-              />
-              */}
+             
               <Route
                 path="/evaluaciones/cdt/:id_codigo"
                 element={<CDTAdminister />}
@@ -169,54 +144,7 @@ function App() {
                 path="/evaluaciones/voz/:id_codigo"
                 element={<VoiceTestAdminister />}
               />
-              {/* <Route
-                path="/pruebas"
-                element={
-                  <ProtectedRoute>
-                    <Pruebas />
-                  </ProtectedRoute>
-                }
-              /> */}
-              {/* <Route
-                path="/pruebas/finalizado"
-                element={
-                  <ProtectedRoute>
-                    <PruebaFinalizada />
-                  </ProtectedRoute>
-                }
-              /> */}
-              <Route
-                path="/pruebas/pausada"
-                element={
-                  <ProtectedRoute>
-                    <MMSEPausada />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/mmse-configuracion"
-                element={
-                  <ProtectedRoute>
-                    <MMSEConfiguracionPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/mmse"
-                element={
-                  <ProtectedRoute>
-                    <MMSEPatient />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/evaluaciones/mmse"
-                element={
-                  <ProtectedRoute>
-                    <MMSEPatient />
-                  </ProtectedRoute>
-                }
-              />
+            
               <Route
                 path="/"
                 element={
