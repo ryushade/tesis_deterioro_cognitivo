@@ -91,6 +91,19 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       icon: Users,
       roles: ['Administrador'], // Solo administradores
     },
+     {
+      title: "Permisos",
+      url: "/configuracion/permisos",
+      icon: Users,
+      roles: ['Administrador'],
+    },
+    {
+      title: "MMSE",
+      url: "/configuracion/mmse",
+      icon: Users,
+      roles: ['Administrador', 'Neuropsicologo'],
+    },
+
 
     
     
@@ -123,7 +136,7 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
   const navMainItems = pickByUrls(["/dashboard","/pacientes","/pruebas-cognitivas","/codigos-acceso","/cdt-test"]) 
   const navReportsItems = pickByUrls(["/evaluaciones","/resultados"]) 
   const navGestionItems = pickByUrls(["/neuropsicologos","/roles-permisos"]) 
-  const navConfigItems = pickByUrls(["/configuracion"])
+  const navConfigItems = pickByUrls(["/configuracion/permisos", "/configuracion/mmse"])
 
   return (
     <Sidebar collapsible="icon" {...props}>
@@ -142,7 +155,7 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
         {navMainItems.length > 0 && <NavMain label="Principal" items={navMainItems} />}
         {navGestionItems.length > 0 && <NavMain label="Gestión" items={navGestionItems} />}
         {navReportsItems.length > 0 && <NavMain label="Reportes" items={navReportsItems} />}
-        {navConfigItems.length > 0 && <NavMain label = "Configuración" items={navConfigItems} />}
+        {navConfigItems.length > 0 && <NavMain label="Configuracion" items={navConfigItems} />}
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={userWithAvatar} onLogout={onLogout} />

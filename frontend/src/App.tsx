@@ -134,12 +134,21 @@ function App() {
                  </ProtectedRoute>
                }
                />
+              
+              <Route
+               path='/configuracion/mmse'
+               element={
+                <ProtectedRoute requiredRoles={["Administrador", "Neuropsicologo"]}>
+                  <Resultados />
+                </ProtectedRoute>
+               }
+              />
 
-             
               <Route
                 path="/evaluaciones/cdt/:id_codigo"
                 element={<CDTAdminister />}
               />
+              
               <Route
                 path="/evaluaciones/voz/:id_codigo"
                 element={<VoiceTestAdminister />}
