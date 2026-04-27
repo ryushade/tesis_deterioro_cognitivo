@@ -11,12 +11,14 @@ import CodigosAcceso from './pages/CodigosAcceso/Code';
 import Evaluaciones from './pages/Evaluaciones/Evaluaciones';
 import Neuropsicologos from './pages/Neuropsicologos/Neuropsicologo';
 import Resultados from './pages/Resultados/Resultados';
+import CategoriasMMSE from './pages/MMSE/CategoriasMMSE';
 
 // Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthorizationService } from './services/auth.middleware';
 import CDTAdminister from './pages/CDT/CDTAdminister';
 import VoiceTestAdminister from './pages/VoiceTest/VoiceTestAdminister';
+
 
 const queryClient = new QueryClient();
 
@@ -139,7 +141,7 @@ function App() {
                path='/configuracion/mmse'
                element={
                 <ProtectedRoute requiredRoles={["Administrador", "Neuropsicologo"]}>
-                  <Resultados />
+                  <CategoriasMMSE />
                 </ProtectedRoute>
                }
               />
