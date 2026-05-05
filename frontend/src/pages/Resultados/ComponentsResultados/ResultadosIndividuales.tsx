@@ -34,7 +34,7 @@ function CardCDT({ ev }: { ev: EvaluacionResultado }) {
   const conAlerta = puntaje < 4;
 
   // La imagen se sirve desde el backend directamente
-  const imgSrc = ev.url_imagen ? `http://localhost:5000/${ev.url_imagen}` : null;
+  const imgSrc = ev.url_imagen ? `http://localhost:5001/${ev.url_imagen}` : null;
 
   return (
     <Card className={`border ${colores.bg} rounded-2xl overflow-hidden shadow-sm`}>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2, LayoutList } from 'lucide-react';
+import { Edit, Trash2, LayoutList, Eye } from 'lucide-react';
 import type { Categoria } from '@/services/categoriaServices';
 
 interface TablaCategoriasProps {
@@ -90,6 +90,14 @@ export default function TablaCategorias({
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
                     <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onEdit(categoria)}
+                        className="text-gray-600 hover:text-gray-800"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
