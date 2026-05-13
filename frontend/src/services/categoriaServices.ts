@@ -2,10 +2,12 @@ import api from './api';
 
 export interface Categoria {
   id_categoria: number;
-  id_prueba: number;
   nombre_categoria: string;
+  descripcion?: string;
   puntaje_maximo: number;
   estado: number;
+  total_secciones?: number;
+  total_items_configurados?: number;
 }
 
 // In-memory mock data for frontend-only CRUD testing
@@ -20,22 +22,12 @@ let mockCategorias: Categoria[] = [
 export const categoriaServices = {
   // Obtener todas las categorias
   getAll: async (): Promise<{ success: boolean; data?: Categoria[]; message?: string }> => {
-    // Simulating API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({ success: true, data: [...mockCategorias] });
-      }, 500);
-    });
-
-    /* 
-    // REAL API CALL (uncomment when backend is ready)
     try {
-      const response = await api.get('/categorias');
+      const response = await api.get('/mmse/categorias');
       return response.data;
     } catch (error: any) {
       return { success: false, message: error.response?.data?.message || 'Error al obtener categorías' };
     }
-    */
   },
 
   // Crear categoría

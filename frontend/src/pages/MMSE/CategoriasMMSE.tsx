@@ -92,14 +92,14 @@ function CategoriasMMSE() {
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                     <div className="flex items-center gap-3">
                         <div className="mb-2">
-                            <h1 className="font-black text-5xl text-blue-900 tracking-tight mb-3">Categorías de la prueba MMSE</h1>
+                            <h1 className="font-black text-5xl text-blue-900 tracking-tight mb-3">Estructura de la prueba MMSE</h1>
                             <p className="text-lg font-medium text-blue-700/80 leading-relaxed">
-                                Administra y visualiza la información de las categorías del MMSE.
+                                Consulta las categorías, secciones e ítems puntuables que componen la prueba.
                             </p>
                         </div>
                     </div>
                     <Button onClick={handleAdd} className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500">
-                        <Plus className="h-4 w-4" /> Agregar categoría
+                        <Plus className="h-4 w-4" /> Configurar estructura
                     </Button>
                 </div>
 

@@ -42,10 +42,16 @@ export default function TablaCategorias({
                 Nombre Categoría
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Secciones
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Items
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Puntaje Máximo
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Estado
+                Estado 
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Acciones
@@ -75,7 +81,25 @@ export default function TablaCategorias({
                     <div className="text-sm font-medium text-gray-900">
                       {categoria.nombre_categoria}
                     </div>
+                    {categoria.descripcion && (
+                      <div className="text-xs text-gray-500 mt-1 max-w-xs truncate">
+                        {categoria.descripcion}
+                      </div>
+                    )}
                   </td>
+
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-sm text-gray-900">
+                      {categoria.total_secciones ?? 0}
+                    </span>
+                  </td>
+
+                  <td className="px-4 py-3 whitespace-nowrap">
+                    <span className="text-sm text-gray-900">
+                      {categoria.total_items_configurados ?? 0}
+                    </span>
+                  </td>
+
                   <td className="px-4 py-3 whitespace-nowrap">
                     <span className="text-sm text-gray-900">
                       {categoria.puntaje_maximo} puntos
@@ -106,16 +130,7 @@ export default function TablaCategorias({
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setCategoriaToDelete(categoria);
-                        }}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      
                     </div>
                   </td>
                 </tr>
