@@ -3,7 +3,6 @@ import api from './api';
 export interface Categoria {
   id_categoria: number;
   nombre_categoria: string;
-  descripcion?: string;
   puntaje_maximo: number;
   estado: number;
   total_secciones?: number;

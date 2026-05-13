@@ -9,7 +9,6 @@ def obtener_categorias_mmse():
                 SELECT
                     c.id_categoria,
                     c.nombre_categoria,
-                    c.descripcion,
                     c.puntaje_maximo,
                     c.estado,
                     COUNT(DISTINCT s.id_seccion) AS total_secciones,
@@ -32,7 +31,6 @@ def obtener_categorias_mmse():
                 GROUP BY
                     c.id_categoria,
                     c.nombre_categoria,
-                    c.descripcion,
                     c.puntaje_maximo,
                     c.estado
                 ORDER BY c.id_categoria;
@@ -40,7 +38,7 @@ def obtener_categorias_mmse():
             return cur.fetchall()
     except Exception as e:
         print(f"Error obteniendo categorias MMSE: {e}")
-        return None
+        return {"error": str(e)}
     finally:
         if conn:
             conn.close()

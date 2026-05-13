@@ -81,11 +81,6 @@ export default function TablaCategorias({
                     <div className="text-sm font-medium text-gray-900">
                       {categoria.nombre_categoria}
                     </div>
-                    {categoria.descripcion && (
-                      <div className="text-xs text-gray-500 mt-1 max-w-xs truncate">
-                        {categoria.descripcion}
-                      </div>
-                    )}
                   </td>
 
                   <td className="px-4 py-3 whitespace-nowrap">
