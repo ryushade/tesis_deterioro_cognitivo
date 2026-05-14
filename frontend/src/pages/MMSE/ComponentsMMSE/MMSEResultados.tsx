@@ -27,22 +27,22 @@ export default function MMSEResultados({ puntajeTotal, categorias, nombrePacient
       }}>
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
-          <div style={{
-            width: '72px', height: '72px', borderRadius: '50%', margin: '0 auto 1rem',
-            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 20px rgba(34,197,94,0.3)',
-          }}>
-            <Trophy size={36} color="#fff" />
-          </div>
+         
           <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#1e293b', marginBottom: '0.25rem' }}>
-            Evaluación Finalizada
+            Evaluación finalizada
           </h1>
           <p style={{ color: '#64748b', fontSize: '1rem' }}>
             Resultados de <strong>{nombrePaciente}</strong>
           </p>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
+            background: clasificacion.bg, padding: '0.5rem 1.25rem',
+            borderRadius: '999px', color: clasificacion.color, fontWeight: 700, fontSize: '0.95rem', marginTop: '1rem',
+          }}>
+            {clasificacion.label}
+          </div>
         </div>
-
+      
         {/* Score circle */}
         <div style={{ textAlign: 'center', marginBottom: '2rem' }}>
           <div style={{
@@ -62,14 +62,7 @@ export default function MMSEResultados({ puntajeTotal, categorias, nombrePacient
             </div>
           </div>
 
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-            background: clasificacion.bg, padding: '0.5rem 1.25rem',
-            borderRadius: '999px', color: clasificacion.color, fontWeight: 700, fontSize: '0.95rem',
-          }}>
-            {clasificacion.icon}
-            {clasificacion.label}
-          </div>
+          
         </div>
 
         {/* Categories table */}
@@ -127,7 +120,6 @@ export default function MMSEResultados({ puntajeTotal, categorias, nombrePacient
           border: '1px solid #bae6fd', fontSize: '0.8rem', color: '#475569',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
-            <TrendingUp size={16} color="#3b82f6" />
             <strong>Interpretación de puntuación MMSE</strong>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.25rem 1rem' }}>

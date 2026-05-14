@@ -131,11 +131,13 @@ function CodigosAcceso() {
           }}
           onDelete={handleDelete}
           onAdministerTest={(codigo) => {
-            // Buscamos cualquier rastro de la palabra 'fluidez' o 'voz' en las propiedades de este objeto (independientemente de cómo el backend las nombre)
             const objStr = JSON.stringify(codigo).toLowerCase();
+            const isMMSE = objStr.includes('mmse') || objStr.includes('mini-mental') || objStr.includes('mini mental');
             const isVoiceTest = objStr.includes('fluidez') || objStr.includes('voz');
             
-            if (isVoiceTest) {
+            if (isMMSE) {
+              navigate(`/evaluaciones/mmse/${codigo.id_codigo}`);
+            } else if (isVoiceTest) {
               navigate(`/evaluaciones/voz/${codigo.id_codigo}`);
             } else {
               navigate(`/evaluaciones/cdt/${codigo.id_codigo}`);

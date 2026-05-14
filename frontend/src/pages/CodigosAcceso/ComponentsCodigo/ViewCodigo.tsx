@@ -34,11 +34,16 @@ export default function ViewCodigo({ open, onClose, codigo }: ViewCodigoProps) {
 
   if (!open || !codigo) return null;
 
-  // Determinar si es una prueba de voz o CDT basándose en el tipo o rastro en el objeto
-  const isVoiceTest = JSON.stringify(codigo).toLowerCase().includes('fluidez') || 
-                     JSON.stringify(codigo).toLowerCase().includes('voz');
+  // Determinar el tipo de prueba basándose en el campo tipo_evaluacion
+  // tipo_evaluacion viene del backend como nombre_prueba de la BD, ej: "Mini-Mental State Examination (MMSE)"
+  const tipo = (codigo.tipo_evaluacion || '').toLowerCase();
   
-  const testPath = isVoiceTest ? 'voz' : 'cdt';
+  let testPath = 'cdt'; // default
+  if (tipo.includes('mmse') || tipo.includes('mini-mental') || tipo.includes('mini mental')) {
+    testPath = 'mmse';
+  } else if (tipo.includes('fluidez') || tipo.includes('voz')) {
+    testPath = 'voz';
+  }
   const evaluationUrl = `${window.location.origin}/evaluaciones/${testPath}/${codigo.id_codigo}`;
   
   // URL del QR usando api.qrserver.com (Estable y sin dependencias extra)
