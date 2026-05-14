@@ -1,5 +1,6 @@
 import db.database as db
 
+
 def obtener_resultados_paciente_prueba(id_paciente: int, id_prueba: int = None):
     """
     Obtiene el historial de evaluaciones de un paciente.
@@ -17,8 +18,9 @@ def obtener_resultados_paciente_prueba(id_paciente: int, id_prueba: int = None):
                     ec.id_asignacion,
                     ec.fecha_evaluacion,
                     ec.estado_evaluacion,
+                    ec.puntaje_total,
                     p.nombres, p.apellidos,
-                    pc.id_prueba, pc.nombre_prueba,
+                    pc.id_prueba, pc.nombre_prueba, pc.puntaje_maximo AS puntaje_maximo_prueba,
                     av.id_analisis, av.url_imagen, av.puntaje_ia, ec.diagnostico_ia, ec.observaciones, av.detalles_ia
                 FROM evaluacion_cognitiva ec
                 JOIN asignacion_prueba ap ON ec.id_asignacion = ap.id_asignacion
@@ -40,6 +42,35 @@ def obtener_resultados_paciente_prueba(id_paciente: int, id_prueba: int = None):
     except Exception as e:
         print("Error obteniendo resultados:", e)
         return None
+    finally:
+        if conexion:
+            conexion.close()
+
+
+def obtener_resultado_categorias_mmse(id_evaluacion: int):
+    """
+    Obtiene el desglose por categoría de una evaluación MMSE completada.
+    Retorna lista de {id_categoria, nombre_categoria, puntaje_maximo, puntaje_obtenido}.
+    """
+    conexion = None
+    try:
+        conexion = db.obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    rc.id_categoria,
+                    c.nombre_categoria,
+                    c.puntaje_maximo,
+                    rc.puntaje_obtenido
+                FROM resultado_categoria rc
+                JOIN categoria_mmse c ON c.id_categoria = rc.id_categoria
+                WHERE rc.id_evaluacion = %s
+                ORDER BY rc.id_categoria
+            """, (id_evaluacion,))
+            return cursor.fetchall()
+    except Exception as e:
+        print(f"Error obteniendo categorías MMSE para evaluación {id_evaluacion}: {e}")
+        return []
     finally:
         if conexion:
             conexion.close()

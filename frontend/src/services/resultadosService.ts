@@ -1,5 +1,12 @@
 import { apiClient } from './api';
 
+export interface CategoriaMMSEResultado {
+  id_categoria: number;
+  nombre_categoria: string;
+  puntaje_maximo: number;
+  puntaje_obtenido: number;
+}
+
 export interface EvaluacionResultado {
   id_evaluacion: number;
   id_asignacion: number;
@@ -9,11 +16,15 @@ export interface EvaluacionResultado {
   paciente_apellidos: string;
   id_prueba: number;
   nombre_prueba: string;
+  puntaje_total?: number;
+  puntaje_maximo_prueba?: number;
   id_analisis?: number;
   url_imagen?: string;
   puntaje_ia?: number;
   clasificacion_ia?: string;
+  observaciones_ia?: string;
   detalles_ia_jsonb?: any;
+  categorias_mmse?: CategoriaMMSEResultado[];
 }
 
 export interface ResultadosResponse {
