@@ -18,6 +18,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthorizationService } from './services/auth.middleware';
 import CDTAdminister from './pages/CDT/CDTAdminister';
 import VoiceTestAdminister from './pages/VoiceTest/VoiceTestAdminister';
+import MMSEAdminister from './pages/MMSE/MMSEAdminister';
 
 
 const queryClient = new QueryClient();
@@ -154,6 +155,11 @@ function App() {
               <Route
                 path="/evaluaciones/voz/:id_codigo"
                 element={<VoiceTestAdminister />}
+              />
+
+              <Route
+                path="/evaluaciones/mmse/:id_codigo"
+                element={<MMSEAdminister />}
               />
             
               <Route
