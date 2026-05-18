@@ -5,9 +5,8 @@ import { FontAwesome, Ionicons } from '@expo/vector-icons';
 export default function ExploreScreen() {
   return (
     <View style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <Text style={styles.title}>Guía de Pruebas</Text>
+        <Text style={styles.title}>Guía de pruebas</Text>
         <Text style={styles.subtitle}>Información sobre evaluaciones cognitivas</Text>
       </View>
 
@@ -23,62 +22,60 @@ export default function ExploreScreen() {
           </Text>
         </View>
 
-        {/* Sección: Test del Reloj (CDT) */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="time-outline" size={22} color="#0D47A1" />
-            <Text style={styles.cardTitle}>Test del Reloj (Clock Drawing Test)</Text>
+            <Text style={styles.cardTitle}>Prueba de reloj</Text>
           </View>
           <Text style={styles.cardBody}>
-            El CDT es una prueba de cribado neuropsicológico simple y rápida que evalúa la capacidad visuoespacial, constructiva y las funciones ejecutivas de planificación.
+            La prueba de reloj es una prueba de cribado neuropsicológico simple y rápida que evalúa la capacidad visuoespacial, constructiva y las funciones ejecutivas de planificación.
           </Text>
           <View style={styles.bulletList}>
             <View style={styles.bulletRow}>
               <FontAwesome name="chevron-right" size={10} color="#0D47A1" style={styles.bulletIcon} />
-              <Text style={styles.bulletText}>**Praxia constructiva:** Capacidad de trazar el círculo y organizar espacialmente las horas.</Text>
+              <Text style={styles.bulletText}>Praxia constructiva: Capacidad de trazar el círculo y organizar espacialmente las horas.</Text>
             </View>
             <View style={styles.bulletRow}>
               <FontAwesome name="chevron-right" size={10} color="#0D47A1" style={styles.bulletIcon} />
-              <Text style={styles.bulletText}>**Función ejecutiva:** Planificación del dibujo y colocación exacta de las manecillas (11:10).</Text>
+              <Text style={styles.bulletText}>Función ejecutiva: Planificación del dibujo y colocación exacta de las manecillas (11:10).</Text>
             </View>
             <View style={styles.bulletRow}>
               <FontAwesome name="chevron-right" size={10} color="#0D47A1" style={styles.bulletIcon} />
-              <Text style={styles.bulletText}>**Clasificación de Shulman (0-5):** Criterio estándar utilizado por nuestro modelo ResNet18 de Inteligencia Artificial.</Text>
+              <Text style={styles.bulletText}>Clasificación de Shulman (0-5): Criterio estándar utilizado por nuestro modelo ResNet18 de Inteligencia Artificial.</Text>
             </View>
           </View>
         </View>
 
-        {/* Sección: Fluidez Verbal (SVF) */}
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <Ionicons name="mic-outline" size={22} color="#0D47A1" />
-            <Text style={styles.cardTitle}>Test de Fluidez Verbal Semántica</Text>
+            <Text style={styles.cardTitle}>Prueba de fluidez verbal</Text>
           </View>
           <Text style={styles.cardBody}>
-            La prueba de fluidez semántica consiste en nombrar la mayor cantidad de elementos pertenecientes a una categoría específica (ej: animales) en un tiempo límite de un minuto.
+            La prueba de fluidez verbal consiste en nombrar la mayor cantidad de elementos pertenecientes a una categoría específica (ej: animales) en un tiempo límite de un minuto.
           </Text>
           <View style={styles.bulletList}>
             <View style={styles.bulletRow}>
               <FontAwesome name="chevron-right" size={10} color="#0D47A1" style={styles.bulletIcon} />
-              <Text style={styles.bulletText}>**Memoria semántica:** Acceso y recuperación voluntaria de palabras almacenadas.</Text>
+              <Text style={styles.bulletText}>Memoria semántica: Acceso y recuperación voluntaria de palabras almacenadas.</Text>
             </View>
             <View style={styles.bulletRow}>
               <FontAwesome name="chevron-right" size={10} color="#0D47A1" style={styles.bulletIcon} />
-              <Text style={styles.bulletText}>**Función biométrica vocal:** Extracción de características acústicas (MFCCs, ZCR y Spectral Centroid) mediante inteligencia artificial Random Forest.</Text>
+              <Text style={styles.bulletText}>Función biométrica vocal: Extracción de características acústicas (MFCCs, ZCR y Spectral Centroid) mediante inteligencia artificial Random Forest.</Text>
             </View>
           </View>
         </View>
 
-        {/* Créditos de Tesis */}
         <View style={styles.creditCard}>
-          <Text style={styles.creditTitle}>Créditos e Investigación Académica</Text>
+          <Text style={styles.creditTitle}>Créditos e investigación académica</Text>
           <Text style={styles.creditText}>
-            Investigador: Marco - Tesis de Ingeniería de Sistemas e Informática.{"\n"}
-            Asesoría Clínica: Centro de Salud San Martín.{"\n"}
+            Investigador: Marco Rioja Valle{"\n"}
+            Institución: Centro de Salud San Martín.{"\n"}
             Módulos de IA: Inferencia de visión profunda y biometría acústica vocal.
           </Text>
         </View>
       </ScrollView>
+
     </View>
   );
 }
