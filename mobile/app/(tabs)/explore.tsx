@@ -16,7 +16,7 @@ export default function ExploreScreen() {
         <View style={styles.card}>
           <View style={styles.cardHeader}>
             <FontAwesome name="hospital-o" size={22} color="#0D47A1" />
-            <Text style={styles.cardTitle}>Centro de Salud San Martín</Text>
+            <Text style={styles.cardTitle}>Centro de salud San Martín</Text>
           </View>
           <Text style={styles.cardBody}>
             Este aplicativo móvil forma parte del proyecto de tesis: *"Sistema inteligente para apoyar la evaluación del deterioro cognitivo en adultos mayores del Centro de Salud San Martín"*. Permite a pacientes realizar pruebas asistidas y registrar biomarcadores bajo supervisión clínica.
