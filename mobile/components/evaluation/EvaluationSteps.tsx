@@ -118,7 +118,7 @@ export const CdtCaptureStep = ({ patientInfo, rejectReason, imageUri, setImageUr
 
 export const VoiceCaptureStep = ({ patientInfo, isRecording, pulseAnim, stopRecording, startRecording, voiceTimer, formatTime }: any) => (
   <View style={styles.card}>
-    <Text style={styles.cardHeaderTitle}>Grabación de Fluidez Verbal</Text>
+    <Text style={styles.cardHeaderTitle}>Prueba de fluidez verbal</Text>
     <Text style={styles.cardHeaderSubtitle}>Prueba de voz del paciente: {patientInfo?.nombre_paciente}</Text>
     <View style={styles.voiceRecordOuterZone}>
       {isRecording ? (
@@ -136,8 +136,7 @@ export const VoiceCaptureStep = ({ patientInfo, isRecording, pulseAnim, stopReco
       <Text style={styles.voiceStatusText}>{isRecording ? "Grabando... Toque el botón rojo para finalizar" : "Toque el micrófono para iniciar"}</Text>
     </View>
     <View style={styles.infoBoxBlue}>
-      <Ionicons name="information-circle-outline" size={20} color="#0D47A1" />
-      <Text style={styles.infoBoxText}>El paciente tiene 60 segundos para nombrar animales. Se realizará una transcripción y análisis acústico automático.</Text>
+      <Text style={styles.infoBoxText}>El paciente tiene 60 segundos para nombrar animales.</Text>
     </View>
   </View>
 );
@@ -167,17 +166,16 @@ export const CdtResultsStep = ({ cdtResult, handleLogout }: any) => {
       <Text style={styles.resultDetailsHeader}>Resultados del análisis estructural</Text>
       {resultTheme.alert && (
         <View style={styles.alertCriticalBanner}>
-          <Ionicons name="alert-circle" size={24} color="#C62828" />
           <View style={{ flex: 1 }}>
-            <Text style={styles.alertCriticalTitle}>Alerta Clínica Detectada</Text>
-            <Text style={styles.alertCriticalText}>Los patrones del dibujo sugieren posible compromiso cognitivo. Se aconseja interconsulta formal.</Text>
+            <Text style={styles.alertCriticalTitle}>Revisión clínica sugerida</Text>
+            <Text style={styles.alertCriticalText}>Los patrones del dibujo sugieren posible compromiso cognitivo. Se aconseja interconsulta.</Text>
           </View>
         </View>
       )}
       <View style={styles.resultTextCard}>
         <Text style={styles.resultDescText}>{cdtResult.observaciones || resultTheme.desc}</Text>
       </View>
-      <Text style={styles.scaleHierarchyHeader}>Escala Analítica de Shulman (CDT)</Text>
+      <Text style={styles.scaleHierarchyHeader}>Escala de Shulman</Text>
       <View style={styles.scaleTracker}>
         {[5, 4, 3, 2, 1, 0].map((num) => {
           const isCurrent = cdtResult.puntuacion === num;
@@ -192,8 +190,7 @@ export const CdtResultsStep = ({ cdtResult, handleLogout }: any) => {
         })}
       </View>
       <TouchableOpacity style={styles.primaryBtn} onPress={handleLogout}>
-        <Text style={styles.primaryBtnText}>Finalizar y Salir</Text>
-        <FontAwesome name="check" size={16} color="white" />
+        <Text style={styles.primaryBtnText}>Finalizar y salir</Text>
       </TouchableOpacity>
     </View>
   );
@@ -203,7 +200,7 @@ export const VoiceResultsStep = ({ voiceResult, handleLogout }: any) => (
   <View style={styles.card}>
     <View style={styles.resultsBadgeRow}>
       <View style={[styles.badgeContainer, { backgroundColor: voiceResult.alerta ? '#FFEBEE' : '#E8F5E9', borderColor: voiceResult.alerta ? '#FFCDD2' : '#A5D6A7' }]}>
-        <Text style={[styles.badgeText, { color: voiceResult.alerta ? '#C62828' : '#2E7D32' }]}>{voiceResult.alerta ? "Sospecha de Deterioro" : "Control Saludable"}</Text>
+        <Text style={[styles.badgeText, { color: voiceResult.alerta ? '#C62828' : '#2E7D32' }]}>{voiceResult.alerta ? "Revisión sugerida" : "Sin alteraciones"}</Text>
       </View>
       <View style={[styles.badgeContainer, { backgroundColor: voiceResult.alerta ? '#FFEBEE' : '#E8F5E9', borderColor: voiceResult.alerta ? '#FFCDD2' : '#A5D6A7' }]}>
         <Text style={[styles.badgeText, { color: voiceResult.alerta ? '#C62828' : '#2E7D32' }]}>Confianza: {voiceResult.confianza}%</Text>
@@ -212,28 +209,25 @@ export const VoiceResultsStep = ({ voiceResult, handleLogout }: any) => (
     <Text style={styles.resultDetailsHeader}>Resultados de fluidez verbal</Text>
     {voiceResult.alerta ? (
       <View style={styles.alertCriticalBanner}>
-        <Ionicons name="alert-circle" size={24} color="#C62828" />
         <View style={{ flex: 1 }}>
-          <Text style={styles.alertCriticalTitle}>Patrón de Riesgo Detectado</Text>
-          <Text style={styles.alertCriticalText}>La IA detectó una tasa inusual de cruces por cero (ZCR) y pausas prolongadas en la biometría vocal.</Text>
+          <Text style={styles.alertCriticalTitle}>Resultados fuera de rango</Text>
+          <Text style={styles.alertCriticalText}>Se detectaron pausas prolongadas o variaciones inusuales en el flujo del habla.</Text>
         </View>
       </View>
     ) : (
       <View style={styles.alertSuccessBanner}>
-        <FontAwesome name="check-circle" size={24} color="#2E7D32" />
         <View style={{ flex: 1 }}>
-          <Text style={styles.alertSuccessTitle}>Patrón Vocal Conservado</Text>
-          <Text style={styles.alertSuccessText}>Las características espectrales y la fluidez léxica están dentro de los límites de control normales.</Text>
+          <Text style={styles.alertSuccessTitle}>Resultados esperados</Text>
+          <Text style={styles.alertSuccessText}>La fluidez léxica y las características de voz se encuentran dentro de parámetros normales.</Text>
         </View>
       </View>
     )}
-    <Text style={styles.transcriptSubHeader}>Transcripción del Habla (ASR):</Text>
+    <Text style={styles.transcriptSubHeader}>Transcripción:</Text>
     <ScrollView style={styles.transcriptBox}>
       <Text style={styles.transcriptText}>{voiceResult.transcripcion}</Text>
     </ScrollView>
     <TouchableOpacity style={styles.primaryBtn} onPress={handleLogout}>
-      <Text style={styles.primaryBtnText}>Finalizar y Salir</Text>
-      <FontAwesome name="check" size={16} color="white" />
+      <Text style={styles.primaryBtnText}>Finalizar y salir</Text>
     </TouchableOpacity>
   </View>
 );
