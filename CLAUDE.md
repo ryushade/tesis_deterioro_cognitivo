@@ -61,6 +61,21 @@ El sistema actúa como un soporte clínico digital e interactivo para neuropsic�
     npm run build
     ```
 
+### 2.3 Aplicación Móvil PWA (Expo & React Native Web)
+*   **Directorio:** `mobile/`
+*   **Stack:** Expo v54 + React Native Web (React 19) + Expo Router + expo-image-picker + expo-av.
+*   **Comandos:**
+    ```bash
+    # Instalar dependencias
+    npm install
+    
+    # Iniciar el servidor local de Expo para Web / PWA
+    npm run web
+    
+    # Levantar servidor de desarrollo interactivo (Android/iOS/Web)
+    npx expo start
+    ```
+
 ---
 
 ## 3. Arquitectura de Software y Mapeo Tecnológico
