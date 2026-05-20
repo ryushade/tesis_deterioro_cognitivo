@@ -29,7 +29,7 @@ def obtener_categorias_mmse():
                 LEFT JOIN public.item_mmse i
                     ON i.id_opcion = o.id_opcion
                    AND i.estado = 1
-                WHERE UPPER(p.nombre_prueba) = 'MMSE'
+                WHERE (UPPER(p.nombre_prueba) LIKE '%MMSE%' OR UPPER(p.nombre_prueba) LIKE '%MINI%')
                 GROUP BY
                     c.id_categoria,
                     c.nombre_categoria,
@@ -96,7 +96,7 @@ def obtener_estructura_mmse():
                 JOIN seccion_mmse s ON s.id_categoria = c.id_categoria
                 JOIN opcion_seccion_mmse o ON o.id_seccion = s.id_seccion
                 JOIN item_mmse i ON i.id_opcion = o.id_opcion
-                WHERE UPPER(p.nombre_prueba) = 'MMSE'
+                WHERE (UPPER(p.nombre_prueba) LIKE '%MMSE%' OR UPPER(p.nombre_prueba) LIKE '%MINI%')
                   AND p.estado = 1
                   AND c.estado = 1
                   AND s.estado = 1

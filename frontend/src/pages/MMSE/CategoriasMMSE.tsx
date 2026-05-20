@@ -10,6 +10,8 @@ import type { Categoria } from "@/services/categoriaServices";
 import TablaCategorias from "./ComponentsCategorias/TablaCategorias";
 import AddCategoriaModal from "./ComponentsCategorias/AddCategoria";
 import EditCategoriaModal from "./ComponentsCategorias/EditCategoria";
+import ViewCategoriaModal from "./ComponentsCategorias/ViewCategoriaModal";
+import type { MMSEEstructura } from "@/services/categoriaServices";
 
 function CategoriasMMSE() {
     const [categorias, setCategorias] = useState<Categoria[]>([]);
@@ -19,7 +21,10 @@ function CategoriasMMSE() {
     // Modals state
     const [showAddModal, setShowAddModal] = useState(false);
     const [showEditModal, setShowEditModal] = useState(false);
+    const [showViewModal, setShowViewModal] = useState(false);
     const [selectedCategoriaToEdit, setSelectedCategoriaToEdit] = useState<Categoria | null>(null);
+    const [selectedCategoriaToView, setSelectedCategoriaToView] = useState<MMSEEstructura['categorias'][0] | null>(null);
+    const [estructuraCompleta, setEstructuraCompleta] = useState<MMSEEstructura | null>(null);
 
     const handleLogout = async () => { 
         await authService.logout(); 
@@ -49,8 +54,20 @@ function CategoriasMMSE() {
         }
     };
 
+    const fetchEstructura = async () => {
+        try {
+            const response = await categoriaServices.getEstructura();
+            if (response.success && response.data) {
+                setEstructuraCompleta(response.data);
+            }
+        } catch (error) {
+            console.error('Error fetching structure:', error);
+        }
+    };
+
     useEffect(() => {
         fetchCategorias();
+        fetchEstructura();
     }, []);
 
     const handleSearch = (term: string) => {
@@ -68,6 +85,20 @@ function CategoriasMMSE() {
     const handleEdit = (categoria: Categoria) => {
         setSelectedCategoriaToEdit(categoria);
         setShowEditModal(true);
+    };
+
+    const handleView = (categoria: Categoria) => {
+        if (!estructuraCompleta) {
+            toast.error('La estructura detallada de las preguntas aún no ha cargado. Intente de nuevo en un segundo.');
+            return;
+        }
+        const categoriaEstructura = estructuraCompleta.categorias.find((c: any) => c.id_categoria === categoria.id_categoria);
+        if (!categoriaEstructura) {
+            toast.error('No se encontró la estructura de esta categoría en la base de datos.');
+            return;
+        }
+        setSelectedCategoriaToView(categoriaEstructura);
+        setShowViewModal(true);
     };
 
     const handleDelete = async (categoria: Categoria) => {
@@ -109,7 +140,14 @@ function CategoriasMMSE() {
                     searchTerm={searchTerm}
                     onSearch={handleSearch}
                     onEdit={handleEdit}
+                    onView={handleView}
                     onDelete={handleDelete}
+                />
+
+                <ViewCategoriaModal 
+                    open={showViewModal}
+                    onClose={() => setShowViewModal(false)}
+                    categoriaEstructura={selectedCategoriaToView}
                 />
 
                 <AddCategoriaModal

@@ -14,6 +14,7 @@ import {
   CdtResultsStep,
   VoiceResultsStep
 } from '../../components/evaluation/EvaluationSteps';
+import ClockCameraScanner from '../../components/evaluation/ClockCameraScanner';
 
 const getApiUrl = () => {
   if (Platform.OS === 'web') {
@@ -31,6 +32,7 @@ const API_URL = getApiUrl();
 
 export default function HomeScreen() {
   const [step, setStep] = useState<'login' | 'instructions' | 'cdt_capture' | 'voice_capture' | 'cdt_results' | 'voice_results' | 'processing'>('login');
+  const [showScanner, setShowScanner] = useState(false);
   const [accessCode, setAccessCode] = useState('');
   const [patientInfo, setPatientInfo] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -109,12 +111,16 @@ export default function HomeScreen() {
   };
 
   const takePhoto = async () => {
-    try {
-      const permission = await ImagePicker.requestCameraPermissionsAsync();
-      if (!permission.granted) return alert("Permiso denegado");
-      const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.9 });
-      if (!result.canceled && result.assets) { setImageUri(result.assets[0].uri); setRejectReason(null); }
-    } catch (e) { alert("Error abriendo cámara"); }
+    if (Platform.OS === 'web') {
+      try {
+        const permission = await ImagePicker.requestCameraPermissionsAsync();
+        if (!permission.granted) return alert("Permiso denegado");
+        const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], allowsEditing: true, quality: 0.9 });
+        if (!result.canceled && result.assets) { setImageUri(result.assets[0].uri); setRejectReason(null); }
+      } catch (e) { alert("Error abriendo cámara"); }
+    } else {
+      setShowScanner(true);
+    }
   };
 
   const pickFromGallery = async () => {
@@ -181,6 +187,19 @@ export default function HomeScreen() {
   };
 
   const formatTime = (secs: number) => `${Math.floor(secs / 60).toString().padStart(2, '0')}:${(secs % 60).toString().padStart(2, '0')}`;
+
+  if (showScanner) {
+    return (
+      <ClockCameraScanner
+        onCapture={(uri) => {
+          setImageUri(uri);
+          setRejectReason(null);
+          setShowScanner(false);
+        }}
+        onCancel={() => setShowScanner(false)}
+      />
+    );
+  }
 
   return (
     <View style={styles.outerContainer}>

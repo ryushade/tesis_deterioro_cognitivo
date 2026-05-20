@@ -9,6 +9,37 @@ export interface Categoria {
   total_items_configurados?: number;
 }
 
+export interface MMSEEstructura {
+  id_prueba: number;
+  nombre_prueba: string;
+  puntaje_maximo: number;
+  categorias: {
+    id_categoria: number;
+    nombre_categoria: string;
+    puntaje_maximo: number;
+    secciones: {
+      id_seccion: number;
+      nombre_seccion: string;
+      descripcion: string;
+      instrucciones_aplicacion: string;
+      puntaje_maximo: number;
+      opciones: {
+        id_opcion: number;
+        nombre_opcion: string;
+        instrucciones: string;
+        puntaje_maximo: number;
+        items: {
+          id_item: number;
+          texto_item: string;
+          criterio_correccion: string;
+          respuesta_esperada: string;
+          puntaje_maximo: number;
+        }[];
+      }[];
+    }[];
+  }[];
+}
+
 // In-memory mock data for frontend-only CRUD testing
 let mockCategorias: Categoria[] = [
   { id_categoria: 1, id_prueba: 2, nombre_categoria: 'Orientación', puntaje_maximo: 10, estado: 1 },
@@ -26,6 +57,16 @@ export const categoriaServices = {
       return response.data;
     } catch (error: any) {
       return { success: false, message: error.response?.data?.message || 'Error al obtener categorías' };
+    }
+  },
+
+  // Obtener estructura completa
+  getEstructura: async (): Promise<{ success: boolean; data?: MMSEEstructura; message?: string }> => {
+    try {
+      const response = await api.get('/mmse/estructura');
+      return response.data;
+    } catch (error: any) {
+      return { success: false, message: error.response?.data?.message || 'Error al obtener estructura' };
     }
   },
 

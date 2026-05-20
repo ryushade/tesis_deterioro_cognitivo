@@ -10,6 +10,7 @@ interface TablaCategoriasProps {
   onSearch: (term: string) => void;
   onEdit: (categoria: Categoria) => void;
   onDelete: (categoria: Categoria) => void;
+  onView: (categoria: Categoria) => void;
 }
 
 export default function TablaCategorias({
@@ -19,6 +20,7 @@ export default function TablaCategorias({
   onSearch: _onSearch,
   onEdit,
   onDelete,
+  onView,
 }: TablaCategoriasProps) {
   const [categoriaToDelete, setCategoriaToDelete] = useState<Categoria | null>(null);
 
@@ -112,7 +114,7 @@ export default function TablaCategorias({
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onEdit(categoria)}
+                        onClick={() => onView(categoria)}
                         className="text-gray-600 hover:text-gray-800"
                       >
                         <Eye className="h-4 w-4" />

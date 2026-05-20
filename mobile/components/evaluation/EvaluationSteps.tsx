@@ -75,6 +75,7 @@ export const CdtCaptureStep = ({ patientInfo, rejectReason, imageUri, setImageUr
   <View style={styles.card}>
     <Text style={styles.cardHeaderTitle}>Capturar prueba del reloj</Text>
     <Text style={styles.cardHeaderSubtitle}>Suba el dibujo de {patientInfo?.nombre_paciente}</Text>
+    
     {rejectReason && (
       <View style={styles.warningAlert}>
         <Ionicons name="warning" size={24} color="#E65100" />
@@ -84,32 +85,98 @@ export const CdtCaptureStep = ({ patientInfo, rejectReason, imageUri, setImageUr
         </View>
       </View>
     )}
+
+    {/* Tips box based on AI verification logic in backend */}
+    {!imageUri && (
+      <View style={{ 
+        backgroundColor: '#F0F4F8', 
+        borderRadius: 16, 
+        padding: 14, 
+        marginBottom: 18, 
+        borderWidth: 1, 
+        borderColor: '#E1E9F0' 
+      }}>
+        <Text style={{ fontSize: 13, fontWeight: '800', color: '#0A2540', marginBottom: 8, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+          Requisitos para validación por IA:
+        </Text>
+        <View style={{ gap: 6 }}>
+          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+            <Ionicons name="checkmark-circle" size={16} color="#2E7D32" />
+            <Text style={{ fontSize: 12, color: '#637381', fontWeight: '500' }}>Dibujo hecho completamente a mano alzada (no perfecto)</Text>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+            <Ionicons name="checkmark-circle" size={16} color="#2E7D32" />
+            <Text style={{ fontSize: 12, color: '#637381', fontWeight: '500' }}>Papel blanco puro, sin líneas ni cuadrículas</Text>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+            <Ionicons name="checkmark-circle" size={16} color="#2E7D32" />
+            <Text style={{ fontSize: 12, color: '#637381', fontWeight: '500' }}>Trazos oscuros con bolígrafo o lápiz nítido</Text>
+          </View>
+          <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center' }}>
+            <Ionicons name="checkmark-circle" size={16} color="#2E7D32" />
+            <Text style={{ fontSize: 12, color: '#637381', fontWeight: '500' }}>Buena iluminación, sin sombras ni destellos de flash</Text>
+          </View>
+        </View>
+      </View>
+    )}
+
     <View style={styles.imageSelectorBox}>
       {imageUri ? (
         <View style={styles.previewContainer}>
           <Image source={{ uri: imageUri }} style={styles.previewImage} />
+          {/* Badge indicator */}
+          <View style={{ 
+            position: 'absolute', 
+            bottom: 12, 
+            left: 12, 
+            backgroundColor: 'rgba(46, 125, 50, 0.9)', 
+            borderRadius: 20, 
+            paddingVertical: 4, 
+            paddingHorizontal: 10,
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4
+          }}>
+            <Ionicons name="checkmark-circle-outline" size={16} color="white" />
+            <Text style={{ color: 'white', fontSize: 11, fontWeight: '700' }}>Captura lista</Text>
+          </View>
           <TouchableOpacity style={styles.removeImageBtn} onPress={() => { setImageUri(null); setRejectReason(null); }}>
             <FontAwesome name="times" size={18} color="white" />
           </TouchableOpacity>
         </View>
       ) : (
         <View style={styles.emptyPhotoBox}>
-          <Ionicons name="camera-outline" size={48} color="#919EAB" />
-          <Text style={styles.emptyPhotoText}>No hay dibujo capturado</Text>
-          <Text style={styles.emptyPhotoSubtext}>Fotografíe el reloj dibujado sobre el papel</Text>
+          <View style={{
+            width: 70, 
+            height: 70, 
+            borderRadius: 35, 
+            backgroundColor: '#E3F2FD', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            marginBottom: 12
+          }}>
+            <Ionicons name="camera-outline" size={36} color="#0D47A1" />
+          </View>
+          <Text style={styles.emptyPhotoText}>Esperando captura</Text>
+          <Text style={styles.emptyPhotoSubtext}>Use la cámara del escáner para tomar el dibujo</Text>
         </View>
       )}
     </View>
+
     <View style={styles.captureOptionsRow}>
       <TouchableOpacity style={styles.secondaryBtn} onPress={takePhoto}>
-        <Text style={styles.secondaryBtnText}>Cámara</Text>
+        <Ionicons name="camera" size={18} color="#0D47A1" />
+        <Text style={styles.secondaryBtnText}>Usar Escáner</Text>
       </TouchableOpacity>
       <TouchableOpacity style={styles.secondaryBtn} onPress={pickFromGallery}>
+        <Ionicons name="images" size={18} color="#0D47A1" />
         <Text style={styles.secondaryBtnText}>Galería</Text>
       </TouchableOpacity>
     </View>
+
     {imageUri && (
       <TouchableOpacity style={styles.primaryBtn} onPress={submitCdtTest}>
+        <Ionicons name="analytics" size={20} color="white" style={{ marginRight: 4 }} />
         <Text style={styles.primaryBtnText}>Analizar dibujo</Text>
       </TouchableOpacity>
     )}
