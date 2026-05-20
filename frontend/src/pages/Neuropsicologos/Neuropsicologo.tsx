@@ -7,7 +7,7 @@ import { useGetNeuropsicologos, neuropsicologosService, type Neuropsicologo } fr
 import TablaNeuropsicologos from "./ComponentsNeuropsicologos/TablaNeuropsicologos"
 import AddNeuropsicologo from "./ComponentsNeuropsicologos/AddNeuropsicologoModal"
 import EditNeuropsicologo from "./ComponentsNeuropsicologos/EditNeuropsicologoModal"
-// import ViewNeuropsicologo from "./ComponentsNeuropsicologos/ViewNeuropsicologoModal"
+import ViewNeuropsicologo from "./ComponentsNeuropsicologos/ViewNeuropsicologoModal"
 import toast, { Toaster } from 'react-hot-toast'
 import PaginacionPacientes from '../Pacientes/ComponentsPacientes/PaginacionPacientes';
 import ConfirmationModal from './ComponentsNeuropsicologos/ConfirmationModal'
@@ -127,7 +127,7 @@ function Neuropsicologos() {
         </div>
         <AddNeuropsicologo open={showAddModal} onClose={() => setShowAddModal(false)} onSuccess={() => { setShowAddModal(false); handleRefresh() }} />
         {showEditModal && selectedItem && (<EditNeuropsicologo open={showEditModal} onClose={() => setShowEditModal(false)} item={selectedItem} onSuccess={() => { setShowEditModal(false); handleRefresh() }} />)}
-        {/* {showViewModal && selectedItem && (<ViewNeuropsicologo open={showViewModal} onClose={() => setShowViewModal(false)} item={selectedItem} />)} */}
+        {showViewModal && selectedItem && (<ViewNeuropsicologo open={showViewModal} onClose={() => setShowViewModal(false)} item={selectedItem} />)}
         <ConfirmationModal isOpen={showDeleteDialog} onClose={() => setShowDeleteDialog(false)} onConfirm={confirmDelete} title="Eliminar neuropsicólogo" message={`¿Eliminar a ${selectedItem?.usua}?`}   confirmText="Eliminar" type="danger" />
       </div>
     </DashboardLayout>

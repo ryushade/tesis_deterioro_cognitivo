@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { X, ChevronDown, ChevronUp } from 'lucide-react';
 import { resultadosService, type EvaluacionResultado, type CategoriaMMSEResultado } from '@/services/resultadosService';
+import { getMediaUrl } from '@/services/api'
 
 interface ViewPacienteModalProps {
   open: boolean;

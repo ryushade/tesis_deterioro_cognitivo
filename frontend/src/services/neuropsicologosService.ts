@@ -12,6 +12,9 @@ export interface Neuropsicologo {
   nombres?: string;
   apellidos?: string;
   estado?: number;
+  id_neuropsicologo?: number;
+  total_pacientes?: number;
+  total_evaluaciones?: number;
 }
 
 export interface NeuropsicologoCreate {

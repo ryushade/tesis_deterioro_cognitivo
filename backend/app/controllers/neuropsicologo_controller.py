@@ -7,7 +7,9 @@ def obtener_neuropsicologo():
         with conexion.cursor() as cursor:
             cursor.execute("""
                 SELECT u.id_usuario, u.usua, u.contra, u.estado_usuario,
-                       n.nombres, n.apellidos, n.estado
+                       n.nombres, n.apellidos, n.estado, n.id_neuropsicologo,
+                       COALESCE((SELECT COUNT(*) FROM paciente p WHERE p.id_neuropsicologo = n.id_neuropsicologo), 0) AS total_pacientes,
+                       COALESCE((SELECT COUNT(*) FROM evaluacion_cognitiva ec WHERE ec.id_neuropsicologo = n.id_neuropsicologo), 0) AS total_evaluaciones
                 FROM usuario u
                 LEFT JOIN neuropsicologo n ON n.id_usuario = u.id_usuario
                 WHERE u.id_rol = 2

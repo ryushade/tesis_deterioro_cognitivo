@@ -42,17 +42,18 @@ export default function TablaNeuropsicologos({ items, loading, error, searchTerm
         <table className="w-full">
           <thead className="bg-gray-50">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">USUARIO</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">NOMBRES</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">APELLIDOS</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ESTADO</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ACCIONES</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Usuario</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Especialista</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pacientes registrados</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Evaluaciones supervisadas</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Estado</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {items.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-gray-500">
+                <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
                   <User className="h-12 w-12 mx-auto mb-2 text-gray-300" />
                   <p>No se encontraron neuropsicólogos</p>
                   {searchTerm && <p className="text-sm">Intenta con otros términos de búsqueda</p>}
@@ -62,17 +63,20 @@ export default function TablaNeuropsicologos({ items, loading, error, searchTerm
               items.map((it) => (
                 <tr key={it.id_usuario} className="hover:bg-gray-50">
                   <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="text-sm font-medium text-gray-900">{it.usua}</span>
+                      <span className="text-sm font-semibold text-gray-900">@{it.usua}</span>
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                    {it.nombres || <span className="text-gray-400 italic">—</span>}
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 font-medium">
+                    {it.nombres || it.apellidos ? `${it.nombres || ''} ${it.apellidos || ''}` : <span className="text-gray-400 italic">—</span>}
                   </td>
-                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                    {it.apellidos || <span className="text-gray-400 italic">—</span>}
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-center font-bold">
+                    {it.total_pacientes ?? 0}
+                  </td>
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 text-center font-bold">
+                    {it.total_evaluaciones ?? 0}
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${it.estado_usuario ? 'text-green-700 bg-green-100' : 'text-gray-700 bg-gray-100'}`}>
-                      {it.estado_usuario ? 'Activo' : 'Inactivo'}
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${it.estado_usuario === 1 || (it as any).estado === true || it.estado === 1 ? 'text-green-700 bg-green-100' : 'text-gray-700 bg-gray-100'}`}>
+                      {it.estado_usuario === 1 || (it as any).estado === true || it.estado === 1 ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
