@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Clock, AlertTriangle, CheckCircle2, ImageOff, Brain } from "lucide-react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
 import type { EvaluacionResultado } from '@/services/resultadosService';
+import { getMediaUrl } from '@/services/api';
 
 interface Props {
   resultados: EvaluacionResultado[];
@@ -55,7 +56,7 @@ function CardCDT({ ev }: { ev: EvaluacionResultado }) {
   const observaciones = ev.observaciones_ia || ev.detalles_ia_jsonb?.observaciones || '—';
   const conAlerta = puntaje < 4;
 
-  const imgSrc = ev.url_imagen ? `http://localhost:5001/${ev.url_imagen}` : null;
+  const imgSrc = ev.url_imagen ? getMediaUrl(ev.url_imagen) : null;
 
   return (
     <Card className={`border ${colores.bg} rounded-2xl overflow-hidden shadow-sm`}>

@@ -107,8 +107,8 @@ export default function EditPacienteModal({ open, onClose, onSuccess, paciente }
         setSubmitting(false);
         return;
       }
-      if (edad < 0 || edad > 120) {
-        toast.error('La edad debe estar entre 0 y 120 años');
+      if (edad < 65 || edad > 120) {
+        toast.error('El paciente debe tener al menos 65 años');
         setSubmitting(false);
         return;
       }
