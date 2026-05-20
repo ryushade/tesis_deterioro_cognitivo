@@ -153,6 +153,7 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     hay_circulo = False
     mejor_circulo = None
     circularidad = 0.0
+    es_circularidad_perfecta = False
     if circulos is not None and len(circulos[0]) >= 1:
         hay_circulo = True
         mejor_circulo = circulos[0][0]
@@ -175,6 +176,21 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
             perimetro = cv2.arcLength(c_max, True)
             if perimetro > 0:
                 circularidad = (4 * np.pi * area) / (perimetro ** 2)
+            
+            # --- EVALUACIÓN DE CIRCULARIDAD GEOMÉTRICA DE ALTA PRECISIÓN ---
+            # Los círculos digitales/industriales discretizados tienen imperfecciones de píxeles
+            # (staircase effect) que bajan la circularidad estándar. Usamos bounding box y círculo mínimo contenedor.
+            x_b, y_b, w_b, h_b = cv2.boundingRect(c_max)
+            aspect_ratio = min(w_b, h_b) / max(w_b, h_b) if max(w_b, h_b) > 0 else 0
+            
+            (cx_enc, cy_enc), r_enc = cv2.minEnclosingCircle(c_max)
+            area_enc = np.pi * (r_enc ** 2)
+            ratio_enclosing = area / area_enc if area_enc > 0 else 0
+            
+            # Si el aspecto es casi simétrico y el área coincide en >94% con el círculo contenedor,
+            # estamos ante un círculo de precisión industrial/digital.
+            if aspect_ratio > 0.96 and ratio_enclosing > 0.94 and area > 1000:
+                es_circularidad_perfecta = True
 
     pct_tinta_dentro = 0.0
     if hay_circulo:
@@ -201,6 +217,7 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     print(f"  > Circulo detectado: {'SI' if hay_circulo else 'NO'} (Requerido)")
     if hay_circulo:
         print(f"  > Circularidad: {circularidad:.3f} (Max Humano: 0.94)")
+        print(f"  > Es circularidad perfecta (BBox/Enclosing): {es_circularidad_perfecta}")
         print(f"  > Tinta en circulo: {pct_tinta_dentro*100:.1f}% (Min: 40%)")
     print("="*55 + "\n")
 
@@ -209,52 +226,70 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     # Rechazo independiente por colores (Tonos < 120 es digital con degradados limitados)
     if variabilidad_fondo < 1.5 or tonos_unicos < 120:
         return False, (
-            "Se detectó una imagen digital o procesada. Una fotografía real presenta "
-            "variaciones de micro-textura (ruido de sensor) que no se encuentran aquí. "
-            "Por favor, suba una fotografía clara del dibujo hecho a mano (evite usar apps de escaneo)."
+            "La imagen parece ser un gráfico digital, captura de pantalla o imagen procesada. "
+            "Por favor, tome una fotografía real del dibujo hecho a mano sobre papel físico."
         )
 
     if not hay_circulo:
         return False, (
-            "No se detectó un círculo en la imagen. "
-            "La prueba del reloj requiere que el paciente dibuje un círculo claramente visible sobre papel blanco."
+            "No se pudo identificar la silueta circular del reloj. "
+            "Asegúrese de que el círculo dibujado esté bien visible y encuadrado en la toma."
+        )
+
+    # Validar circularidad perfecta al inicio para descartar de inmediato relojes reales u objetos impresos
+    if hay_circulo and (circularidad > 0.94 or es_circularidad_perfecta):
+        return False, (
+            "El contorno detectado es geométricamente perfecto. Recuerde que la prueba del reloj "
+            "evalúa un trazo realizado a mano alzada sobre papel, no relojes de pared reales ni esferas impresas."
         )
 
     if saturacion_media > 30:
         return False, (
-            "La imagen tiene colores. El dibujo del reloj debe ser "
-            "trazos en lápiz o bolígrafo sobre papel blanco."
+            "La imagen contiene demasiados colores. El dibujo debe ser realizado en trazo simple "
+            "de lápiz o lapicero azul o negro sobre papel blanco liso."
         )
 
     if brillo_medio < 130:
-        return False, "La imagen es muy oscura. Asegúrese de tener buena iluminación."
+        return False, (
+            "La fotografía está muy oscura o tiene sombras marcadas. "
+            "Busque un espacio con buena iluminación natural o luz uniforme y evite que su teléfono cause sombra."
+        )
 
     if pixeles_claros < 0.45:
-        return False, "No se detecta suficiente fondo blanco. Fotografíe la hoja bien visible."
+        return False, (
+            "No se detecta suficiente fondo claro. Coloque la hoja sobre una superficie plana "
+            "e intente que el papel abarque la mayor parte de la fotografía."
+        )
 
     if densidad_bordes > 0.12 or pct_tinta_total > 0.15:
-        return False, "La imagen tiene demasiada textura, sombras o elementos que no son trazos simples."
+        return False, (
+            "La imagen tiene demasiado ruido visual, sombras gruesas o elementos distractores de fondo. "
+            "Fotografíe solo la hoja blanca y lisa."
+        )
         
     if num_lineas > 45:
-        return False, "La imagen tiene demasiadas líneas rectas. Por favor, suba la foto del reloj dibujado por el paciente."
+        return False, (
+            "Se detectaron demasiadas líneas rectas paralelas. Esto suele deberse a hojas cuadriculadas/rayadas, "
+            "o capturas de pantalla de computadoras. Use papel completamente blanco y liso."
+        )
 
     if hay_circulo and pct_tinta_dentro < 0.40:
-        return False, "El dibujo no parece un reloj. La mayor parte de los trazos están muy lejos del círculo."
+        return False, (
+            "Los números o manecillas del reloj parecen estar fuera de la esfera detectada. "
+            "Por favor, verifique que la foto esté centrada y que el reloj completo sea visible."
+        )
 
     if destellos > 8:
         return False, (
-            "Se detectaron demasiados reflejos especulares. "
-            "Asegúrese de tomar la foto sin flash y sobre una superficie mate."
-        )
-
-    if hay_circulo and circularidad > 0.94:
-        return False, (
-            "El círculo detectado es excesivamente perfecto (Industrial). "
-            "Recuerde que el reloj debe ser dibujado íntegramente a mano alzada."
+            "Se detectaron reflejos de luz intensos en la imagen. Tome la foto desactivando el flash "
+            "de la cámara y evite fuentes de luz directas sobre el dibujo."
         )
 
     if pct_tinta_gruesa > 0.005: 
-        return False, "La imagen contiene regiones completamente pintadas o trazos antinaturalmente gruesos."
+        return False, (
+            "La imagen contiene trazos antinaturalmente gruesos o secciones completamente sombreadas/pintadas. "
+            "Use un lápiz o bolígrafo estándar para los trazos."
+        )
 
     return True, ""
 
