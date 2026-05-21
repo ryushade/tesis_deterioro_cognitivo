@@ -83,6 +83,12 @@ export default function EditCodigoModal({ open, onClose, onSuccess, codigo }: Pr
         <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
           {error && <div className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</div>}
           
+          {codigo.estado === 2 && (
+            <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg p-3">
+              Esta prueba ya ha sido completada. No se permite modificar el estado ni la prueba asignada de un código de acceso completado.
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 gap-4">
             <div>
               <Label>Código</Label>
@@ -97,7 +103,7 @@ export default function EditCodigoModal({ open, onClose, onSuccess, codigo }: Pr
             <div>
               <Label>Estado</Label>
               <Select value={estado} onValueChange={setEstado}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" disabled={codigo.estado === 2}>
                   <SelectValue placeholder="Seleccione un estado" />
                 </SelectTrigger>
                 <SelectContent>
@@ -112,7 +118,7 @@ export default function EditCodigoModal({ open, onClose, onSuccess, codigo }: Pr
             <div>
               <Label>Prueba asignada</Label>
               <Select value={tipoEvaluacion} onValueChange={setTipoEvaluacion}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full" disabled={codigo.estado === 2}>
                   <SelectValue placeholder="Seleccione la prueba" />
                 </SelectTrigger>
                 <SelectContent>
@@ -127,8 +133,14 @@ export default function EditCodigoModal({ open, onClose, onSuccess, codigo }: Pr
           </div>
           
           <div className="flex justify-end gap-3 pt-2">
-            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>Cancelar</Button>
-            <Button type="submit" disabled={submitting}>{submitting ? 'Guardando...' : 'Guardar'}</Button>
+            <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
+              {codigo.estado === 2 ? 'Cerrar' : 'Cancelar'}
+            </Button>
+            {codigo.estado !== 2 && (
+              <Button type="submit" disabled={submitting}>
+                {submitting ? 'Guardando...' : 'Guardar'}
+              </Button>
+            )}
           </div>
         </form>
       </div>

@@ -166,8 +166,9 @@ export default function TablaCodigo({
                         variant="ghost"
                         size="sm"
                         onClick={() => onEdit(codigo)}
-                        className="text-gray-600 hover:text-gray-800"
-                        title="Editar estado"
+                        className={`text-gray-600 ${codigo.estado === 2 ? 'opacity-40 cursor-not-allowed hover:text-gray-600' : 'hover:text-gray-800'}`}
+                        title={codigo.estado === 2 ? "No se puede editar una prueba completada" : "Editar estado"}
+                        disabled={codigo.estado === 2}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>

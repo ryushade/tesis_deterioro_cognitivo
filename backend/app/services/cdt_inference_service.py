@@ -109,6 +109,19 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     else:
         variabilidad_fondo = 5.0
 
+    # --- METRICA ANTI-DIGITAL 3: Planitud Local (Bloques Planos) ---
+    flat_blocks = 0
+    total_bg_blocks = 0
+    block_size = 8
+    for r in range(0, h_img - block_size, block_size):
+        for c in range(0, w_img - block_size, block_size):
+            block = img_gray[r:r+block_size, c:c+block_size]
+            if block.mean() > 220:
+                total_bg_blocks += 1
+                if block.std() < 0.1:
+                    flat_blocks += 1
+    pct_flat_blocks = (flat_blocks / total_bg_blocks * 100) if total_bg_blocks > 0 else 0.0
+
     # --- METRICA ANTI-OBJETO 1: Reflejos Especulares (Vidrio/Cristal) ---
     # Un reloj real tiene tapa de cristal; el papel es mate.
     # Buscamos cúmulos de píxeles casi blancos puros (>254) que indican reflejos de luz.
@@ -207,8 +220,9 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
 
     print("\n" + "="*55)
     print(f"[IA VALIDATION] {os.path.basename(ruta_imagen)}")
-    print(f"  > Tonos Únicos: {tonos_unicos} (Min: 120)")
-    print(f"  > Variabilidad Fondo: {variabilidad_fondo:.2f} (Min: 2.0)")
+    print(f"  > Bloques Planos: {pct_flat_blocks:.1f}% (Max: 20%)")
+    print(f"  > Tonos Únicos: {tonos_unicos}")
+    print(f"  > Variabilidad Fondo: {variabilidad_fondo:.2f}")
     print(f"  > Densidad bordes: {densidad_bordes*100:.2f}% (Max: 12%)")
     print(f"  > Lineas rectas (Texto/QR): {num_lineas} (Max: 45)")
     print(f"  > Tinta gruesa/relleno: {pct_tinta_gruesa*100:.2f}% (Max: 0.5%)")
@@ -222,17 +236,16 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     print("="*55 + "\n")
 
     # --- REGLAS DE RECHAZO ---
-    # Rechazo independiente por resolución baja (menos de 400px en cualquier dimensión)
-    if min(h_img, w_img) < 400:
+    # Rechazo independiente por resolución baja (menos de 120px en cualquier dimensión)
+    if min(h_img, w_img) < 120:
         return False, (
             "La resolución de la imagen es demasiado baja. Por favor, tome una fotografía real y nítida "
-            "del dibujo hecho a mano con lápiz sobre papel físico (mínimo 400x400 píxeles)."
+            "del dibujo hecho a mano con lápiz sobre papel físico (mínimo 120x120 píxeles)."
         )
 
-    # Rechazo independiente por textura y colores (Variabilidad de fondo baja o tonos únicos limitados)
-    # Aumentado el umbral de variabilidad de fondo a 2.3 y tonos únicos a 150 para detectar robustamente
-    # imágenes digitales descargadas (por ejemplo, desde Google) o capturas de pantalla de relojes.
-    if variabilidad_fondo < 2.3 or tonos_unicos < 150:
+    # Rechazo independiente por textura plana (Bloques planos)
+    # Si la imagen contiene más de un 20% de bloques de fondo perfectamente planos, es un gráfico digital o captura.
+    if pct_flat_blocks > 20.0:
         return False, (
             "La imagen parece ser un gráfico digital, una captura de pantalla o una imagen descargada (como de Google). "
             "Por favor, tome una fotografía real del dibujo de reloj hecho a mano alzada por el paciente sobre papel físico."

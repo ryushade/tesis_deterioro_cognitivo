@@ -94,6 +94,21 @@ def actualizar_codigo(id_asignacion, estado_codigo, id_prueba=None):
     try:
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
+            # Verificar si ya está completado (estado_codigo = 2)
+            cursor.execute("SELECT estado_codigo FROM codigo_acceso WHERE id_asignacion = %s", (id_asignacion,))
+            res = cursor.fetchone()
+            if res:
+                estado_actual = res['estado_codigo'] if isinstance(res, dict) else res[0]
+                if int(estado_actual) == 2:
+                    return False, "No se puede editar una prueba que ya ha sido completada."
+
+            # Validar si intentan cambiar el estado a Completado (2) sin resultados en evaluacion_cognitiva
+            if estado_codigo is not None and int(estado_codigo) == 2:
+                cursor.execute("SELECT 1 FROM evaluacion_cognitiva WHERE id_asignacion = %s AND estado_evaluacion = 2", (id_asignacion,))
+                tiene_resultado = cursor.fetchone()
+                if not tiene_resultado:
+                    return False, "No se puede marcar la prueba como completada porque no hay ningún resultado registrado en /resultados para esta asignación."
+
             # Actualizar estado
             if estado_codigo is not None:
                 cursor.execute("""
@@ -107,12 +122,12 @@ def actualizar_codigo(id_asignacion, estado_codigo, id_prueba=None):
                 """, (id_prueba, id_asignacion))
             
             conexion.commit()
-            return True
+            return True, "Código actualizado exitosamente"
     except Exception as e:
         print("Error en actualizar_codigo:", e)
         if conexion:
             conexion.rollback()
-        return False
+        return False, str(e)
     finally:
         if conexion:
             conexion.close()
