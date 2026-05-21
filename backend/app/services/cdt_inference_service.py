@@ -222,12 +222,20 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     print("="*55 + "\n")
 
     # --- REGLAS DE RECHAZO ---
-    # Rechazo independiente por textura (Variabilidad < 1.5 es digital/escaneado sin textura real)
-    # Rechazo independiente por colores (Tonos < 120 es digital con degradados limitados)
-    if variabilidad_fondo < 1.5 or tonos_unicos < 120:
+    # Rechazo independiente por resolución baja (menos de 400px en cualquier dimensión)
+    if min(h_img, w_img) < 400:
         return False, (
-            "La imagen parece ser un gráfico digital, captura de pantalla o imagen procesada. "
-            "Por favor, tome una fotografía real del dibujo hecho a mano sobre papel físico."
+            "La resolución de la imagen es demasiado baja. Por favor, tome una fotografía real y nítida "
+            "del dibujo hecho a mano con lápiz sobre papel físico (mínimo 400x400 píxeles)."
+        )
+
+    # Rechazo independiente por textura y colores (Variabilidad de fondo baja o tonos únicos limitados)
+    # Aumentado el umbral de variabilidad de fondo a 2.3 y tonos únicos a 150 para detectar robustamente
+    # imágenes digitales descargadas (por ejemplo, desde Google) o capturas de pantalla de relojes.
+    if variabilidad_fondo < 2.3 or tonos_unicos < 150:
+        return False, (
+            "La imagen parece ser un gráfico digital, una captura de pantalla o una imagen descargada (como de Google). "
+            "Por favor, tome una fotografía real del dibujo de reloj hecho a mano alzada por el paciente sobre papel físico."
         )
 
     if not hay_circulo:
