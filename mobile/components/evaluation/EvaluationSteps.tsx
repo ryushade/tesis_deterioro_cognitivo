@@ -1,44 +1,99 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Image, ScrollView, Animated } from 'react-native';
 import { FontAwesome, MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { styles, CDT_SCALES } from './EvaluationStyles';
 
-export const LoginStep = ({ accessCode, setAccessCode, errorMessage, setErrorMessage, handlePatientLogin, loading }: any) => (
-  <View style={styles.card}>
-    <View style={styles.logoCenter}>
-      <View style={styles.avatarCircle}>
-        <FontAwesome name="stethoscope" size={34} color="#4F46E5" />
+export const LoginStep = ({
+  accessCode,
+  setAccessCode,
+  errorMessage,
+  setErrorMessage,
+  handlePatientLogin,
+  loading,
+  apiUrl,
+  setApiUrl
+}: any) => {
+  const [showSettings, setShowSettings] = useState(false);
+
+  return (
+    <View style={styles.card}>
+      <View style={styles.logoCenter}>
+        <View style={styles.avatarCircle}>
+          <FontAwesome name="stethoscope" size={34} color="#4F46E5" />
+        </View>
+        <Text style={styles.loginTitle}>Sistema Inteligente de Evaluación Cognitiva</Text>
+        <Text style={styles.loginSubtitle}>Adultos Mayores - Centro de Salud San Martín</Text>
       </View>
-      <Text style={styles.loginTitle}>Sistema Inteligente de Evaluación Cognitiva</Text>
-      <Text style={styles.loginSubtitle}>Adultos Mayores - Centro de Salud San Martín</Text>
+      <View style={styles.inputSection}>
+        <Text style={styles.inputLabel}>Código de acceso temporal</Text>
+        <View style={styles.inputWrapper}>
+          <FontAwesome name="key" size={20} color="#64748B" style={styles.inputIcon} />
+          <TextInput
+            style={styles.textInput}
+            placeholder="Ej: CDT-123"
+            placeholderTextColor="#94A3B8"
+            value={accessCode}
+            onChangeText={(text) => { setAccessCode(text); setErrorMessage(null); }}
+            autoCapitalize="characters"
+            maxLength={12}
+          />
+        </View>
+        <Text style={styles.inputHelper}>Ingrese el código asignado por el neuropsicólogo desde el panel web.</Text>
+      </View>
+      {errorMessage && (
+        <View style={styles.errorAlert}>
+          <MaterialIcons name="error-outline" size={22} color="#991B1B" />
+          <Text style={styles.errorAlertText}>{errorMessage}</Text>
+        </View>
+      )}
+      <TouchableOpacity style={[styles.primaryBtn, loading && styles.disabledBtn]} onPress={handlePatientLogin} disabled={loading}>
+        {loading ? <ActivityIndicator color="white" /> : <Text style={styles.primaryBtnText}>Iniciar prueba</Text>}
+      </TouchableOpacity>
+
+      {/* Collapsible server settings */}
+      <TouchableOpacity 
+        style={{ 
+          flexDirection: 'row', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          gap: 6, 
+          marginTop: 20, 
+          paddingTop: 14, 
+          borderTopWidth: 1, 
+          borderTopColor: '#F1F5F9' 
+        }} 
+        onPress={() => setShowSettings(!showSettings)}
+      >
+        <FontAwesome name="cog" size={16} color="#64748B" />
+        <Text style={{ fontSize: 13, fontWeight: '600', color: '#64748B' }}>
+          {showSettings ? "Ocultar configuración de red" : "Configurar dirección del servidor"}
+        </Text>
+      </TouchableOpacity>
+
+      {showSettings && (
+        <View style={{ marginTop: 14, backgroundColor: '#F8FAFC', borderRadius: 14, padding: 14, borderWidth: 1, borderColor: '#E2E8F0' }}>
+          <Text style={{ fontSize: 12, fontWeight: '700', color: '#334155', marginBottom: 6 }}>
+            Dirección del Servidor API
+          </Text>
+          <View style={[styles.inputWrapper, { height: 44, paddingHorizontal: 12, backgroundColor: '#FFFFFF' }]}>
+            <TextInput
+              style={[styles.textInput, { fontSize: 13, fontWeight: '500' }]}
+              placeholder="http://192.168.1.50:5001/api"
+              placeholderTextColor="#94A3B8"
+              value={apiUrl}
+              onChangeText={setApiUrl}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+          <Text style={{ fontSize: 11, color: '#64748B', marginTop: 8, lineHeight: 14 }}>
+            Si está en otra red o usa datos móviles, inicie un túnel con <Text style={{ fontWeight: '700' }}>ngrok</Text> en el puerto <Text style={{ fontWeight: '700' }}>5001</Text> y pegue la URL pública aquí.
+          </Text>
+        </View>
+      )}
     </View>
-    <View style={styles.inputSection}>
-      <Text style={styles.inputLabel}>Código de acceso temporal</Text>
-      <View style={styles.inputWrapper}>
-        <FontAwesome name="key" size={20} color="#64748B" style={styles.inputIcon} />
-        <TextInput
-          style={styles.textInput}
-          placeholder="Ej: CDT-123"
-          placeholderTextColor="#94A3B8"
-          value={accessCode}
-          onChangeText={(text) => { setAccessCode(text); setErrorMessage(null); }}
-          autoCapitalize="characters"
-          maxLength={12}
-        />
-      </View>
-      <Text style={styles.inputHelper}>Ingrese el código asignado por el neuropsicólogo desde el panel web.</Text>
-    </View>
-    {errorMessage && (
-      <View style={styles.errorAlert}>
-        <MaterialIcons name="error-outline" size={22} color="#991B1B" />
-        <Text style={styles.errorAlertText}>{errorMessage}</Text>
-      </View>
-    )}
-    <TouchableOpacity style={[styles.primaryBtn, loading && styles.disabledBtn]} onPress={handlePatientLogin} disabled={loading}>
-      {loading ? <ActivityIndicator color="white" /> : <Text style={styles.primaryBtnText}>Iniciar prueba</Text>}
-    </TouchableOpacity>
-  </View>
-);
+  );
+};
 
 export const InstructionsStep = ({ patientInfo, startEvaluation }: any) => {
   const isCdt = patientInfo?.tipo_evaluacion?.toLowerCase().includes('reloj') || patientInfo?.tipo_evaluacion === 'CDT';
@@ -181,51 +236,162 @@ export const CdtCaptureStep = ({ patientInfo, rejectReason, imageUri, setImageUr
   </View>
 );
 
-export const VoiceCaptureStep = ({ patientInfo, isRecording, pulseAnim, stopRecording, startRecording, voiceTimer, formatTime }: any) => (
-  <View style={styles.card}>
-    <Text style={styles.cardHeaderTitle}>Capturar Fluidez Verbal</Text>
-    <Text style={styles.cardHeaderSubtitle}>Módulo de captura vocal de {patientInfo?.nombre_paciente}</Text>
-    <View style={styles.voiceRecordOuterZone}>
-      <View style={{ justifyContent: 'center', alignItems: 'center', height: 160, width: 160 }}>
-        {isRecording && (
-          <>
-            <Animated.View style={{
-              position: 'absolute',
-              width: 144,
-              height: 144,
-              borderRadius: 72,
-              backgroundColor: 'rgba(239, 68, 68, 0.15)',
-              transform: [{ scale: pulseAnim }],
-            }} />
-            <Animated.View style={{
-              position: 'absolute',
-              width: 120,
-              height: 120,
-              borderRadius: 60,
-              backgroundColor: 'rgba(239, 68, 68, 0.25)',
-              transform: [{ scale: pulseAnim }],
-            }} />
-          </>
-        )}
-        {isRecording ? (
-          <TouchableOpacity style={[styles.largeMicBtn, styles.micActiveColor]} onPress={stopRecording}>
-            <FontAwesome name="stop" size={28} color="white" />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity style={styles.largeMicBtn} onPress={startRecording}>
-            <FontAwesome name="microphone" size={32} color="white" />
-          </TouchableOpacity>
-        )}
+export const VoiceCaptureStep = ({
+  patientInfo,
+  voiceCurrentIndex,
+  voiceIsRecording,
+  voiceIsPaused,
+  voiceTimer,
+  formatTime,
+  pulseAnim,
+  onStartRecording,
+  onTogglePause,
+  onNextQuestion,
+  onCancel,
+}: any) => {
+  const PREGUNTAS = [
+    { id: 1, tipo: "Descripción narrativa", texto: "Por favor, cuéntenos cómo es un día normal en su vida. ¿Qué hace desde que se levanta hasta que se acuesta?", limit: null },
+    { id: 2, tipo: "Fluidez semántica", texto: "Por favor, nombre todos los animales que le vengan a la mente durante un minuto.", limit: 60 },
+    { id: 3, tipo: "Fluidez fonémica", texto: "Por favor, diga todas las palabras que empiecen con la letra 'P' durante un minuto.", limit: 60 },
+    { id: 4, tipo: "Repetición de oraciones", texto: "Por favor, repita la siguiente oración: 'El gato se esconde bajo el sofá cuando llueve'.", limit: null },
+    { id: 5, tipo: "Recuerdo", texto: "Ahora, ¿recuerda los objetos que anteriormente aparecieron? Por favor, menciónelos.", limit: null }
+  ];
+
+  const pregunta = PREGUNTAS[voiceCurrentIndex] || PREGUNTAS[0];
+  const isTimed = pregunta.limit !== null;
+  const displayTimer = isTimed
+    ? `${Math.max(0, 60 - voiceTimer)}s`
+    : formatTime(voiceTimer);
+
+  return (
+    <View style={styles.card}>
+      {/* Progress Header */}
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+        <Text style={{ fontSize: 13, color: '#64748B', fontWeight: '700' }}>
+          Pregunta {pregunta.id} de {PREGUNTAS.length}
+        </Text>
+        <View style={styles.voiceQuestionBadge}>
+          <Text style={styles.voiceQuestionBadgeText}>{pregunta.tipo}</Text>
+        </View>
       </View>
-      <Text style={[styles.timerText, isRecording && styles.timerActive]}>{isRecording ? formatTime(voiceTimer) : "00:00"}</Text>
-      <Text style={styles.voiceStatusText}>{isRecording ? "Grabando voz del paciente..." : "Toque el micrófono para iniciar"}</Text>
+
+      {/* Progress Bar */}
+      <View style={styles.voiceProgressBarContainer}>
+        <View style={[styles.voiceProgressBarFiller, { width: `${((voiceCurrentIndex) / PREGUNTAS.length) * 100}%` }]} />
+      </View>
+
+      {/* Question Text */}
+      <View style={{ backgroundColor: '#F8FAFC', borderRadius: 16, padding: 18, borderWidth: 1, borderColor: '#E2E8F0', minHeight: 110, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ fontSize: 15, color: '#0F172A', fontWeight: '600', textAlign: 'center', lineHeight: 22 }}>
+          {pregunta.texto}
+        </Text>
+      </View>
+
+      {/* T5 3x2 Grid of cards */}
+      {voiceCurrentIndex === 4 && (
+        <View style={styles.voiceGridContainer}>
+          {[1, 2, 3, 4, 5, 6].map((num) => (
+            <View key={num} style={styles.voiceGridCard}>
+              <Text style={styles.voiceGridCardText}>?</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Voice Recording zone */}
+      <View style={styles.voiceRecordOuterZone}>
+        <View style={{ justifyContent: 'center', alignItems: 'center', height: 140, width: 140 }}>
+          {voiceIsRecording && !voiceIsPaused && (
+            <>
+              <Animated.View style={{
+                position: 'absolute',
+                width: 130,
+                height: 130,
+                borderRadius: 65,
+                backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                transform: [{ scale: pulseAnim }],
+              }} />
+              <Animated.View style={{
+                position: 'absolute',
+                width: 110,
+                height: 110,
+                borderRadius: 55,
+                backgroundColor: 'rgba(239, 68, 68, 0.25)',
+                transform: [{ scale: pulseAnim }],
+              }} />
+            </>
+          )}
+          {voiceIsRecording ? (
+            voiceIsPaused ? (
+              <TouchableOpacity style={[styles.largeMicBtn, styles.micPausedColor]} onPress={onTogglePause}>
+                <FontAwesome name="play" size={24} color="white" style={{ marginLeft: 4 }} />
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity style={[styles.largeMicBtn, styles.micActiveColor]} onPress={onTogglePause}>
+                <FontAwesome name="pause" size={24} color="white" />
+              </TouchableOpacity>
+            )
+          ) : (
+            <TouchableOpacity style={styles.largeMicBtn} onPress={onStartRecording}>
+              <FontAwesome name="microphone" size={28} color="white" />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Timer */}
+        <Text style={[
+          styles.timerText, 
+          voiceIsRecording && !voiceIsPaused && styles.timerActive,
+          voiceIsRecording && voiceIsPaused && styles.timerPaused
+        ]}>
+          {voiceIsRecording ? displayTimer : "00:00"}
+        </Text>
+
+        {/* Status text */}
+        <Text style={styles.voiceStatusText}>
+          {!voiceIsRecording 
+            ? "Toque el micrófono para iniciar"
+            : voiceIsPaused 
+              ? "Grabación pausada. Pulse Play para reanudar" 
+              : isTimed 
+                ? `Hablando... Tiempo restante: ${displayTimer}`
+                : "Grabando voz del paciente..."}
+        </Text>
+      </View>
+
+      {/* Info box context */}
+      <View style={styles.infoBoxBlue}>
+        <MaterialIcons name="info-outline" size={20} color="#1E40AF" />
+        <Text style={styles.infoBoxText}>
+          {isTimed 
+            ? "Esta es una tarea con tiempo límite de 1 minuto. Se avanzará automáticamente al expirar."
+            : "Hable de forma clara. Al finalizar de responder, presione el botón de abajo para avanzar."}
+        </Text>
+      </View>
+
+      {/* Bottom Button Actions */}
+      <View style={styles.voiceButtonsRow}>
+        <TouchableOpacity style={styles.voiceCancelBtn} onPress={onCancel}>
+          <FontAwesome name="times" size={18} color="#EF4444" />
+        </TouchableOpacity>
+        
+        <TouchableOpacity 
+          style={[
+            styles.voiceNextBtn, 
+            !voiceIsRecording && styles.voiceNextBtnDisabled
+          ]} 
+          onPress={onNextQuestion}
+          disabled={!voiceIsRecording}
+        >
+          <Text style={styles.voiceNextBtnText}>
+            {voiceCurrentIndex === 4 ? "Finalizar prueba" : "Siguiente pregunta"}
+          </Text>
+          <Ionicons name={voiceCurrentIndex === 4 ? "checkmark-done" : "arrow-forward"} size={18} color="white" />
+        </TouchableOpacity>
+      </View>
     </View>
-    <View style={styles.infoBoxBlue}>
-      <MaterialIcons name="info-outline" size={20} color="#1E40AF" />
-      <Text style={styles.infoBoxText}>La prueba se detendrá automáticamente a los 60 segundos o al presionar detener.</Text>
-    </View>
-  </View>
-);
+  );
+};
 
 export const ProcessingStep = () => (
   <View style={styles.card}>

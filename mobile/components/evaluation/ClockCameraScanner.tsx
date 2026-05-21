@@ -12,7 +12,7 @@ interface ClockCameraScannerProps {
 
 export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraScannerProps) {
   const [permission, requestPermission] = useCameraPermissions();
-  const [facing, setFacing] = useState<CameraType>('back');
+  const facing: CameraType = 'back';
   const [flash, setFlash] = useState<'off' | 'on'>('off');
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
@@ -53,7 +53,7 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
         anim.stop();
       }
     };
-  }, [capturedImage]);
+  }, [capturedImage, scanAnim]);
 
   if (!permission) {
     return (
@@ -105,6 +105,7 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
           setCapturedImage(photo.uri);
         }
       } catch (error) {
+        console.error("Error capturando imagen:", error);
         alert("Error al capturar la imagen. Por favor intente de nuevo.");
       } finally {
         setCapturing(false);
@@ -114,10 +115,6 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
 
   const toggleFlash = () => {
     setFlash(prev => prev === 'off' ? 'on' : 'off');
-  };
-
-  const toggleFacing = () => {
-    setFacing(prev => prev === 'back' ? 'front' : 'back');
   };
 
   const toggleCheckItem = async (key: 'circle' | 'readable' | 'noShadows') => {
