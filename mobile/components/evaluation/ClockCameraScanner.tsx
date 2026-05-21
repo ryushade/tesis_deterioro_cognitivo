@@ -58,7 +58,7 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
   if (!permission) {
     return (
       <View style={[styles.cameraContainer, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size="large" color="#0D47A1" />
+        <ActivityIndicator size="large" color="#4F46E5" />
         <Text style={{ color: 'white', marginTop: 16, fontWeight: '600' }}>Iniciando cámara...</Text>
       </View>
     );
@@ -67,13 +67,13 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
   if (!permission.granted) {
     return (
       <View style={[styles.cameraContainer, { justifyContent: 'center', alignItems: 'center', padding: 24 }]}>
-        <Ionicons name="camera-outline" size={72} color="#0D47A1" style={{ marginBottom: 16 }} />
+        <Ionicons name="camera-outline" size={72} color="#4F46E5" style={{ marginBottom: 16 }} />
         <Text style={[styles.scannerTitle, { textAlign: 'center', color: 'white', fontSize: 18, marginBottom: 8 }]}>Se requiere permiso de cámara</Text>
         <Text style={{ color: '#B0BEC5', textAlign: 'center', marginBottom: 24, lineHeight: 20, fontSize: 14 }}>
           Para poder capturar y analizar el dibujo del reloj, necesitamos acceso a la cámara de este dispositivo.
         </Text>
         <TouchableOpacity
-          style={[styles.primaryBtn, { width: '80%', backgroundColor: '#0D47A1' }]}
+          style={[styles.primaryBtn, { width: '80%', backgroundColor: '#4F46E5' }]}
           onPress={requestPermission}
         >
           <Text style={styles.primaryBtnText}>Conceder permiso</Text>
@@ -82,7 +82,7 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
           style={{ marginTop: 24 }}
           onPress={onCancel}
         >
-          <Text style={{ color: '#FF7043', fontWeight: '700', fontSize: 15 }}>Cancelar y volver</Text>
+          <Text style={{ color: '#EF4444', fontWeight: '700', fontSize: 15 }}>Cancelar y volver</Text>
         </TouchableOpacity>
       </View>
     );
@@ -173,7 +173,7 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
               <Ionicons 
                 name={checkedItems.circle ? "checkbox" : "square-outline"} 
                 size={24} 
-                color={checkedItems.circle ? "#2E7D32" : "#919EAB"} 
+                color={checkedItems.circle ? "#10B981" : "#94A3B8"} 
               />
               <Text style={styles.checklistText}>El reloj está dibujado completamente a mano alzada (esfera no industrial)</Text>
             </TouchableOpacity>
@@ -186,7 +186,7 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
               <Ionicons 
                 name={checkedItems.readable ? "checkbox" : "square-outline"} 
                 size={24} 
-                color={checkedItems.readable ? "#2E7D32" : "#919EAB"} 
+                color={checkedItems.readable ? "#10B981" : "#94A3B8"} 
               />
               <Text style={styles.checklistText}>Todos los números y manecillas (las 11:10) son legibles</Text>
             </TouchableOpacity>
@@ -199,7 +199,7 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
               <Ionicons 
                 name={checkedItems.noShadows ? "checkbox" : "square-outline"} 
                 size={24} 
-                color={checkedItems.noShadows ? "#2E7D32" : "#919EAB"} 
+                color={checkedItems.noShadows ? "#10B981" : "#94A3B8"} 
               />
               <Text style={styles.checklistText}>No hay sombras oscuras ni reflejos molestos de flash en la hoja</Text>
             </TouchableOpacity>
@@ -215,7 +215,7 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
               <TouchableOpacity 
                 style={[
                   styles.previewConfirmBtn, 
-                  !allChecked && { backgroundColor: '#919EAB', opacity: 0.7 }
+                  !allChecked && { backgroundColor: '#CBD5E1', opacity: 0.7 }
                 ]} 
                 onPress={handleConfirm}
                 disabled={!allChecked}
@@ -240,15 +240,22 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
       >
         <View style={styles.overlayContainer}>
           {/* Custom Cutout Overlay */}
-          <View style={styles.maskOuter}>
-            <View style={styles.maskInner} />
-            <View style={styles.guideCircle}>
-              {/* Scan Line Animation */}
-              <Animated.View style={[
-                styles.scanLine, 
-                { transform: [{ translateY: scanAnim }] }
-              ]} />
+          <View style={styles.maskContainer}>
+            <View style={styles.maskRowSide} />
+            <View style={styles.maskRowMiddle}>
+              <View style={styles.maskCellSide} />
+              <View style={styles.maskCenterHole}>
+                <View style={styles.guideCircle}>
+                  {/* Scan Line Animation */}
+                  <Animated.View style={[
+                    styles.scanLine, 
+                    { transform: [{ translateY: scanAnim }] }
+                  ]} />
+                </View>
+              </View>
+              <View style={styles.maskCellSide} />
             </View>
+            <View style={styles.maskRowSide} />
           </View>
 
           {/* Upper Info */}

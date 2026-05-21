@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, Animated, Platform } from 'react-native';
 import { Audio } from 'expo-av';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import Constants from 'expo-constants';
 import { styles } from '../../components/evaluation/EvaluationStyles';
@@ -29,6 +29,46 @@ const getApiUrl = () => {
 };
 
 const API_URL = getApiUrl();
+
+const ProgressStepper = ({ currentStep }: { currentStep: string }) => {
+  let activeIndex = 1;
+  if (currentStep === 'instructions') activeIndex = 2;
+  else if (currentStep === 'cdt_capture' || currentStep === 'voice_capture' || currentStep === 'processing') activeIndex = 3;
+  else if (currentStep === 'cdt_results' || currentStep === 'voice_results') activeIndex = 4;
+
+  const renderBadge = (index: number, label: string) => {
+    const isActive = activeIndex === index;
+    const isDone = activeIndex > index;
+    return (
+      <View style={styles.stepItem}>
+        <View style={[
+          styles.stepBadge,
+          isActive && styles.stepBadgeActive,
+          isDone && styles.stepBadgeDone
+        ]}>
+          {isDone ? (
+            <Ionicons name="checkmark" size={12} color="white" />
+          ) : (
+            <Text style={[styles.stepBadgeText, isActive && styles.stepBadgeTextActive]}>{index}</Text>
+          )}
+        </View>
+        <Text style={[styles.stepText, isActive && styles.stepTextActive]}>{label}</Text>
+      </View>
+    );
+  };
+
+  return (
+    <View style={styles.stepperContainer}>
+      {renderBadge(1, 'Ingreso')}
+      <View style={[styles.stepConnector, activeIndex > 1 && styles.stepConnectorActive]} />
+      {renderBadge(2, 'Instrucciones')}
+      <View style={[styles.stepConnector, activeIndex > 2 && styles.stepConnectorActive]} />
+      {renderBadge(3, 'Prueba')}
+      <View style={[styles.stepConnector, activeIndex > 3 && styles.stepConnectorActive]} />
+      {renderBadge(4, 'Resultados')}
+    </View>
+  );
+};
 
 export default function HomeScreen() {
   const [step, setStep] = useState<'login' | 'instructions' | 'cdt_capture' | 'voice_capture' | 'cdt_results' | 'voice_results' | 'processing'>('login');
@@ -205,7 +245,7 @@ export default function HomeScreen() {
     <View style={styles.outerContainer}>
       <View style={styles.topHeader}>
         <View style={styles.headerRow}>
-          <FontAwesome name="heartbeat" size={24} color="#0D47A1" />
+          <FontAwesome name="heartbeat" size={24} color="#4F46E5" />
           <Text style={styles.headerBrand}>Centro de Salud San Martín</Text>
         </View>
         {step !== 'login' && (
@@ -216,6 +256,7 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <ProgressStepper currentStep={step} />
         {step === 'login' && <LoginStep accessCode={accessCode} setAccessCode={setAccessCode} errorMessage={errorMessage} setErrorMessage={setErrorMessage} handlePatientLogin={handlePatientLogin} loading={loading} />}
         {step === 'instructions' && <InstructionsStep patientInfo={patientInfo} startEvaluation={startEvaluation} />}
         {step === 'cdt_capture' && <CdtCaptureStep patientInfo={patientInfo} rejectReason={rejectReason} imageUri={imageUri} setImageUri={setImageUri} takePhoto={takePhoto} pickFromGallery={pickFromGallery} submitCdtTest={submitCdtTest} setRejectReason={setRejectReason} />}
