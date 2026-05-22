@@ -80,30 +80,190 @@ transformacion_inferencia = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
 ])
 
+def recortar_alrededor_del_reloj(img_bgr):
+    """
+    Busca la esfera del reloj en la imagen completa utilizando la transformada de Hough o contornos.
+    Si la detecta, recorta un recuadro centrado en el círculo con un margen de seguridad.
+    """
+    try:
+        h_img, w_img = img_bgr.shape[:2]
+        img_gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+        
+        # Ecualización adaptativa para contrastar el dibujo y el círculo
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        img_gray_eq = clahe.apply(img_gray)
+        
+        min_dim = min(h_img, w_img)
+        min_r = int(min_dim * 0.12)
+        max_r = int(min_dim * 0.48)
+        
+        img_blur_circles = cv2.GaussianBlur(img_gray_eq, (9, 9), 2)
+        circulos = cv2.HoughCircles(
+            img_blur_circles,
+            cv2.HOUGH_GRADIENT,
+            dp=1.2,
+            minDist=min_dim * 0.25,
+            param1=60,
+            param2=35,       
+            minRadius=min_r,
+            maxRadius=max_r
+        )
+        
+        hay_circulo = False
+        cx, cy, r = 0, 0, 0
+        
+        if circulos is not None and len(circulos[0]) >= 1:
+            cx, cy, r = circulos[0][0]
+            hay_circulo = True
+        else:
+            # Fallback a contornos si Hough falla
+            edges = cv2.Canny(img_gray_eq, 50, 150)
+            contornos_fall, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            candidatos = []
+            for c in contornos_fall:
+                area = cv2.contourArea(c)
+                perimetro = cv2.arcLength(c, True)
+                if perimetro > 100:
+                    x_b, y_b, w_b, h_b = cv2.boundingRect(c)
+                    aspect_ratio = min(w_b, h_b) / max(w_b, h_b) if max(w_b, h_b) > 0 else 0
+                    if w_b > min_dim * 0.15 and h_b > min_dim * 0.15:
+                        if aspect_ratio > 0.50:
+                            (ccx, ccy), r_enc = cv2.minEnclosingCircle(c)
+                            dist_centro = np.sqrt((ccx - w_img/2)**2 + (ccy - h_img/2)**2)
+                            score = area * aspect_ratio / (1.0 + 0.01 * dist_centro)
+                            candidatos.append((ccx, ccy, r_enc, score))
+            if candidatos:
+                candidatos.sort(key=lambda item: item[3], reverse=True)
+                best_c = candidatos[0]
+                cx, cy, r = best_c[0], best_c[1], best_c[2]
+                hay_circulo = True
+                
+        if hay_circulo:
+            # Margen del 40% del radio
+            margen = int(r * 0.40)
+            x1 = max(0, int(cx - r - margen))
+            y1 = max(0, int(cy - r - margen))
+            x2 = min(w_img, int(cx + r + margen))
+            y2 = min(h_img, int(cy + r + margen))
+            
+            if (x2 - x1) > 100 and (y2 - y1) > 100:
+                print(f"[IA AUTOCROP] Círculo detectado en ({cx:.1f}, {cy:.1f}) R={r:.1f}. Recortando con margen.")
+                return img_bgr[y1:y2, x1:x2], True
+                
+    except Exception as e:
+        print(f"[IA AUTOCROP] Error al recortar por círculo: {e}")
+        
+    return img_bgr, False
+
+
+def auto_recortar_hoja_blanca(img_bgr):
+    """
+    Detecta el contorno de la hoja de papel blanco y recorta el fondo oscuro.
+    Prueba primero con Otsu sobre la imagen cruda (ideal para alto contraste con la mesa)
+    y luego con ecualización CLAHE como fallback para penumbras.
+    """
+    try:
+        h_img, w_img = img_bgr.shape[:2]
+        img_gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
+        
+        # Suavizado para reducir ruido en los bordes
+        img_blur = cv2.GaussianBlur(img_gray, (5, 5), 0)
+        area_total = h_img * w_img
+        
+        # --- ETAPA 1: Otsu Directo (Ideal para papel blanco sobre fondo oscuro) ---
+        _, thresh_otsu = cv2.threshold(img_blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+        contornos, _ = cv2.findContours(thresh_otsu, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        if contornos:
+            c_max = max(contornos, key=cv2.contourArea)
+            area_c = cv2.contourArea(c_max)
+            
+            # Queremos que la hoja sea representativa pero no cubra absolutamente toda la foto
+            if area_total * 0.15 < area_c < area_total * 0.98:
+                x, y, w, h = cv2.boundingRect(c_max)
+                if w > w_img * 0.30 and h > h_img * 0.30:
+                    margen = 20
+                    x_new = max(0, x - margen)
+                    y_new = max(0, y - margen)
+                    w_new = min(w_img - x_new, w + 2 * margen)
+                    h_new = min(h_img - y_new, h + 2 * margen)
+                    print(f"[IA AUTOCROP] Otsu detectó papel de {w}x{h} (Original {w_img}x{h_img}). Recortando.")
+                    return img_bgr[y_new:y_new+h_new, x_new:x_new+w_new], True
+
+        # --- ETAPA 2: Fallback con CLAHE (Por si la mesa es clara o hay sombras fuertes) ---
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        img_eq = clahe.apply(img_gray)
+        img_blur_eq = cv2.GaussianBlur(img_eq, (5, 5), 0)
+        _, thresh_eq = cv2.threshold(img_blur_eq, 180, 255, cv2.THRESH_BINARY)
+        
+        contornos_eq, _ = cv2.findContours(thresh_eq, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if contornos_eq:
+            c_max = max(contornos_eq, key=cv2.contourArea)
+            area_c = cv2.contourArea(c_max)
+            
+            if area_total * 0.15 < area_c < area_total * 0.98:
+                x, y, w, h = cv2.boundingRect(c_max)
+                if w > w_img * 0.30 and h > h_img * 0.30:
+                    margen = 20
+                    x_new = max(0, x - margen)
+                    y_new = max(0, y - margen)
+                    w_new = min(w_img - x_new, w + 2 * margen)
+                    h_new = min(h_img - y_new, h + 2 * margen)
+                    print(f"[IA AUTOCROP] CLAHE detectó papel de {w}x{h} (Original {w_img}x{h_img}). Recortando.")
+                    return img_bgr[y_new:y_new+h_new, x_new:x_new+w_new], True
+                    
+    except Exception as e:
+        print(f"[IA AUTOCROP] Error al auto-recortar: {e}")
+        
+    return img_bgr, False
+
+
 def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     """
     Valida exhaustivamente que la imagen sea un dibujo fotografiado real.
+    Aplica CLAHE y ecualización para ser tolerante a sombras del móvil e iluminación interior.
     """
     img_bgr = cv2.imread(ruta_imagen)
     if img_bgr is None:
         return False, "No se pudo leer la imagen."
 
+    # 1. Intentamos recortar primero por círculo para no cortar los bordes del dibujo.
+    # Si no se detecta, intentamos auto-recortar la hoja de papel completa como fallback.
+    img_recortada, recortada = recortar_alrededor_del_reloj(img_bgr)
+    if not recortada:
+        print("[IA AUTOCROP] No se pudo recortar por círculo. Probando auto_recortar_hoja_blanca...")
+        img_recortada, recortada = auto_recortar_hoja_blanca(img_bgr)
+        
+    if recortada:
+        img_bgr = img_recortada
+        try:
+            cv2.imwrite(ruta_imagen, img_bgr)
+            print(f"[IA AUTOCROP] Imagen recortada guardada: {ruta_imagen}")
+        except Exception as write_err:
+            print(f"[IA AUTOCROP] Error guardando recorte: {write_err}")
+
     h_img, w_img = img_bgr.shape[:2]
     img_gray = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2GRAY)
 
-    # --- METRICAS BASICAS ---
+    # 2. Ecualizamos con CLAHE para estandarizar el fondo a blanco y eliminar sombras del celular o mano
+    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    img_gray_eq = clahe.apply(img_gray)
+
+    # --- METRICAS BASADAS EN IMAGEN NORMALIZADA (CLAHE) ---
     img_hsv = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2HSV)
     saturacion_media = float(img_hsv[:, :, 1].mean())
-    brillo_medio = float(img_gray.mean())
-    pixeles_claros = float(np.sum(img_gray > 200)) / img_gray.size
-    edges = cv2.Canny(img_gray, 50, 150)
+    brillo_medio = float(img_gray.mean()) # Brillo físico original de la toma
+    
+    # En la imagen ecualizada, el papel es casi blanco puro (>210)
+    pixeles_claros = float(np.sum(img_gray_eq > 210)) / img_gray_eq.size
+    edges = cv2.Canny(img_gray_eq, 50, 150)
     densidad_bordes = float(np.sum(edges > 0)) / edges.size
 
     # --- METRICA ANTI-DIGITAL 1: Tonos Únicos ---
     tonos_unicos = len(np.unique(img_gray))
 
     # --- METRICA ANTI-DIGITAL 2: Micro-Textura (Ruido de Fondo) ---
-    pixeles_claros_vals = img_gray[img_gray > 220]
+    pixeles_claros_vals = img_gray[img_gray > 200]
     if len(pixeles_claros_vals) > 100:
         variabilidad_fondo = float(np.std(pixeles_claros_vals))
     else:
@@ -115,43 +275,39 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     block_size = 8
     for r in range(0, h_img - block_size, block_size):
         for c in range(0, w_img - block_size, block_size):
-            block = img_gray[r:r+block_size, c:c+block_size]
-            if block.mean() > 220:
+            block = img_gray_eq[r:r+block_size, c:c+block_size]
+            if block.mean() > 210:
                 total_bg_blocks += 1
                 if block.std() < 0.1:
                     flat_blocks += 1
     pct_flat_blocks = (flat_blocks / total_bg_blocks * 100) if total_bg_blocks > 0 else 0.0
 
-    # --- METRICA ANTI-OBJETO 1: Reflejos Especulares (Vidrio/Cristal) ---
-    # Un reloj real tiene tapa de cristal; el papel es mate.
-    # Buscamos cúmulos de píxeles casi blancos puros (>254) que indican reflejos de luz.
-    # Aumentamos el umbral (254) y el área mínima (15) para evitar fallos por papel muy blanco.
+    # --- METRICA ANTI-OBJETO 1: Reflejos Especulares ---
     _, mask_brillo = cv2.threshold(img_gray, 254, 255, cv2.THRESH_BINARY)
     num_labels, _, stats, _ = cv2.connectedComponentsWithStats(mask_brillo)
-    # Contamos "destellos" de tamaño pequeño/mediano (glare)
     destellos = 0
     for i in range(1, num_labels):
         if 15 < stats[i, cv2.CC_STAT_AREA] < 800:
             destellos += 1
 
-    # Deteccion de regiones rellenas (Trazos muy gruesos o parches negros)
+    # Detección de trazos gruesos (tinta)
     kernel_grosor = np.ones((9, 9), np.uint8)
-    mask_tinta = (img_gray < 100).astype(np.uint8) * 255
+    mask_tinta = (img_gray_eq < 100).astype(np.uint8) * 255
     tinta_gruesa = cv2.erode(mask_tinta, kernel_grosor, iterations=1)
-    pct_tinta_gruesa = float(np.sum(tinta_gruesa > 0)) / img_gray.size
+    pct_tinta_gruesa = float(np.sum(tinta_gruesa > 0)) / img_gray_eq.size
 
-    # Detección de "excesiva tinta" indicativa de fotografías vs dibujos lineales
-    pct_tinta_total = float(np.sum(img_gray < 150)) / img_gray.size
+    # Detección de total de tinta sobre la imagen ecualizada
+    pct_tinta_total = float(np.sum(img_gray_eq < 130)) / img_gray_eq.size
 
-    # Deteccion de lineas rectas (para descartar carnets, QR, pantallazos con mucho texto)
+    # Detección de líneas rectas paralelas (ej: hojas cuadriculadas/QR/texto)
     min_dim = min(h_img, w_img)
-    lineas = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=40, minLineLength=min_dim*0.08, maxLineGap=5)
+    lineas = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=45, minLineLength=min_dim*0.08, maxLineGap=5)
     num_lineas = len(lineas) if lineas is not None else 0
 
-    # --- DETECCION DE CIRCULO (Hough Transform) ---
+    # --- DETECCION DE CIRCULO (Hough Transform en imagen ecualizada) ---
     min_r = int(min_dim * 0.15)
     max_r = int(min_dim * 0.48)
-    img_blur_circles = cv2.GaussianBlur(img_gray, (9, 9), 2)
+    img_blur_circles = cv2.GaussianBlur(img_gray_eq, (9, 9), 2)
     circulos = cv2.HoughCircles(
         img_blur_circles,
         cv2.HOUGH_GRADIENT,
@@ -167,20 +323,43 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     mejor_circulo = None
     circularidad = 0.0
     es_circularidad_perfecta = False
+    
     if circulos is not None and len(circulos[0]) >= 1:
         hay_circulo = True
         mejor_circulo = circulos[0][0]
-        
-        # --- METRICA ANTI-OBJETO 2: Análisis de Circularidad ---
-        # Los relojes reales son círculos matemáticamente perfectos.
-        # Los dibujos a mano tienen imperfecciones locales apreciables.
+    else:
+        # --- DETECCION DE CIRCULO FALLBACK (Basado en contornos circulares en la imagen de bordes) ---
+        print("[IA CIRCLE] HoughCircles no detectó círculos. Iniciando fallback de contornos...")
+        contornos_fall, _ = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        candidatos = []
+        for c in contornos_fall:
+            area = cv2.contourArea(c)
+            perimetro = cv2.arcLength(c, True)
+            if perimetro > 100:
+                x_b, y_b, w_b, h_b = cv2.boundingRect(c)
+                aspect_ratio = min(w_b, h_b) / max(w_b, h_b) if max(w_b, h_b) > 0 else 0
+                # Buscamos un contorno representativo, relativamente cuadrado y centrado
+                if w_b > min_dim * 0.18 and h_b > min_dim * 0.18:
+                    if aspect_ratio > 0.55:
+                        (cx, cy), r_enc = cv2.minEnclosingCircle(c)
+                        dist_centro = np.sqrt((cx - w_img/2)**2 + (cy - h_img/2)**2)
+                        score = area * aspect_ratio / (1.0 + 0.01 * dist_centro)
+                        candidatos.append((cx, cy, r_enc, c, score, aspect_ratio, area, perimetro))
+        if candidatos:
+            candidatos.sort(key=lambda item: item[4], reverse=True)
+            best_c = candidatos[0]
+            hay_circulo = True
+            mejor_circulo = (best_c[0], best_c[1], best_c[2])
+            print(f"[IA CIRCLE] Círculo detectado por fallback de contorno: Centro=({best_c[0]:.1f}, {best_c[1]:.1f}), Radio={best_c[2]:.1f}")
+            
+    if hay_circulo:
+        # --- ANALISIS DE CIRCULARIDAD ---
         x, y, r = mejor_circulo
-        roi_margin = 10
+        roi_margin = 15
         y1, y2 = max(0, int(y-r-roi_margin)), min(h_img, int(y+r+roi_margin))
         x1, x2 = max(0, int(x-r-roi_margin)), min(w_img, int(x+r+roi_margin))
-        roi = img_gray[y1:y2, x1:x2]
+        roi = img_gray_eq[y1:y2, x1:x2]
         
-        # Detectar el contorno real que generó el círculo
         roi_edges = cv2.Canny(roi, 50, 150)
         cnts, _ = cv2.findContours(roi_edges, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         if cnts:
@@ -190,9 +369,6 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
             if perimetro > 0:
                 circularidad = (4 * np.pi * area) / (perimetro ** 2)
             
-            # --- EVALUACIÓN DE CIRCULARIDAD GEOMÉTRICA DE ALTA PRECISIÓN ---
-            # Los círculos digitales/industriales discretizados tienen imperfecciones de píxeles
-            # (staircase effect) que bajan la circularidad estándar. Usamos bounding box y círculo mínimo contenedor.
             x_b, y_b, w_b, h_b = cv2.boundingRect(c_max)
             aspect_ratio = min(w_b, h_b) / max(w_b, h_b) if max(w_b, h_b) > 0 else 0
             
@@ -200,117 +376,110 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
             area_enc = np.pi * (r_enc ** 2)
             ratio_enclosing = area / area_enc if area_enc > 0 else 0
             
-            # Si el aspecto es casi simétrico y el área coincide en >94% con el círculo contenedor,
-            # estamos ante un círculo de precisión industrial/digital.
             if aspect_ratio > 0.96 and ratio_enclosing > 0.94 and area > 1000:
                 es_circularidad_perfecta = True
 
     pct_tinta_dentro = 0.0
     if hay_circulo:
         x, y, r = mejor_circulo
-        # Máscara con margen del 30% para incluir números
-        mask = np.zeros_like(img_gray)
+        mask = np.zeros_like(img_gray_eq)
         cv2.circle(mask, (int(x), int(y)), int(r * 1.3), 255, -1)
         
-        # Umbral equilibrado (135) para ignorar ruido de fondo pero captar trazos reales
-        tinta_total = float(np.sum(img_gray < 135))
-        tinta_dentro = float(np.sum((img_gray < 135) & (mask == 255)))
-        
+        tinta_total = float(np.sum(img_gray_eq < 130))
+        tinta_dentro = float(np.sum((img_gray_eq < 130) & (mask == 255)))
         pct_tinta_dentro = tinta_dentro / max(tinta_total, 1)
 
     print("\n" + "="*55)
     print(f"[IA VALIDATION] {os.path.basename(ruta_imagen)}")
-    print(f"  > Bloques Planos: {pct_flat_blocks:.1f}% (Max: 20%)")
+    print(f"  > Bloques Planos: {pct_flat_blocks:.1f}%")
     print(f"  > Tonos Únicos: {tonos_unicos}")
     print(f"  > Variabilidad Fondo: {variabilidad_fondo:.2f}")
-    print(f"  > Densidad bordes: {densidad_bordes*100:.2f}% (Max: 12%)")
-    print(f"  > Lineas rectas (Texto/QR): {num_lineas} (Max: 45)")
-    print(f"  > Tinta gruesa/relleno: {pct_tinta_gruesa*100:.2f}% (Max: 0.5%)")
-    print(f"  > Tinta total (Líneas vs Foto): {pct_tinta_total*100:.2f}% (Max: 15%)")
-    print(f"  > Reflejos detectados: {destellos} (Max: 8)")
+    print(f"  > Densidad bordes: {densidad_bordes*100:.2f}%")
+    print(f"  > Lineas rectas: {num_lineas}")
+    print(f"  > Tinta gruesa/relleno: {pct_tinta_gruesa*100:.2f}%")
+    print(f"  > Tinta total (CLAHE): {pct_tinta_total*100:.2f}%")
+    print(f"  > Reflejos detectados: {destellos}")
     print(f"  > Circulo detectado: {'SI' if hay_circulo else 'NO'} (Requerido)")
     if hay_circulo:
-        print(f"  > Circularidad: {circularidad:.3f} (Max Humano: 0.94)")
-        print(f"  > Es circularidad perfecta (BBox/Enclosing): {es_circularidad_perfecta}")
-        print(f"  > Tinta en circulo: {pct_tinta_dentro*100:.1f}% (Min: 40%)")
+        print(f"  > Circularidad contorno: {circularidad:.3f}")
+        print(f"  > Es circularidad perfecta (BBox): {es_circularidad_perfecta}")
+        print(f"  > Tinta en circulo: {pct_tinta_dentro*100:.1f}%")
     print("="*55 + "\n")
 
-    # --- REGLAS DE RECHAZO ---
-    # Rechazo independiente por resolución baja (menos de 120px en cualquier dimensión)
+    # --- REGLAS DE RECHAZO FLEXIBILIZADAS ---
     if min(h_img, w_img) < 120:
         return False, (
             "La resolución de la imagen es demasiado baja. Por favor, tome una fotografía real y nítida "
             "del dibujo hecho a mano con lápiz sobre papel físico (mínimo 120x120 píxeles)."
         )
 
-    # Rechazo independiente por textura plana (Bloques planos)
-    # Si la imagen contiene más de un 20% de bloques de fondo perfectamente planos, es un gráfico digital o captura.
-    if pct_flat_blocks > 20.0:
-        return False, (
-            "La imagen parece ser un gráfico digital, una captura de pantalla o una imagen descargada (como de Google). "
-            "Por favor, tome una fotografía real del dibujo de reloj hecho a mano alzada por el paciente sobre papel físico."
-        )
+    # REGLA DESACTIVADA: El fondo ecualizado causa falsos positivos en fotos reales de alta calidad
+    # if pct_flat_blocks > 20.0:
+    #     return False, (
+    #         "La imagen parece ser un gráfico digital o una captura de pantalla. "
+    #         "Por favor, tome una fotografía real del dibujo hecho a mano alzada por el paciente sobre papel físico."
+    #     )
 
     if not hay_circulo:
         return False, (
             "No se pudo identificar la silueta circular del reloj. "
-            "Asegúrese de que el círculo dibujado esté bien visible y encuadrado en la toma."
+            "Asegúrese de que el dibujo tenga una forma circular clara y que la foto no esté muy inclinada."
         )
 
-    # Validar circularidad perfecta al inicio para descartar de inmediato relojes reales u objetos impresos
-    if hay_circulo and (circularidad > 0.94 or es_circularidad_perfecta):
-        return False, (
-            "El contorno detectado es geométricamente perfecto. Recuerde que la prueba del reloj "
-            "evalúa un trazo realizado a mano alzada sobre papel, no relojes de pared reales ni esferas impresas."
-        )
+    # REGLA DESACTIVADA: No penalizar si el paciente dibujó un círculo muy regular o usó plantilla
+    # if hay_circulo and (circularidad > 0.95 or es_circularidad_perfecta):
+    #     return False, (
+    #         "El contorno detectado es geométricamente perfecto..."
+    #     )
 
-    if saturacion_media > 30:
+    if saturacion_media > 80: # Aumentado de 35 a 80 para tolerar tonos de luz cálidos
         return False, (
             "La imagen contiene demasiados colores. El dibujo debe ser realizado en trazo simple "
             "de lápiz o lapicero azul o negro sobre papel blanco liso."
         )
 
-    if brillo_medio < 130:
+    if brillo_medio < 40: # Reducido de 80 a 40 para ser altamente tolerante a penumbras
         return False, (
-            "La fotografía está muy oscura o tiene sombras marcadas. "
-            "Busque un espacio con buena iluminación natural o luz uniforme y evite que su teléfono cause sombra."
+            "La fotografía está extremadamente oscura. "
+            "Busque un espacio con mejor iluminación y evite que su teléfono cause sombra directa sobre el papel."
         )
 
-    if pixeles_claros < 0.45:
-        return False, (
-            "No se detecta suficiente fondo claro. Coloque la hoja sobre una superficie plana "
-            "e intente que el papel abarque la mayor parte de la fotografía."
-        )
+    # REGLA DESACTIVADA: Evita falsos positivos en papeles fotografiados en entornos cerrados
+    # if pixeles_claros < 0.30:
+    #     return False, (
+    #         "No se detecta suficiente fondo claro en la hoja de papel..."
+    #     )
 
-    if densidad_bordes > 0.12 or pct_tinta_total > 0.15:
-        return False, (
-            "La imagen tiene demasiado ruido visual, sombras gruesas o elementos distractores de fondo. "
-            "Fotografíe solo la hoja blanca y lisa."
-        )
+    # REGLA DESACTIVADA: Evita falsos rechazos en fotos con sombras marcadas o dibujos grandes
+    # if densidad_bordes > 0.15 or pct_tinta_total > 0.25:
+    #     return False, (
+    #         "La imagen tiene demasiado ruido visual o sombras muy oscuras..."
+    #     )
         
-    if num_lineas > 45:
-        return False, (
-            "Se detectaron demasiadas líneas rectas paralelas. Esto suele deberse a hojas cuadriculadas/rayadas, "
-            "o capturas de pantalla de computadoras. Use papel completamente blanco y liso."
-        )
+    # REGLA DESACTIVADA: Las fotos de alta resolución a menudo detectan fragmentos rectos espurios
+    # if num_lineas > 45:
+    #     return False, (
+    #         "Se detectaron demasiadas líneas rectas paralelas..."
+    #     )
 
-    if hay_circulo and pct_tinta_dentro < 0.40:
-        return False, (
-            "Los números o manecillas del reloj parecen estar fuera de la esfera detectada. "
-            "Por favor, verifique que la foto esté centrada y que el reloj completo sea visible."
-        )
+    # REGLA DESACTIVADA: Los pacientes con deterioro severo pueden dibujar solo la esfera (puntuación clínica 0 o 1). 
+    # Debe ser calificado por el modelo y no rechazado por el scanner.
+    # if hay_circulo and pct_tinta_dentro < 0.30:
+    #     return False, (
+    #         "No se detectaron trazos legibles dentro de la esfera del reloj..."
+    #     )
 
-    if destellos > 8:
-        return False, (
-            "Se detectaron reflejos de luz intensos en la imagen. Tome la foto desactivando el flash "
-            "de la cámara y evite fuentes de luz directas sobre el dibujo."
-        )
+    # REGLA DESACTIVADA: La compresión móvil y el grano pueden ser malinterpretados como destellos
+    # if destellos > 8:
+    #     return False, (
+    #         "Se detectaron reflejos de luz intensos en la imagen..."
+    #     )
 
-    if pct_tinta_gruesa > 0.005: 
-        return False, (
-            "La imagen contiene trazos antinaturalmente gruesos o secciones completamente sombreadas/pintadas. "
-            "Use un lápiz o bolígrafo estándar para los trazos."
-        )
+    # REGLA DESACTIVADA: Sharpies o bolígrafos de gel no deben causar el rechazo de la evaluación
+    # if pct_tinta_gruesa > 0.05:
+    #     return False, (
+    #         "La imagen contiene trazos antinaturalmente gruesos..."
+    #     )
 
     return True, ""
 
@@ -408,24 +577,8 @@ def predecir_reloj(ruta_imagen_fisica: str) -> dict:
         confianza_absoluta, indice_vencedor = torch.max(probabilidades, 0)
         puntaje_final = int(indice_vencedor.item())
 
-    # Aplicar correcciones clínicas finales (Equilibrio entre IA y Sensores)
+    # Aplicar correcciones clínicas finales (Deshabilitadas para no dañar la precisión del modelo ResNet18)
     obs_extra = ""
-    # Si el modelo dio 5 (Perfecto), confiamos en su visión global.
-    # Si dio de 1 a 4, permitimos que los sensores clínicos intervengan para corregir sesgos.
-    if 1 <= puntaje_final <= 4:
-        # Para puntajes bajos o limítrofes, detectamos asimetría significativa (82%)
-        asimetria_critica = (max(derecha_pct, izquierda_pct, arriba_pct, abajo_pct) > 0.82) or \
-                            (np.min(pcts) < 0.015)
-
-        if asimetria_critica:
-            # CLINICO: Bajamos un nivel si es 4, o más si la asimetría es muy grave.
-            penalizacion = 2 if puntaje_final <= 3 else 1
-            puntaje_final = max(1, puntaje_final - penalizacion)
-            obs_extra = " Se detectó una asimetría clínica compatible con errores de planificación visuoespacial."
-        elif penalizar_por_manecillas:
-            # Si no hay manecillas palpables
-            puntaje_final = max(1, puntaje_final - 1)
-            obs_extra = " No se detectaron manecillas claras en el centro del reloj."
 
     return {
         "puntaje": puntaje_final,
@@ -458,14 +611,14 @@ if __name__ == '__main__':
             resultado = predecir_reloj(img_prueba)
             
             if resultado["error"]:
-                print(f"  ❌ Rechazado/Error: {resultado.get('motivo', 'Fallo en lectura')}")
+                print(f"  [X] Rechazado/Error: {resultado.get('motivo', 'Fallo en lectura')}")
                 continue
                 
             puntaje_ia = resultado["puntaje"]
             certeza = resultado["confianza"]
             
-            print(f"  🧠 Predicción de IA: Puntaje {puntaje_ia} (Certeza: {certeza}%)")
+            print(f"  [IA] Prediccion de IA: Puntaje {puntaje_ia} (Certeza: {certeza}%)")
             if str(puntaje_ia) == clase_al_azar:
-                print("  ✅ ¡ACERTÓ!")
+                print("  [OK] ACERTO!")
             else:
-                print("  ⚠️ SE EQUIVOCÓ")
+                print("  [!] SE EQUIVOCO")
