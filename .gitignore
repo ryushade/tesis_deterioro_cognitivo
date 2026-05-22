@@ -23072,3 +23072,4 @@ backend/app/services/cdt_modelo.zip
 backend/app/services/voz_dataset
 backend/app/services/voz_dataset_extraido
 backend/uploads/pacientes/relojes
+backend/ia_audio/datasets

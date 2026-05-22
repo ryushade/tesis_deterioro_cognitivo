@@ -1,0 +1,273 @@
+=== PAGE 13 ===
+10 3. Código fuente
+core/:
+• ServiceLocator.kt : implementa un patrón de inyección de dependencias ma-
+nual para proporcionar instancias compartidas.
+• audio/AudioRecorder.kt: gestiona la captura de audio desde el dispositivo.
+• crypto/:
+◦ AesGcm.kt: implementación de cifrado simétrico mediante AES-GCM.
+◦ Rsa.kt / RsaUtils.kt : utilidades de cifrado asimétrico mediante RSA.
+◦ Base64u.kt: funciones auxiliares de codificación Base64.
+• storage/SecurePrefs.kt : gestiona el almacenamiento seguro de datos sensi-
+bles en el dispositivo.
+workers/UploadWorker.kt: implementa tareas en segundo plano utilizando Work-
+Manager para la subida de grabaciones al servidor.
+res/: contiene los recursos de la aplicación (imágenes, audios, estilos, strings,
+etc.).
+AndroidManifest.xml : define la configuración global de la aplicación, incluyen-
+do permisos y componentes.
+build.gradle.kts : archivos de configuración de compilación y dependencias del
+proyecto.
+Carpeta ia_multimodal:
+Este módulo contiene el código para el entrenamiento y evaluación de un modelo
+multimodal orientado a la detección de Alzheimer y a la estimación de deterioro cogni-
+tivo a partir de información lingüística y acústica derivada de la voz. A diferencia de un
+sistema puramente basado en audio o en texto, este entorno combina transcripciones
+automáticas con embeddings acústicos extraídos mediante modelos ASR, permitien-
+do estudiar de forma conjunta el contenido verbal y las características temporales del
+audio.
+El flujo general del codigo parte de archivos de audio, que son procesados median-
+te reconocimiento automático del habla para generar, por un lado, transcripciones tex-
+tuales y , por otro, representaciones acústicas. A partir de estas dos fuentes, el sistema
+entrena el modelo y lo evalua.
+La estructura del codigo es la siguiente:
+classify_train.py : script principal de entrenamiento para la tarea de clasificación.
+Implementa un modelo multimodal que combina embeddings textuales obteni-
+dos con BERT y embeddings acústicos, realizando entrenamiento y evaluación
+mediante validación cruzada estratificada. Incluye cálculo de métricas, selección
+del mejor modelo por fold y almacenamiento de resultados y configuraciones de
+entrenamiento.
+
+=== PAGE 14 ===
+3. Código fuente 11
+mmse_train.py: script de entrenamiento para la tarea de regresión de la puntua-
+ción MMSE. Utiliza la arquitectura multimodal para predecir una variable con-
+tinua asociada al estado cognitivo, optimizando con pérdida MSE y evaluando
+mediante RMSE.
+audio_asr_to_text.py : utilidades de preprocesamiento que transforman audios
+en transcripciones automáticas y embeddings acústicos. Soporta distintos flujos
+de trabajo, que posteriormente son utilizados por el modelo.
+recognize.py: implementación de los componentes de reconocimiento automá-
+tico del habla. Incluye la lógica necesaria para cargar modelos ASR, decodificar
+audio y obtener tanto la transcripción como las representaciones utilizadas como
+entrada acústica del sistema multimodal.
+check_pause_length.py : script de análisis exploratorio sobre pausas y patrones
+de segmentación en las transcripciones. Permite estudiar la distribución de silen-
+cios o separadores, así como analizar umbrales y propiedades estadísticas poten-
+cialmente relevantes para la caracterización del habla.
+dataloaders.py : contiene las implementaciones de los conjuntos de datos utiliza-
+dos en las pruebas.
+layers.py: define diferentes capas empleadas en el modelo multimodal.
+core.py: funciones auxiliares de procesamiento textual. Implementa la carga y
+normalización de transcripciones generadas por ASR, así como reglas para con-
+vertir secuencias de pausas en signos de puntuación o separadores léxicos, faci-
+litando la obtención de versiones limpias del texto.
+helpers.py: utilidades generales del proyecto, principalmente para la gestión del
+dispositivo de ejecución (CPU/GPU).
+pre_train_weights/: recursos asociados a los modelos ASR preentrenados:
+• dict.ltr.txt: diccionario de símbolos utilizado durante la decodificación de
+modelos de reconocimiento.
+• download_weights.sh: script para descargar pesos preentrenados de mode-
+los de ASR.
+requirements.txt: listado de dependencias necesarias para reproducir el entorno
+experimental, incluyendo bibliotecas de deep learning, procesamiento de audio,
+transformers y utilidades de evaluación.
+Carpeta iaeav_ia_inference:
+El microservicio de inferencia IA es una API REST construida con Flask 2.3 que
+implementa el pipeline completo de detección de indicadores de Alzheimer a partir de
+grabaciones de voz. Combina reconocimiento automático del habla (ASR) con el clasifi-
+cador multimodal ABERTA, con soporte para inglés (fairseq) y español (HuggingFace
+CTC). La estructura del repositorio es la siguiente:
+src/api/app.py: API principal con dos endpoints: GET/health (comprueba que
+el modelo está cargado y listo para recibir peticiones) y POST/predict (ejecuta el
+
+=== PAGE 15 ===
+12 3. Código fuente
+pipeline completo de inferencia sobre un archivo de audio en formato W A V , MP3
+o FLAC).
+src/inference/inference_handler.py : handler unificado que orquesta el pipeline
+ASR + WERT; carga los pesos del modelo al inicio, ejecuta el reconocimiento au-
+tomático del habla con Wav2Vec2, extrae los embeddings del audio, los concatena
+con los embeddings BERT del texto transcrito, y devuelve la clase predicha (0 =
+sin indicadores, 1 = indicadores de Alzheimer), la confianza y la transcripción.
+src/config/settings.py: configuración centralizada mediante variables de entorno
+(WEIGHTS_DIR , ASR_BACKEND , BERT_MODEL_NAME , WERT_FILENAME , etc.) con valo-
+res por defecto que permiten el arranque sin configuración adicional en desarrollo
+local.
+src/diarization.py : pipeline de diarización basado en WhisperX y pyannote.audio;
+separa automáticamente los turnos de habla del clínico y del paciente en conver-
+saciones completas, de modo que solo el audio del paciente se procesa por el
+modelo de clasificación.
+src/diarization_api.py : servicio Flask independiente que expone la funcionali-
+dad de diarización como microservicio; el servicio de inferencia principal lo con-
+sulta cuando recibe un audio con la cabecera X-Audio-Type:full.
+Dockerfile y Dockerfile.diarization: imágenes Docker para la API de inferencia
+y para el servicio de diarización, respectivamente (ambas sobre Python 3.8 con
+CUDA opcional).
+docker-compose.dual.yml : orquestación del despliegue dual: api_en (puerto
+2020, backend ASR fairseq, inglés) y api\_es (puerto 2022, backend ASR Hug-
+gingFace CTC, español); el backend de la plataforma selecciona el servicio según
+el idioma de la prueba.
+download-weights.sh: script que descarga automáticamente los aproximadamen-
+te 12 GB de pesos del modelo: el clasificador WERT fine-tuned desde el NAS del
+proyecto, Wav2Vec2 inglés desde fairseq/Meta AI, y BETO y Wav2Vec2 español
+fine-tuned desde HuggingFace.
+requirements.txt y requirements-diarization.txt : dependencias Python del ser-
+vicio de inferencia y del servicio de diarización, respectivamente.
+training/wav2bert-feature-rework/ : código completo de entrenamiento del mo-
+delo WERT para inglés usando el framework fairseq; incluye dataloaders, defini-
+ción de capas personalizadas (layers.py), cabeza clasificadora (model_head.py),
+bucle de entrenamiento ( full_train.py), cálculo de métricas ( cal_metrics.py ) y
+script de descarga de pesos preentrenados.
+training/wav2bert-feature-spanish/ : variante española del código de entrena-
+miento, adaptada para usar Wav2Vec2-Large-XLSR-53 y BETO desde Hugging-
+Face; añade generate_dataset.py para la generación del conjunto de datos en es-
+pañol y download_model.py para la descarga automática de los modelos base.
+Carpeta ia_texto:
+
+=== PAGE 16 ===
+3. Código fuente 13
+main.py: archivo que permite ejecutar el cuerpo principal del código con 4 mo-
+delos basados en la arquitectura T ransformer incluyendo el entrenamiento y la
+ejecución de éstos.
+utils.py: archivo que incorpora funciones de distintas utilidades para facilitar y
+optimizar el funcioanmiento del código.
+model.py: archivo que incluye funciones para el entrenamiento y la predicción
+de los modelos.
+paths.py: archivo que permite gestionar las rutas relativas para la gestión del
+código y los directorios que éste emplea.
+data.py: archivo enfocado en la carga de los datos.
+data_src: los datos de entrada del dataset empleado.
+Carpeta ia_audio:
+Este módulo contiene el código de investigación para el desarrollo y evaluación
+de nuevos modelos de inteligencia artificial orientados a la detección de indicadores
+de Alzheimer a partir de señales de voz. A diferencia del sistema en producción, este
+entorno permite experimentar con distintas configuraciones de modelos, representa-
+ciones espectrales y estrategias de entrenamiento de forma reproducible.
+El flujo completo implementado parte de señales de audio en formato W A V , que son
+procesadas dinámicamente durante el entrenamiento. En lugar de utilizar espectrogra-
+mas precomputados, el modelo trabaja directamente con el audio completo, generando
+ventanas temporales y sus correspondientes representaciones espectrales dentro de la
+propia red neuronal, lo que permite una mayor flexibilidad y eficiencia experimental.
+La estructura del repositorio es la siguiente:
+train.py: script principal de entrenamiento que implementa todo el pipeline ex-
+perimental: carga de datos, construcción del modelo, entrenamiento con soporte
+para mixed precision , validación, test y evaluación mediante múltiples métricas
+(accuracy , recall, F1, AUC, entre otras). Además, gestiona la ejecución mediante
+validación cruzada estratificada y el almacenamiento de resultados, históricos y
+predicciones.
+datasets/: contiene las implementaciones de los conjuntos de datos utilizados:
+• iaeav_dataset.py: define el dataset principal, que carga archivos W A V com-
+pletos, realiza re-muestreo, conversión a mono y construye particiones es-
+tratificadas en train/val/test mediante Stratified K-Fold.
+• iaeav_dataset_balanced.py : variante que implementa balanceo de clases me-
+diante undersampling en el conjunto de entrenamiento, manteniendo la dis-
+tribución original en validación y test.
+models/: implementaciones de los modelos de deep learning:
+• resnext_audio.py: adaptación de arquitecturas ResNeXt para el procesamien-
+to de espectrogramas, incluyendo mecanismos de preservación temporal y
+atención en el eje temporal.
+
+=== PAGE 17 ===
+14 3. Código fuente
+• wav_windowing_stochastic_model.py : modelo principal de investigación
+que recibe audio completo y genera dinámicamente ventanas aleatorias du-
+rante el entrenamiento, calculando sus espectrogramas y agregando las pre-
+dicciones durante la inferencia. Este enfoque permite reducir el coste compu-
+tacional manteniendo la representatividad de la señal.
+• wav_windowing_model.py: variante determinista que procesa todas las ven-
+tanas del audio y agrega sus predicciones mediante estrategias como media
+o máximo.
+utils/:
+• logger.py: implementación de un sistema de logging ligero que permite re-
+gistrar la evolución del entrenamiento, métricas y eventos relevantes tanto
+en consola como en fichero, facilitando la trazabilidad de los experimentos.
+
+=== PAGE 18 ===
+4
+Instalación paso a paso
+A continuación se describe el proceso completo para desplegar la plataforma IAEA V
+en un entorno local o de producción, partiendo desde cero.
+1. Instalar Docker.
+Descargar e instalar Docker Desktop desde https://docs.docker.com/get-d
+ocker/ (disponible para Windows, macOS y Linux). En servidores Linux sin
+interfaz gráfica se puede instalar únicamente Docker Engine y el plugin Docker
+Compose V2.
+Verificar que la instalación es correcta ejecutando docker-{}-version y docker
+composeversion en un terminal. Se requiere Docker Compose V2 (el comando
+es dockercompose, sin guion).
+2. Configurar variables de entorno.
+Copiar la plantilla de variables del backend con cpbackend/deploy/.env.ex
+amplebackend/deploy/.env y editar el fichero resultante con las credenciales
+reales: contraseña de PostgreSQL ( POSTGRES\_PASSWORD ), contraseña de Redis
+(REDIS\_PASSWORD ), clave secreta de Flask ( SECRET\_KEY ) y contraseña del
+administrador inicial ( ADMIN\_PASSWORD).
+Generar las cuatro claves criptográficas ejecutando bashbackend/deploy/scr
+ipts/gen-keys.sh desde la raíz del repositorio del backend. El script crea los
+ficheros jwt\_priv.pem, jwt\_pub.pem, upload\_priv.pem y upload\_pub.pem
+en backend/deploy/keys/ ; estas claves son las que usa el backend para firmar
+los JWT y para el cifrado de sobre de los audios.
+3. Arrancar servicio de IA.
+Descargar los pesos del modelo (aproximadamente 12 GB en total) ejecutando cd
+ai-inference/\&\&./download-weights.sh. El script obtiene automáticamente,
+en este orden: el clasificador WERT fine-tuned desde la carpeta del proyecto, el
+modelo Wav2Vec2 para inglés desde el repositorio fairseq de Meta AI, el modelo
+15
+
+=== PAGE 19 ===
+16 4. Instalación paso a paso
+BETO (BERT en español) desde HuggingFace ( dccuchile/bert-base-spanish
+-wwm-uncased) y el Wav2Vec2 español fine-tuned desde HuggingFace ( jonatasg
+rosman/wav2vec2-large-xlsr-53-spanish ).
+Levantar los contenedores del servicio de inferencia con dockercompose-fdock
+er-compose.dual.ymlup-d-{}-build . Esto arranca dos instancias del servicio:
+api\_en en el puerto 2020 (inglés, backend ASR fairseq) y api\_es en el puerto
+2022 (español, backend ASR HuggingFace CTC). Verificar que ambos están listos
+con curlhttp://localhost:2020/health y curlhttp://localhost:2022/hea
+lth; la respuesta esperada es \{``status'':``ready''\} .
+4. Arrancar backend.
+Construir y levantar los cuatro servicios del backend (PostgreSQL 15, Redis 7,
+API Flask y worker Celery) con cdbackend/\&\&dockercompose-fdeploy/doc
+ker-compose.prod.ymlup-d-{}-build . En el primer arranque, Docker descarga
+las imágenes base y construye el contenedor del backend; los contenidos de la
+base de datos se persisten en un volumen Docker.
+Verificar que el backend responde correctamente ejecutando curlhttp://localh
+ost:8000/api/v1/health/simple; la respuesta esperada es \{"status":"ok"\}.
+Para un diagnóstico más completo (estado de la base de datos, almacenamiento
+y versión) usar curlhttp://localhost:8000/api/v1/health . Si es el primer
+despliegue, crear el usuario administrador con dockercompose-fdeploy/docke
+r-compose.prod.ymlexecbackendflaskcreate-admin.
+5. Arrancar frontend.
+Instalar las dependencias del proyecto (requiere Node.js 18 o superior y npm 9 o
+superior): cdfrontend/\&\&npminstall.
+Para desarrollo local, arrancar el servidor de desarrollo con npmrundev; la aplica-
+ción queda disponible en http://localhost:5173 y las peticiones a /api/* se
+redirigen automáticamente al backend en localhost:8000 gracias al proxy confi-
+gurado en vite.config.ts. Para producción, compilar con npmrunbuild y servir
+la carpeta dist/ con Nginx (o cualquier servidor web estático), configurando el
+proxy /api/* hacia el backend y el fallback de rutas a index.html para que React
+Router funcione correctamente.
+6. Instalar APK.
+Obtener el fichero APK de la aplicación Android desde el repositorio de la apli-
+cación móvil o desde el NAS del proyecto.
+Instalar el APK en un dispositivo Android 8.0 (API 26) o superior habilitando pre-
+viamente la opción «Instalar aplicaciones de fuentes desconocidas» en los ajustes
+de seguridad del dispositivo (o, en Android 8+, concediendo el permiso direc-
+tamente al explorador de archivos o al gestor desde el que se instale). Al abrir
+la aplicación por primera vez, introducir la dirección del servidor backend en la
+pantalla de configuración.
+
+=== PAGE 20 ===
+4. Instalación paso a paso 17
+7. Gestión desde frontend.
+Acceder al panel de administración en http://localhost:5173 en modo desa-
+rrollo, o en el dominio configurado en Nginx en producción. Iniciar sesión con las
+credenciales del usuario administrador creado en el paso 4, o mediante Google
+OAuth si está configurado.
+Desde el panel de administración es posible crear nuevos usuarios asignando el
+rol correspondiente ( participant, clinician, operator, manager o admin), ges-
+tionar los archivos subidos, consultar las grabaciones cifradas con su resultado de
+análisis IA, y descargar los informes. Para tareas de mantenimiento adicionales
+(reinicio de servicios, migraciones de base de datos, consulta de logs) referirse a
+los comandos descritos en el README del backend.
+
