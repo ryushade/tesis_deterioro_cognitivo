@@ -17,13 +17,6 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [capturing, setCapturing] = useState(false);
 
-  // Checklist states
-  const [checkedItems, setCheckedItems] = useState({
-    circle: false,
-    readable: false,
-    noShadows: false,
-  });
-
   const cameraRef = useRef<any>(null);
   const scanAnim = useRef(new Animated.Value(0)).current;
 
@@ -117,16 +110,6 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
     setFlash(prev => prev === 'off' ? 'on' : 'off');
   };
 
-  const toggleCheckItem = async (key: 'circle' | 'readable' | 'noShadows') => {
-    if (Platform.OS !== 'web') {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    setCheckedItems(prev => ({
-      ...prev,
-      [key]: !prev[key]
-    }));
-  };
-
   const handleConfirm = async () => {
     if (capturedImage) {
       if (Platform.OS !== 'web') {
@@ -138,14 +121,7 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
 
   const handleRetake = () => {
     setCapturedImage(null);
-    setCheckedItems({
-      circle: false,
-      readable: false,
-      noShadows: false,
-    });
   };
-
-  const allChecked = checkedItems.circle && checkedItems.readable && checkedItems.noShadows;
 
   // Confirm / Preview State
   if (capturedImage) {
@@ -155,51 +131,24 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
         
         <View style={styles.previewOverlay}>
           <View style={styles.scannerHeader}>
-            <Text style={styles.scannerTitle}>Verificación de Calidad</Text>
-            <Text style={styles.scannerSubtitle}>Asegúrese de cumplir con los requisitos para evitar rechazos</Text>
+            <Text style={styles.scannerTitle}>Vista Previa</Text>
+            <Text style={styles.scannerSubtitle}>Revise que la foto se vea nítida y centrada</Text>
           </View>
 
           <View style={styles.checklistCard}>
-            <Text style={styles.checklistTitle}>Validaciones requeridas:</Text>
-            
-            <TouchableOpacity 
-              style={styles.checklistItem} 
-              onPress={() => toggleCheckItem('circle')}
-              activeOpacity={0.7}
-            >
-              <Ionicons 
-                name={checkedItems.circle ? "checkbox" : "square-outline"} 
-                size={24} 
-                color={checkedItems.circle ? "#10B981" : "#94A3B8"} 
-              />
-              <Text style={styles.checklistText}>El reloj está dibujado completamente a mano alzada (esfera no industrial)</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.checklistItem} 
-              onPress={() => toggleCheckItem('readable')}
-              activeOpacity={0.7}
-            >
-              <Ionicons 
-                name={checkedItems.readable ? "checkbox" : "square-outline"} 
-                size={24} 
-                color={checkedItems.readable ? "#10B981" : "#94A3B8"} 
-              />
-              <Text style={styles.checklistText}>Todos los números y manecillas (las 11:10) son legibles</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.checklistItem} 
-              onPress={() => toggleCheckItem('noShadows')}
-              activeOpacity={0.7}
-            >
-              <Ionicons 
-                name={checkedItems.noShadows ? "checkbox" : "square-outline"} 
-                size={24} 
-                color={checkedItems.noShadows ? "#10B981" : "#94A3B8"} 
-              />
-              <Text style={styles.checklistText}>No hay sombras oscuras ni reflejos molestos de flash en la hoja</Text>
-            </TouchableOpacity>
+            <View style={{ alignItems: 'center', marginBottom: 6 }}>
+              <View style={{ 
+                width: 56, height: 56, borderRadius: 28, 
+                backgroundColor: '#EEF2FF', 
+                justifyContent: 'center', alignItems: 'center', marginBottom: 12 
+              }}>
+                <Ionicons name="image-outline" size={28} color="#4F46E5" />
+              </View>
+              <Text style={styles.checklistTitle}>¿Desea usar esta foto?</Text>
+              <Text style={{ fontSize: 13, color: '#64748B', textAlign: 'center', lineHeight: 18, fontWeight: '500', paddingHorizontal: 8 }}>
+                La IA analizará automáticamente la calidad y el contenido del dibujo.
+              </Text>
+            </View>
 
             <View style={styles.previewButtonsRow}>
               <TouchableOpacity 
@@ -210,14 +159,10 @@ export default function ClockCameraScanner({ onCapture, onCancel }: ClockCameraS
               </TouchableOpacity>
 
               <TouchableOpacity 
-                style={[
-                  styles.previewConfirmBtn, 
-                  !allChecked && { backgroundColor: '#CBD5E1', opacity: 0.7 }
-                ]} 
+                style={styles.previewConfirmBtn}
                 onPress={handleConfirm}
-                disabled={!allChecked}
               >
-                <Text style={styles.previewConfirmText}>Usar foto</Text>
+                <Text style={styles.previewConfirmText}>Usar esta foto</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -10,7 +10,7 @@ export default function ExploreScreen() {
           <Ionicons name="medical" size={20} color="#4F46E5" />
         </View>
         <View>
-          <Text style={styles.title}>Guía de Pruebas</Text>
+          <Text style={styles.title}>Guía de pruebas</Text>
           <Text style={styles.subtitle}>Información clínica sobre las evaluaciones cognitivas</Text>
         </View>
       </View>
@@ -109,9 +109,9 @@ export default function ExploreScreen() {
             <Ionicons name="ribbon-outline" size={22} color="#FFFFFF" />
             <Text style={styles.creditTitle}>Investigación Académica & Créditos</Text>
           </View>
-          
+
           <View style={styles.creditDivider} />
-          
+
           <View style={styles.creditRow}>
             <Text style={styles.creditLabel}>Investigador:</Text>
             <Text style={styles.creditValue}>Marco Rioja Valle</Text>

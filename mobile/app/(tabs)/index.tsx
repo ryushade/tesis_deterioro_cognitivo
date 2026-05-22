@@ -114,7 +114,7 @@ export default function HomeScreen() {
     try {
       await recording.stopAndUnloadAsync();
       setRecording(null);
-      
+
       // Simulating analysis latency (4 seconds)
       setTimeout(() => {
         const hasAlert = Math.random() > 0.4;
@@ -176,7 +176,7 @@ export default function HomeScreen() {
     setStep('login'); setAccessCode(''); setPatientInfo(null); setErrorMessage(null);
     setImageUri(null); setCdtResult(null); setVoiceResult(null); setRejectReason(null);
     if (recording) {
-      recording.stopAndUnloadAsync().catch(() => {});
+      recording.stopAndUnloadAsync().catch(() => { });
     }
     setRecording(null);
     setVoiceIsRecording(false);
@@ -341,7 +341,7 @@ export default function HomeScreen() {
       <View style={styles.topHeader}>
         <View style={styles.headerRow}>
           <FontAwesome name="heartbeat" size={24} color="#4F46E5" />
-          <Text style={styles.headerBrand}>Centro de Salud San Martín</Text>
+          <Text style={styles.headerBrand}>Centro de salud San Martín</Text>
         </View>
         {step !== 'login' && (
           <TouchableOpacity style={styles.logoutBtn} onPress={handleLogout}>
