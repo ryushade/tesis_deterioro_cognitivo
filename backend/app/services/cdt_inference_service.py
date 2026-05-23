@@ -391,6 +391,9 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
 
     print("\n" + "="*55)
     print(f"[IA VALIDATION] {os.path.basename(ruta_imagen)}")
+    print(f"  > Dimensiones: {w_img}x{h_img}")
+    print(f"  > Brillo medio (Físico): {brillo_medio:.1f}")
+    print(f"  > Saturación media (HSV): {saturacion_media:.1f}")
     print(f"  > Bloques Planos: {pct_flat_blocks:.1f}%")
     print(f"  > Tonos Únicos: {tonos_unicos}")
     print(f"  > Variabilidad Fondo: {variabilidad_fondo:.2f}")
@@ -432,7 +435,7 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     #         "El contorno detectado es geométricamente perfecto..."
     #     )
 
-    if saturacion_media > 80: # Aumentado de 35 a 80 para tolerar tonos de luz cálidos
+    if saturacion_media > 95: # Aumentado de 80 a 95 para tolerar tonos de luz cálidos de hogares
         return False, (
             "La imagen contiene demasiados colores. El dibujo debe ser realizado en trazo simple "
             "de lápiz o lapicero azul o negro sobre papel blanco liso."
@@ -444,17 +447,19 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
             "Busque un espacio con mejor iluminación y evite que su teléfono cause sombra directa sobre el papel."
         )
 
-    # REGLA DESACTIVADA: Evita falsos positivos en papeles fotografiados en entornos cerrados
-    # if pixeles_claros < 0.30:
-    #     return False, (
-    #         "No se detecta suficiente fondo claro en la hoja de papel..."
-    #     )
+    # REGLA REACTIVADA (Ajustada a 15%): Asegura que haya un fondo claro característico del papel
+    if pixeles_claros < 0.15:
+        return False, (
+            "No se detecta suficiente fondo claro en la hoja de papel. "
+            "Por favor, tome una foto nítida sobre papel blanco liso con buena iluminación."
+        )
 
-    # REGLA DESACTIVADA: Evita falsos rechazos en fotos con sombras marcadas o dibujos grandes
-    # if densidad_bordes > 0.15 or pct_tinta_total > 0.25:
-    #     return False, (
-    #         "La imagen tiene demasiado ruido visual o sombras muy oscuras..."
-    #     )
+    # REGLA REACTIVADA (Ajustadas a 18% y 40%): Filtra imágenes con texturas densas (pelaje, paisajes) o fondos oscuros
+    if densidad_bordes > 0.18 or pct_tinta_total > 0.40:
+        return False, (
+            "La imagen tiene demasiado ruido visual, texturas complejas o sombras muy oscuras. "
+            "Asegúrese de subir un dibujo simple hecho a lápiz sobre papel limpio."
+        )
         
     # REGLA DESACTIVADA: Las fotos de alta resolución a menudo detectan fragmentos rectos espurios
     # if num_lineas > 45:
