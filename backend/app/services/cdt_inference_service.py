@@ -275,8 +275,8 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     block_size = 8
     for r in range(0, h_img - block_size, block_size):
         for c in range(0, w_img - block_size, block_size):
-            block = img_gray_eq[r:r+block_size, c:c+block_size]
-            if block.mean() > 210:
+            block = img_gray[r:r+block_size, c:c+block_size]
+            if block.mean() > 220:
                 total_bg_blocks += 1
                 if block.std() < 0.1:
                     flat_blocks += 1
@@ -413,12 +413,12 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
             "del dibujo hecho a mano con lápiz sobre papel físico (mínimo 120x120 píxeles)."
         )
 
-    # REGLA DESACTIVADA: El fondo ecualizado causa falsos positivos en fotos reales de alta calidad
-    # if pct_flat_blocks > 20.0:
-    #     return False, (
-    #         "La imagen parece ser un gráfico digital o una captura de pantalla. "
-    #         "Por favor, tome una fotografía real del dibujo hecho a mano alzada por el paciente sobre papel físico."
-    #     )
+    # REGLA ACTIVADA: Usando img_gray en lugar de img_gray_eq para evitar falsos positivos
+    if pct_flat_blocks > 20.0:
+        return False, (
+            "La imagen parece ser un gráfico digital o una captura de pantalla. "
+            "Por favor, tome una fotografía real del dibujo hecho a mano alzada por el paciente sobre papel físico."
+        )
 
     if not hay_circulo:
         return False, (
