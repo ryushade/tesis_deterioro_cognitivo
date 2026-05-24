@@ -48,6 +48,8 @@ function formatDateShort(d: string) {
 
 // ======== CDT Card ========
 function CardCDT({ ev }: { ev: EvaluacionResultado }) {
+  const [mostrarExplicacion, setMostrarExplicacion] = React.useState(false);
+  
   const puntaje = ev.puntaje_ia ?? 0;
   const puntajeMax = 5;
   const porcentaje = Math.round((puntaje / puntajeMax) * 100);
@@ -57,17 +59,35 @@ function CardCDT({ ev }: { ev: EvaluacionResultado }) {
   const conAlerta = puntaje < 4;
 
   const imgSrc = ev.url_imagen ? getMediaUrl(ev.url_imagen) : null;
+  const explicacionSrc = ev.detalles_ia_jsonb?.url_explicacion 
+    ? getMediaUrl(ev.detalles_ia_jsonb.url_explicacion) 
+    : null;
 
   return (
     <Card className={`border ${colores.bg} rounded-2xl overflow-hidden shadow-sm`}>
       <div className="flex flex-col md:flex-row">
-        <div className="flex items-center justify-center bg-white border-b md:border-b-0 md:border-r border-slate-100 p-4 min-w-[180px] md:w-[200px]">
+        <div className="flex flex-col items-center justify-center bg-white border-b md:border-b-0 md:border-r border-slate-100 p-4 min-w-[180px] md:w-[200px] gap-3">
           {imgSrc ? (
-            <img
-              src={imgSrc}
-              alt="Dibujo del reloj"
-              className="w-full max-w-[160px] max-h-[160px] object-contain rounded-lg border border-slate-200 shadow-sm"
-            />
+            <div className="flex flex-col items-center gap-2 w-full">
+              <img
+                src={mostrarExplicacion && explicacionSrc ? explicacionSrc : imgSrc}
+                alt={mostrarExplicacion ? "Mapa de calor de la IA" : "Dibujo del reloj"}
+                className="w-full max-w-[160px] max-h-[160px] object-contain rounded-lg border border-slate-200 shadow-sm transition-all duration-300"
+              />
+              {explicacionSrc && (
+                <button
+                  onClick={() => setMostrarExplicacion(!mostrarExplicacion)}
+                  className={`mt-1 flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-full border shadow-sm transition-all duration-200 w-full max-w-[160px] ${
+                    mostrarExplicacion
+                      ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <Brain className="w-3.5 h-3.5 animate-pulse" />
+                  {mostrarExplicacion ? 'Ver Original' : 'Explicabilidad IA'}
+                </button>
+              )}
+            </div>
           ) : (
             <div className="flex flex-col items-center gap-2 text-slate-300">
               <ImageOff className="w-10 h-10" />

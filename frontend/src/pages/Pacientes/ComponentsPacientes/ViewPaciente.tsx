@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { X, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, Brain } from 'lucide-react';
 import { resultadosService, type EvaluacionResultado, type CategoriaMMSEResultado } from '@/services/resultadosService';
 import { getMediaUrl } from '@/services/api'
 
@@ -61,6 +61,7 @@ const ViewPacienteModal: React.FC<ViewPacienteModalProps> = ({ open, onClose, pa
   const [resultados, setResultados] = useState<EvaluacionResultado[]>([]);
   const [loading, setLoading] = useState(false);
   const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [showExplanationIds, setShowExplanationIds] = useState<Record<number, boolean>>({});
 
   useEffect(() => {
     if (open && paciente?.id_paciente) {
@@ -269,6 +270,10 @@ const ViewPacienteModal: React.FC<ViewPacienteModalProps> = ({ open, onClose, pa
                   const isExpanded = expandedId === ev.id_evaluacion;
                   const isMMSE = ev.nombre_prueba.toLowerCase().includes('mmse') || ev.nombre_prueba.toLowerCase().includes('mental');
                   const isCDT = ev.nombre_prueba.toLowerCase().includes('reloj') || ev.nombre_prueba.toLowerCase().includes('cdt');
+                  const mostrarExplicacion = !!showExplanationIds[ev.id_evaluacion];
+                  const explicacionSrc = ev.detalles_ia_jsonb?.url_explicacion 
+                    ? getMediaUrl(ev.detalles_ia_jsonb.url_explicacion) 
+                    : null;
 
                   let scoreBadge = null;
                   if (isMMSE) {
@@ -352,12 +357,29 @@ const ViewPacienteModal: React.FC<ViewPacienteModalProps> = ({ open, onClose, pa
                           {/* CDT Clock Drawing visual and AI predictions */}
                           {isCDT && ev.url_imagen && (
                             <div className="mt-2 flex flex-col md:flex-row gap-5 bg-white p-4 rounded-lg border border-slate-100 shadow-sm">
-                              <div className="w-36 h-36 bg-slate-50 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center shadow-inner self-center">
-                                <img
-                                  src={getMediaUrl(ev.url_imagen)}
-                                  alt="Dibujo del reloj del paciente"
-                                  className="max-w-full max-h-full object-contain"
-                                />
+                              <div className="flex flex-col items-center gap-2 self-center">
+                                <div className="w-36 h-36 bg-slate-50 rounded-lg border border-slate-200 overflow-hidden flex items-center justify-center shadow-inner">
+                                  <img
+                                    src={mostrarExplicacion && explicacionSrc ? explicacionSrc : getMediaUrl(ev.url_imagen)}
+                                    alt={mostrarExplicacion ? "Mapa de calor de la IA" : "Dibujo del reloj del paciente"}
+                                    className="max-w-full max-h-full object-contain transition-all duration-300"
+                                  />
+                                </div>
+                                {explicacionSrc && (
+                                  <Button
+                                    onClick={() => setShowExplanationIds(prev => ({ ...prev, [ev.id_evaluacion]: !prev[ev.id_evaluacion] }))}
+                                    variant="outline"
+                                    size="sm"
+                                    className={`h-7 px-2 text-[10px] font-semibold rounded-full border shadow-sm transition-all duration-200 w-32 ${
+                                      mostrarExplicacion
+                                        ? 'bg-indigo-600 text-white border-indigo-600 hover:bg-indigo-700 hover:text-white'
+                                        : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-700'
+                                    }`}
+                                  >
+                                    <Brain className="w-3 h-3 mr-1 animate-pulse" />
+                                    {mostrarExplicacion ? 'Ver Original' : 'Explicabilidad IA'}
+                                  </Button>
+                                )}
                               </div>
                               <div className="flex-1 space-y-2">
                                 <div>

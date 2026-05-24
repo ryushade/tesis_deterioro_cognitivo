@@ -489,6 +489,92 @@ def es_dibujo_sobre_papel(ruta_imagen: str) -> tuple:
     return True, ""
 
 
+def calcular_integrated_gradients(modelo, tensor_imagen, clase_destino, pasos=25):
+    """
+    Calcula los gradientes integrados (Integrated Gradients) para el tensor de entrada.
+    Utiliza una línea base blanca (1.0 en todas partes tras normalización) que representa
+    el papel en blanco del test del reloj.
+    """
+    # 1. Crear línea base blanca (valores de normalización de PyTorch para blanco)
+    # Media: [0.485, 0.456, 0.406], Desviación: [0.229, 0.224, 0.225]
+    baseline = torch.zeros_like(tensor_imagen)
+    for c in range(3):
+        mean = [0.485, 0.456, 0.406][c]
+        std = [0.229, 0.224, 0.225][c]
+        baseline[0, c, :, :] = (1.0 - mean) / std
+
+    # Clonar entrada y asegurar gradiente
+    input_img = tensor_imagen.clone().detach().requires_grad_(True)
+    
+    # 2. Generar las imágenes interpoladas lineales entre la línea base y la imagen real
+    alphas = torch.linspace(0.0, 1.0, pasos).to(device)
+    interpolated_images = []
+    for alpha in alphas:
+        interpolated = baseline + alpha * (input_img - baseline)
+        interpolated_images.append(interpolated)
+    
+    # Concatenar todos los tensores para procesarlos en un batch
+    batch_interpolated = torch.cat(interpolated_images, dim=0).to(device)
+    batch_interpolated.requires_grad_()
+    
+    # 3. Pasar por el modelo
+    outputs = modelo(batch_interpolated)
+    score = outputs[:, clase_destino]
+    
+    # 4. Obtener gradientes usando torch.autograd.grad
+    grads = torch.autograd.grad(outputs=score, inputs=batch_interpolated, grad_outputs=torch.ones_like(score))[0]
+    
+    # 5. Promediar gradientes a lo largo del eje del batch
+    avg_grads = torch.mean(grads, dim=0, keepdim=True)
+    
+    # 6. Calcular Integrated Gradients = (input - baseline) * avg_grads
+    delta = (input_img - baseline).detach().cpu()
+    integrated_grad = delta * avg_grads.detach().cpu()
+    
+    # 7. Sumar a lo largo del canal de color y tomar valor absoluto
+    attribution = torch.sum(torch.abs(integrated_grad[0]), dim=0)
+    
+    return attribution.numpy()
+
+
+def guardar_mapa_explicacion(ruta_original, attribution_map, ruta_salida):
+    """
+    Normaliza la atribución, le aplica un mapa de calor y la fusiona
+    con la imagen original recortada para guardarla como PNG de explicación.
+    """
+    try:
+        # 1. Leer imagen original recortada
+        img_orig = cv2.imread(ruta_original)
+        if img_orig is None:
+            return False
+            
+        h, w = img_orig.shape[:2]
+        
+        # 2. Redimensionar el attribution_map (224x224) al tamaño original
+        attrib_resized = cv2.resize(attribution_map, (w, h), interpolation=cv2.INTER_CUBIC)
+        
+        # 3. Normalizar de 0 a 255
+        attrib_min = attrib_resized.min()
+        attrib_max = attrib_resized.max()
+        if attrib_max - attrib_min > 0:
+            attrib_norm = ((attrib_resized - attrib_min) / (attrib_max - attrib_min) * 255).astype(np.uint8)
+        else:
+            attrib_norm = np.zeros_like(attrib_resized, dtype=np.uint8)
+            
+        # 4. Aplicar mapa de calor
+        heatmap = cv2.applyColorMap(attrib_norm, cv2.COLORMAP_JET)
+        
+        # 5. Fusionar con la imagen original (60% original, 40% mapa de calor)
+        fusionada = cv2.addWeighted(img_orig, 0.60, heatmap, 0.40, 0)
+        
+        # 6. Guardar la imagen fusionada
+        cv2.imwrite(ruta_salida, fusionada)
+        return True
+    except Exception as e:
+        print(f"[XAI ERROR] Error al guardar mapa de explicabilidad: {e}")
+        return False
+
+
 def predecir_reloj(ruta_imagen_fisica: str) -> dict:
     """
     Funcion endpoint: Ingresa una ruta, retorna el puntaje y porcentaje de precision.
@@ -585,11 +671,27 @@ def predecir_reloj(ruta_imagen_fisica: str) -> dict:
     # Aplicar correcciones clínicas finales (Deshabilitadas para no dañar la precisión del modelo ResNet18)
     obs_extra = ""
 
+    # --- EXPLICABILIDAD (Integrated Gradients) ---
+    ruta_explicacion = os.path.splitext(ruta_imagen_fisica)[0] + "_explicacion.png"
+    url_explicacion = None
+    try:
+        attributions = calcular_integrated_gradients(MODELO_CDT, tensor_img, puntaje_final, pasos=25)
+        exito_xai = guardar_mapa_explicacion(ruta_imagen_fisica, attributions, ruta_explicacion)
+        if exito_xai:
+            partes = ruta_imagen_fisica.replace('\\', '/').split('/uploads/')
+            if len(partes) > 1:
+                url_explicacion = "uploads/" + partes[1]
+                url_explicacion = os.path.splitext(url_explicacion)[0] + "_explicacion.png"
+            print(f"[XAI] Mapa de calor guardado y configurado: {url_explicacion}")
+    except Exception as xai_err:
+        print(f"[XAI ERROR] Error calculando Integrated Gradients: {xai_err}")
+
     return {
         "puntaje": puntaje_final,
         "confianza": float(round(confianza_absoluta.item() * 100, 2)),
         "error": False,
-        "observaciones_ia": obs_extra if obs_extra else None
+        "observaciones_ia": obs_extra if obs_extra else None,
+        "url_explicacion": url_explicacion
     }
 
 if __name__ == '__main__':
