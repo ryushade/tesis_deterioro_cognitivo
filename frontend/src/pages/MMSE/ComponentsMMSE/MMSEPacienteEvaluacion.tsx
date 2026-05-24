@@ -120,6 +120,14 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
     setSteps(list);
   };
 
+  // Cleanup timers on step change
+  useEffect(() => {
+    return () => {
+      if (holdInterval.current) clearInterval(holdInterval.current);
+      if (pasoTresInterval.current) clearInterval(pasoTresInterval.current);
+    };
+  }, [currentStepIdx]);
+
   const currentStep = steps[currentStepIdx];
   if (!currentStep) return null;
 
@@ -338,14 +346,6 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
       saveItemAnswer("completed");
     }
   };
-
-  // Cleanup timers on step change
-  useEffect(() => {
-    return () => {
-      if (holdInterval.current) clearInterval(holdInterval.current);
-      if (pasoTresInterval.current) clearInterval(pasoTresInterval.current);
-    };
-  }, [currentStepIdx]);
 
   // --- DRAWING CANVAS LOGIC ---
   const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
