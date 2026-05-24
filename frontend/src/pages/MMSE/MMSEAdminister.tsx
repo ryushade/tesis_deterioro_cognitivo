@@ -5,6 +5,7 @@ import { mmseEvaluacionService } from "@/services/mmseEvaluacionService";
 import type { EstructuraMMSE, AsignacionInfo, ResultadoFinal } from "@/services/mmseEvaluacionService";
 import MMSEInstrucciones from "./ComponentsMMSE/MMSEInstrucciones";
 import MMSEEvaluacion from "./ComponentsMMSE/MMSEEvaluacion";
+import MMSEPacienteEvaluacion from "./ComponentsMMSE/MMSEPacienteEvaluacion";
 import MMSEResultados from "./ComponentsMMSE/MMSEResultados";
 
 type Step = "loading" | "instrucciones" | "evaluacion" | "finalizado" | "error";
@@ -12,6 +13,8 @@ type Step = "loading" | "instrucciones" | "evaluacion" | "finalizado" | "error";
 export default function MMSEAdminister() {
   const { id_codigo } = useParams();
   const idAsignacion = Number(id_codigo);
+  const userType = localStorage.getItem("userType");
+  const isPaciente = userType === "paciente";
 
   const [step, setStep] = useState<Step>("loading");
   const [estructura, setEstructura] = useState<EstructuraMMSE | null>(null);
@@ -131,11 +134,19 @@ export default function MMSEAdminister() {
         )}
 
         {step === "evaluacion" && estructura && idEvaluacion && (
-          <MMSEEvaluacion
-            categorias={estructura.categorias}
-            idEvaluacion={idEvaluacion}
-            onFinalizar={handleFinalizar}
-          />
+          isPaciente ? (
+            <MMSEPacienteEvaluacion
+              categorias={estructura.categorias}
+              idEvaluacion={idEvaluacion}
+              onFinalizar={handleFinalizar}
+            />
+          ) : (
+            <MMSEEvaluacion
+              categorias={estructura.categorias}
+              idEvaluacion={idEvaluacion}
+              onFinalizar={handleFinalizar}
+            />
+          )
         )}
 
         {step === "finalizado" && resultado && (
