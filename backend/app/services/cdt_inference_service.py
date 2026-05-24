@@ -675,7 +675,7 @@ def predecir_reloj(ruta_imagen_fisica: str) -> dict:
     ruta_explicacion = os.path.splitext(ruta_imagen_fisica)[0] + "_explicacion.png"
     url_explicacion = None
     try:
-        attributions = calcular_integrated_gradients(MODELO_CDT, tensor_img, puntaje_final, pasos=25)
+        attributions = calcular_integrated_gradients(MODELO_CDT, tensor_img, puntaje_final, pasos=12)
         exito_xai = guardar_mapa_explicacion(ruta_imagen_fisica, attributions, ruta_explicacion)
         if exito_xai:
             partes = ruta_imagen_fisica.replace('\\', '/').split('/uploads/')

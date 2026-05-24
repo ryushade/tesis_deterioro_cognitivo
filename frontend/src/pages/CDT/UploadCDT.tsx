@@ -14,6 +14,9 @@ export default function UploadCDT({ nombrePaciente, onNext, error, onClearError,
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
+  const isNetworkError = error?.toLowerCase().includes("conexión") || error?.toLowerCase().includes("timeout") || error?.toLowerCase().includes("network");
+  const errorTitle = isNetworkError ? "Error de conexión" : "Imagen no válida";
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -52,7 +55,7 @@ export default function UploadCDT({ nombrePaciente, onNext, error, onClearError,
           <div className="mb-5 flex items-start gap-3 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-4 animate-in slide-in-from-top duration-300">
             <AlertCircle className="w-5 h-5 mt-0.5 shrink-0 text-red-500" />
             <div className="flex-1">
-              <p className="font-semibold text-sm">Imagen no válida</p>
+              <p className="font-semibold text-sm">{errorTitle}</p>
               <p className="text-sm mt-0.5 leading-relaxed">{error}</p>
             </div>
           </div>
