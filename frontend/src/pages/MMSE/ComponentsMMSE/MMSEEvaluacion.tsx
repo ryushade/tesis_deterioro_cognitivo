@@ -21,6 +21,7 @@ interface Props {
   categorias: CategoriaMMSE[];
   idEvaluacion: number;
   onFinalizar: (tiempos?: Record<string, number>) => void;
+  tiempoLimite?: number;
 }
 
 const getCategoryKey = (catName?: string): string => {
@@ -41,7 +42,7 @@ const getCategoryKey = (catName?: string): string => {
   return "lenguaje";
 };
 
-export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar }: Props) {
+export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar, tiempoLimite }: Props) {
   // Flatten sections with category info
   const secciones: { seccion: SeccionMMSE; categoria: CategoriaMMSE; globalIndex: number }[] = [];
   categorias.forEach((cat) => {
@@ -71,6 +72,19 @@ export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar }
     intervalRef.current = setInterval(() => {
       setElapsedSeconds(prev => {
         const nextSec = prev + 1;
+        
+        // If there's a limit and we've reached it, auto-finalize the test!
+        if (tiempoLimite && nextSec >= tiempoLimite) {
+          clearInterval(intervalRef.current!);
+          setTimeout(() => {
+            const tiempos = {
+              total: nextSec,
+              ...categoryTimesRef.current
+            };
+            onFinalizar(tiempos);
+          }, 0);
+        }
+
         const activeCat = currentCategoryRef.current;
         categoryTimesRef.current[activeCat] = (categoryTimesRef.current[activeCat] || 0) + 1;
         return nextSec;
@@ -79,13 +93,12 @@ export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar }
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, []);
+  }, [tiempoLimite]);
 
-  useEffect(() => {
-    if (current && current.categoria) {
-      currentCategoryRef.current = getCategoryKey(current.categoria.nombre_categoria);
-    }
-  }, [current]);
+
+  const remainingSeconds = tiempoLimite ? tiempoLimite - elapsedSeconds : null;
+  const isTimeCritical = remainingSeconds !== null && remainingSeconds <= 60;
+  const displaySeconds = tiempoLimite ? Math.max(0, tiempoLimite - elapsedSeconds) : elapsedSeconds;
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -94,6 +107,13 @@ export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar }
   };
 
   const current = secciones[currentIdx];
+
+  useEffect(() => {
+    if (current && current.categoria) {
+      currentCategoryRef.current = getCategoryKey(current.categoria.nombre_categoria);
+    }
+  }, [current]);
+
   if (!current) return null;
 
   const { seccion, categoria } = current;
@@ -283,12 +303,19 @@ export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar }
               Sección {currentIdx + 1} de {secciones.length}
             </span>
             <span style={{
-              fontFamily: 'monospace', fontSize: '0.85rem', fontWeight: 700,
-              color: '#475569', background: '#f1f5f9', padding: '2px 8px', borderRadius: '6px',
-              display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid #e2e8f0'
+              fontFamily: 'monospace', fontSize: '0.85rem', 
+              fontWeight: isTimeCritical ? 900 : 700,
+              color: isTimeCritical ? '#ffffff' : '#475569', 
+              background: isTimeCritical ? '#ef4444' : '#f1f5f9', 
+              padding: '2px 8px', borderRadius: '6px',
+              display: 'flex', alignItems: 'center', gap: '4px', 
+              border: isTimeCritical ? '1px solid #ef4444' : '1px solid #e2e8f0',
+              animation: isTimeCritical ? 'pulseRed 1s infinite' : 'none',
+              transform: isTimeCritical ? 'scale(1.05)' : 'none',
+              transition: 'all 0.3s ease',
             }}>
-              <Clock size={12} style={{ color: '#6366f1' }} />
-              {formatTime(elapsedSeconds)}
+              <Clock size={12} style={{ color: isTimeCritical ? '#ffffff' : '#6366f1' }} />
+              {formatTime(displaySeconds)}
             </span>
             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#3b82f6' }}>
               {Math.round(progress)}%
@@ -475,6 +502,10 @@ export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar }
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseRed {
+          0%, 100% { transform: scale(1.05); }
+          50% { transform: scale(1.0); opacity: 0.9; }
+        }
       `}</style>
     </div>
   );

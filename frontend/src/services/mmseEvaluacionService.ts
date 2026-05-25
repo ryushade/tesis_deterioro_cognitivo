@@ -46,6 +46,7 @@ export interface EstructuraMMSE {
   id_prueba: number;
   nombre_prueba: string;
   puntaje_maximo: number;
+  tiempo_limite_segundos?: number;
   categorias: CategoriaMMSE[];
 }
 

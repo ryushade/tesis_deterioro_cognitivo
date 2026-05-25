@@ -144,12 +144,14 @@ export default function MMSEAdminister() {
               categorias={estructura.categorias}
               idEvaluacion={idEvaluacion}
               onFinalizar={handleFinalizar}
+              tiempoLimite={estructura.tiempo_limite_segundos}
             />
           ) : (
             <MMSEEvaluacion
               categorias={estructura.categorias}
               idEvaluacion={idEvaluacion}
               onFinalizar={handleFinalizar}
+              tiempoLimite={estructura.tiempo_limite_segundos}
             />
           )
         )}

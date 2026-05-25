@@ -11,6 +11,7 @@ interface Props {
   categorias: CategoriaMMSE[];
   idEvaluacion: number;
   onFinalizar: (tiempos?: Record<string, number>) => void;
+  tiempoLimite?: number;
 }
 
 const getCategoryKey = (step: any): string => {
@@ -42,7 +43,7 @@ interface UserAnswer {
   base64Image?: string;
 }
 
-export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFinalizar }: Props) {
+export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFinalizar, tiempoLimite }: Props) {
   // Step list mapping
   const [steps, setSteps] = useState<any[]>([]);
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
@@ -103,6 +104,19 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
     intervalRef.current = setInterval(() => {
       setElapsedSeconds(prev => {
         const nextSec = prev + 1;
+        
+        // If there's a limit and we've reached it, auto-finalize the test!
+        if (tiempoLimite && nextSec >= tiempoLimite) {
+          clearInterval(intervalRef.current!);
+          setTimeout(() => {
+            const tiempos = {
+              total: nextSec,
+              ...categoryTimesRef.current
+            };
+            onFinalizar(tiempos);
+          }, 0);
+        }
+
         const activeCat = currentCategoryRef.current;
         categoryTimesRef.current[activeCat] = (categoryTimesRef.current[activeCat] || 0) + 1;
         return nextSec;
@@ -111,13 +125,8 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
     };
-  }, []);
+  }, [tiempoLimite]);
 
-  useEffect(() => {
-    if (currentStep) {
-      currentCategoryRef.current = getCategoryKey(currentStep);
-    }
-  }, [currentStep]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -260,6 +269,13 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
   }, [currentStepIdx]);
 
   const currentStep = steps[currentStepIdx];
+
+  useEffect(() => {
+    if (currentStep) {
+      currentCategoryRef.current = getCategoryKey(currentStep);
+    }
+  }, [currentStep]);
+
   if (!currentStep) return null;
 
   // --- AUTO GRADING LOGIC ---
@@ -1375,10 +1391,9 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
     );
   };
 
-  // Navigations details
-  const isFirstStep = currentStepIdx === 0;
-  const isLastStep = currentStepIdx === steps.length - 1;
-  const progressPercent = steps.length > 0 ? ((currentStepIdx + 1) / steps.length) * 100 : 0;
+  const remainingSeconds = tiempoLimite ? tiempoLimite - elapsedSeconds : null;
+  const isTimeCritical = remainingSeconds !== null && remainingSeconds <= 60;
+  const displaySeconds = tiempoLimite ? Math.max(0, tiempoLimite - elapsedSeconds) : elapsedSeconds;
 
   // Background and UI structures matching Web Application development guidelines (Wowing Aesthetics)
   return (
@@ -1391,9 +1406,13 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
             <Sparkles className="w-3.5 h-3.5 text-blue-500 animate-pulse" />
             {currentStep.categoria?.nombre_categoria || "Prueba cognitiva"}
           </span>
-          <span className="font-mono text-slate-500 bg-slate-100/80 px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-sm border border-slate-200/50">
-            <Clock className="w-3.5 h-3.5 text-indigo-500" />
-            {formatTime(elapsedSeconds)}
+          <span className={`font-mono px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-sm border transition-all duration-300 ${
+            isTimeCritical 
+              ? "bg-red-500 text-white border-red-500 animate-pulse font-black scale-105" 
+              : "text-slate-500 bg-slate-100/80 border-slate-200/50"
+          }`}>
+            <Clock className={`w-3.5 h-3.5 ${isTimeCritical ? "text-white" : "text-indigo-500"}`} />
+            {formatTime(displaySeconds)}
           </span>
           <span className="font-bold text-blue-600">{Math.round(progressPercent)}% completado</span>
         </div>

@@ -60,6 +60,7 @@ def obtener_estructura_mmse():
                     p.id_prueba,
                     p.nombre_prueba,
                     p.puntaje_maximo AS puntaje_maximo_prueba,
+                    p.tiempo_limite_segundos,
 
                     c.id_categoria,
                     c.nombre_categoria,
@@ -118,6 +119,7 @@ def obtener_estructura_mmse():
                 "id_prueba": rows[0]["id_prueba"],
                 "nombre_prueba": rows[0]["nombre_prueba"],
                 "puntaje_maximo": rows[0]["puntaje_maximo_prueba"],
+                "tiempo_limite_segundos": rows[0]["tiempo_limite_segundos"],
                 "categorias": []
             }
 
