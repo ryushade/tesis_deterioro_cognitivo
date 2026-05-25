@@ -1,0 +1,45 @@
+{
+  "annotations": {
+    "changelogDate": "20230701121957"
+  },
+  "changelogDate": "20230701121957",
+  "dto": "mapstruct",
+  "entityTableName": "test_entity",
+  "fields": [
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Instant",
+      "fieldValidateRules": [
+        "required"
+      ]
+    },
+    {
+      "fieldName": "updatedAt",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "score",
+      "fieldType": "Integer"
+    }
+  ],
+  "jpaMetamodelFiltering": false,
+  "name": "TestEntity",
+  "pagination": "infinite-scroll",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityField": "login",
+      "otherEntityName": "user",
+      "otherEntityRelationshipName": "testEntity",
+      "ownerSide": true,
+      "relationshipName": "user",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one",
+      "relationshipValidateRules": [
+        "required"
+      ]
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}

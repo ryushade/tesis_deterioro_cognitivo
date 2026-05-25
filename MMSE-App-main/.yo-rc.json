@@ -1,0 +1,60 @@
+{
+  "generator-jhipster": {
+    "applicationType": "monolith",
+    "authenticationType": "jwt",
+    "baseName": "MMSE-App",
+    "buildTool": "maven",
+    "cacheProvider": "no",
+    "clientFramework": "vue",
+    "clientTheme": "none",
+    "creationTimestamp": 1687256070109,
+    "cypressAudit": true,
+    "cypressCoverage": null,
+    "databaseType": "sql",
+    "devDatabaseType": "postgresql",
+    "devServerPort": 9060,
+    "dtoSuffix": "DTO",
+    "enableGradleEnterprise": null,
+    "enableHibernateCache": false,
+    "enableSwaggerCodegen": false,
+    "enableTranslation": true,
+    "entities": [
+      "TestEntity",
+      "UserAnswer",
+      "PatientProfile"
+    ],
+    "entitySuffix": "",
+    "gradleEnterpriseHost": null,
+    "jhiPrefix": "mmse",
+    "jhipsterVersion": "8.1.0",
+    "jwtSecretKey": "ZmNlMGIwYmVjODhhOTYzNGRhYjIwZjY3NjQ3MmYwZjVlMTJiODYxNTM4NTU2ZDliMzBhZjkwMTg5NGY4ZWE0MzM0NzZmMTQ2OTU2YzA1NWQxNTgzODk3NDNhNzRkMGYzZTMwZDIxMTE1ZmE1ZjhmODhmMjNmN2NjNmQ4NTQyNmI=",
+    "languages": [
+      "en",
+      "et"
+    ],
+    "lastLiquibaseTimestamp": 1689346620000,
+    "messageBroker": false,
+    "microfrontend": false,
+    "microfrontends": [],
+    "nativeLanguage": "en",
+    "packageFolder": "ee/tenman/mmse",
+    "packageName": "ee.tenman.mmse",
+    "pages": [],
+    "prodDatabaseType": "postgresql",
+    "reactive": false,
+    "searchEngine": false,
+    "serverPort": null,
+    "serverSideOptions": [],
+    "serviceDiscoveryType": false,
+    "skipCheckLengthOfIdentifier": false,
+    "skipClient": false,
+    "skipFakeData": false,
+    "skipUserManagement": false,
+    "testFrameworks": [
+      "cypress",
+      "gatling"
+    ],
+    "websocket": false,
+    "withAdminUi": true
+  }
+}

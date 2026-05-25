@@ -25,6 +25,7 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
   const [steps, setSteps] = useState<any[]>([]);
   const [currentStepIdx, setCurrentStepIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, UserAnswer>>({});
+  const answersRef = useRef<Record<number, UserAnswer>>({});
   const [selectedAtencionOpcionId, setSelectedAtencionOpcionId] = useState<number | null>(null);
   
   // Status states
@@ -306,6 +307,7 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
           setIsHolding(false);
           // Set answer to completed and auto-advance
           saveItemAnswer("completed");
+          setTimeout(() => handleNextStep(), 400);
           return 100;
         }
         return prev + 4; // Takes ~2.5s
@@ -344,6 +346,7 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
     if (pasoTresState === "countdown_done") {
       setPasoTresState("completed");
       saveItemAnswer("completed");
+      setTimeout(() => handleNextStep(), 400);
     }
   };
 
@@ -405,14 +408,16 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
   const saveItemAnswer = (value: string) => {
     if (currentStep.type === "item") {
       const graded = autoGrade(currentStep.item, value);
+      const newAnswer = {
+        value: value,
+        correcto: graded.correcto,
+        puntaje: graded.puntaje,
+        base64Image: graded.base64Image
+      };
+      answersRef.current[currentStep.item.id_item] = newAnswer;
       setAnswers(prev => ({
         ...prev,
-        [currentStep.item.id_item]: {
-          value: value,
-          correcto: graded.correcto,
-          puntaje: graded.puntaje,
-          base64Image: graded.base64Image
-        }
+        [currentStep.item.id_item]: newAnswer
       }));
     }
   };
@@ -448,7 +453,7 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
     }
 
     const currentItem = currentStep.item;
-    const currentAns = answers[currentItem.id_item];
+    const currentAns = answersRef.current[currentItem.id_item];
     const isAnswered = currentAns !== undefined && currentAns.value !== "";
 
     if (!isAnswered && currentStep.type === "item") {
@@ -494,7 +499,7 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
         if (isFijacionOrMemoria) {
           const targetWords = ["peseta", "caballo", "manzana"];
           const userInputs = sectionItems.map((it: any) => {
-            const val = answers[it.id_item]?.value || "";
+            const val = answersRef.current[it.id_item]?.value || "";
             return val.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
           });
 
@@ -521,7 +526,7 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
 
         // Send each item response to API
         for (const it of sectionItems) {
-          const ans = answers[it.id_item];
+          const ans = answersRef.current[it.id_item];
           const grade = isFijacionOrMemoria ? customGrades[it.id_item] : { correcto: ans.correcto, puntaje: ans.puntaje };
           
           const respPayload: RespuestaItemPayload = {
@@ -636,7 +641,10 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
           {seasons.map(s => (
             <button
               key={s.val}
-              onClick={() => saveItemAnswer(s.val)}
+              onClick={() => {
+                saveItemAnswer(s.val);
+                setTimeout(() => handleNextStep(), 350);
+              }}
               className={`py-4 rounded-xl font-bold border transition-all text-sm cursor-pointer ${
                 ansValue === s.val
                   ? "bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-600/20"
@@ -661,7 +669,10 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
           {months.map(m => (
             <button
               key={m}
-              onClick={() => saveItemAnswer(m)}
+              onClick={() => {
+                saveItemAnswer(m);
+                setTimeout(() => handleNextStep(), 350);
+              }}
               className={`py-3 rounded-lg font-bold border transition-all text-xs cursor-pointer ${
                 ansValue === m
                   ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/25"
@@ -683,7 +694,10 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
           {days.map(d => (
             <button
               key={d}
-              onClick={() => saveItemAnswer(d)}
+              onClick={() => {
+                saveItemAnswer(d);
+                setTimeout(() => handleNextStep(), 350);
+              }}
               className={`py-3 rounded-lg font-bold border transition-all text-xs cursor-pointer ${
                 ansValue === d
                   ? "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/25"
@@ -730,6 +744,11 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
             placeholder="¿Qué es este objeto?"
             value={ansValue}
             onChange={(e) => saveItemAnswer(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && ansValue.trim() !== '') {
+                handleNextStep();
+              }
+            }}
             className="w-full max-w-sm px-5 py-4 border-2 border-slate-200 rounded-2xl text-center outline-none focus:border-blue-600 bg-white font-semibold text-lg transition-colors shadow-inner"
             autoFocus
           />
@@ -753,6 +772,11 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
               maxLength={1}
               value={ansValue}
               onChange={(e) => saveItemAnswer(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && ansValue.trim() !== '') {
+                  handleNextStep();
+                }
+              }}
               className="w-14 h-16 border-2 border-slate-200 rounded-2xl text-center font-black text-2xl text-slate-800 outline-none focus:border-blue-600 bg-white shadow-inner"
               autoFocus
             />
@@ -951,6 +975,11 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
           placeholder={isNum ? "Ingrese el número..." : "Escriba su respuesta..."}
           value={ansValue}
           onChange={(e) => saveItemAnswer(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && ansValue.trim() !== '') {
+              handleNextStep();
+            }
+          }}
           className="w-full px-5 py-4 border-2 border-slate-200 rounded-2xl text-center outline-none focus:border-blue-600 bg-white font-semibold text-lg transition-colors shadow-inner"
           autoFocus
         />

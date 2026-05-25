@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "61234:61234"
+    command: python app.py
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:61234/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

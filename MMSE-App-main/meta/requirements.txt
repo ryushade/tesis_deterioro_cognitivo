@@ -1,0 +1,8 @@
+Flask==3.0.1
+Werkzeug==3.0.1
+torch==1.10.0
+sentence-transformers==2.2.0
+fuzzywuzzy==0.18.0
+sentencepiece==0.1.96
+transformers==4.36.0
+bitsandbytes==0.42.0

@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "61239:61239"
+    volumes:
+      - model_volume:/usr/src/app/pretrained_models
+    command: python app.py
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:61239/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+volumes:
+  model_volume:

@@ -1,0 +1,53 @@
+{
+  "annotations": {
+    "changelogDate": "20230714145700"
+  },
+  "changelogDate": "20230714145700",
+  "dto": "mapstruct",
+  "entityTableName": "user_answer",
+  "fields": [
+    {
+      "fieldName": "answerText",
+      "fieldType": "String"
+    },
+    {
+      "fieldName": "createdAt",
+      "fieldType": "Instant",
+      "fieldValidateRules": [
+        "required"
+      ]
+    },
+    {
+      "fieldName": "updatedAt",
+      "fieldType": "Instant"
+    },
+    {
+      "fieldName": "questionId",
+      "fieldType": "QuestionId",
+      "fieldValidateRules": [
+        "required"
+      ],
+      "fieldValues": "QUESTION_1,QUESTION_2,QUESTION_3,QUESTION_4,QUESTION_5,QUESTION_6,QUESTION_7,QUESTION_8,QUESTION_9,QUESTION_10,QUESTION_11"
+    }
+  ],
+  "jpaMetamodelFiltering": false,
+  "name": "UserAnswer",
+  "pagination": "infinite-scroll",
+  "readOnly": false,
+  "relationships": [
+    {
+      "otherEntityField": "id",
+      "otherEntityName": "testEntity",
+      "otherEntityRelationshipName": "userAnswer",
+      "ownerSide": true,
+      "relationshipName": "testEntity",
+      "relationshipSide": "left",
+      "relationshipType": "many-to-one",
+      "relationshipValidateRules": [
+        "required"
+      ]
+    }
+  ],
+  "searchEngine": "no",
+  "service": "serviceClass"
+}
