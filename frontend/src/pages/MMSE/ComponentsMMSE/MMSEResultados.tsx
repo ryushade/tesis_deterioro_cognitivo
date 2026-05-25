@@ -6,6 +6,13 @@ interface Props {
   puntajeTotal: number;
   categorias: ResultadoCategoria[];
   nombrePaciente: string;
+  tiempos?: Record<string, number>;
+}
+
+function formatDuration(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}m ${s}s`;
 }
 
 function getClasificacion(puntaje: number) {
@@ -15,7 +22,7 @@ function getClasificacion(puntaje: number) {
   return { label: "Deterioro cognitivo severo", color: "#ef4444", icon: <XCircle size={20} />, bg: "#fef2f2" };
 }
 
-export default function MMSEResultados({ puntajeTotal, categorias, nombrePaciente }: Props) {
+export default function MMSEResultados({ puntajeTotal, categorias, nombrePaciente, tiempos }: Props) {
   const navigate = useNavigate();
   const userType = localStorage.getItem("userType");
   const isPaciente = userType === "paciente";
@@ -42,9 +49,14 @@ export default function MMSEResultados({ puntajeTotal, categorias, nombrePacient
           <h1 style={{ fontSize: '1.75rem', fontWeight: 900, color: '#1e293b', marginBottom: '0.25rem' }}>
             Evaluación finalizada
           </h1>
-          <p style={{ color: '#64748b', fontSize: '1rem' }}>
+          <p style={{ color: '#64748b', fontSize: '1rem', marginBottom: '0.25rem' }}>
             Resultados de <strong>{nombrePaciente}</strong>
           </p>
+          {tiempos && tiempos.total !== undefined && (
+            <p style={{ color: '#475569', fontSize: '0.9rem', marginTop: '0.25rem', fontWeight: 500 }}>
+              ⏱ Tiempo de aplicación total: <strong style={{ color: '#4f46e5' }}>{formatDuration(tiempos.total)}</strong>
+            </p>
+          )}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
             background: clasificacion.bg, padding: '0.5rem 1.25rem',
@@ -124,6 +136,47 @@ export default function MMSEResultados({ puntajeTotal, categorias, nombrePacient
             );
           })}
         </div>
+
+        {/* Desglose de tiempos */}
+        {tiempos && Object.keys(tiempos).length > 1 && (
+          <div style={{
+            background: '#f8fafc', borderRadius: '1rem', overflow: 'hidden',
+            border: '1px solid #e2e8f0', marginBottom: '1.5rem', padding: '1.25rem'
+          }}>
+            <h3 style={{ fontSize: '0.8rem', fontWeight: 700, color: '#475569', marginBottom: '1rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              ⏱ Desglose de Tiempos por Etapa
+            </h3>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {[
+                { key: 'orientacion', label: 'Orientación (Temporal/Espacial)' },
+                { key: 'fijacion', label: 'Fijación (Aprendizaje)' },
+                { key: 'atencion', label: 'Atención y Cálculo' },
+                { key: 'memoria', label: 'Memoria (Evocación)' },
+                { key: 'lenguaje', label: 'Lenguaje y Construcción' }
+              ].map(stage => {
+                const secs = tiempos[stage.key] || 0;
+                const total = tiempos.total || 1;
+                const pct = Math.round((secs / total) * 100);
+                return (
+                  <div key={stage.key} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', fontWeight: 600, color: '#334155' }}>
+                      <span>{stage.label}</span>
+                      <span>{formatDuration(secs)} ({pct}%)</span>
+                    </div>
+                    <div style={{ height: '8px', borderRadius: '4px', background: '#e2e8f0', overflow: 'hidden' }}>
+                      <div style={{
+                        height: '100%', borderRadius: '4px', width: `${pct}%`,
+                        background: 'linear-gradient(90deg, #6366f1, #4f46e5)',
+                        transition: 'width 0.6s ease'
+                      }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Legend */}
         <div style={{

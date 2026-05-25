@@ -54,11 +54,12 @@ def _crear_tablas_si_no_existen(cursor):
         );
     """)
 
-    # Intentar agregar id_neuropsicologo si no existe (por si se creó con esquema viejo)
+    # Intentar agregar columnas si no existen (por si se creó con esquema viejo)
     try:
         cursor.execute("ALTER TABLE evaluacion_cognitiva ADD COLUMN IF NOT EXISTS id_neuropsicologo INTEGER")
         cursor.execute("ALTER TABLE evaluacion_cognitiva ADD COLUMN IF NOT EXISTS estado_evaluacion INTEGER DEFAULT 2")
         cursor.execute("ALTER TABLE evaluacion_cognitiva ADD COLUMN IF NOT EXISTS diagnostico_ia TEXT")
+        cursor.execute("ALTER TABLE evaluacion_cognitiva ADD COLUMN IF NOT EXISTS duracion_segundos INTEGER")
     except: pass
 
     cursor.execute("""
@@ -82,6 +83,20 @@ def _crear_tablas_si_no_existen(cursor):
         cursor.execute("ALTER TABLE analisis_visual ADD COLUMN IF NOT EXISTS clasificacion_ia VARCHAR(50)")
         cursor.execute("ALTER TABLE analisis_visual ADD COLUMN IF NOT EXISTS detalles_ia_jsonb JSONB")
     except: pass
+
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS evaluacion_tiempo (
+            id_tiempo SERIAL PRIMARY KEY,
+            id_evaluacion INTEGER NOT NULL,
+            nombre_etapa VARCHAR(100) NOT NULL,
+            duracion_segundos INTEGER NOT NULL,
+            fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            CONSTRAINT fk_et_evaluacion FOREIGN KEY (id_evaluacion)
+                REFERENCES evaluacion_cognitiva(id_evaluacion)
+                ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT uq_evaluacion_etapa UNIQUE (id_evaluacion, nombre_etapa)
+        );
+    """)
 
 
 def procesar_evaluacion_cdt(id_asignacion: int, url_imagen: str, resultado_ia: dict) -> dict:

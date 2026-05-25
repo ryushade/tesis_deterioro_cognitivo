@@ -59,6 +59,8 @@ export interface EvaluacionInfo {
   id_evaluacion: number;
   estado_evaluacion: number;
   puntaje_total: number | null;
+  duracion_segundos?: number | null;
+  tiempos?: Record<string, number>;
 }
 
 // ========== Interfaces de respuesta ==========
@@ -101,6 +103,7 @@ export interface ResultadoCategoria {
 export interface ResultadoFinal {
   puntaje_total: number;
   categorias: ResultadoCategoria[];
+  tiempos?: Record<string, number>;
 }
 
 // ========== Servicio ==========
@@ -195,13 +198,16 @@ export const mmseEvaluacionService = {
   /**
    * Calcula puntajes y finaliza la evaluación.
    */
-  finalizarEvaluacion: async (idEvaluacion: number): Promise<{
+  finalizarEvaluacion: async (idEvaluacion: number, tiempos?: Record<string, number>, duracionSegundos?: number): Promise<{
     success: boolean;
     data?: ResultadoFinal;
     message?: string;
   }> => {
     try {
-      const response = await api.post(`/mmse/evaluacion/finalizar/${idEvaluacion}`);
+      const response = await api.post(`/mmse/evaluacion/finalizar/${idEvaluacion}`, {
+        tiempos,
+        duracion_segundos: duracionSegundos
+      });
       return response.data;
     } catch (error: any) {
       return {

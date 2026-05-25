@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { 
   ArrowRight, ArrowLeft, Loader2, Sparkles, AlertTriangle, 
-  Check, Info, HelpCircle, RefreshCw, Eye
+  Check, Info, HelpCircle, RefreshCw, Eye, Clock
 } from "lucide-react";
 import type { CategoriaMMSE, SeccionMMSE, OpcionMMSE, ItemMMSE } from "@/services/mmseEvaluacionService";
 import { mmseEvaluacionService } from "@/services/mmseEvaluacionService";
@@ -10,8 +10,30 @@ import type { SeccionPayload, RespuestaItemPayload } from "@/services/mmseEvalua
 interface Props {
   categorias: CategoriaMMSE[];
   idEvaluacion: number;
-  onFinalizar: () => void;
+  onFinalizar: (tiempos?: Record<string, number>) => void;
 }
+
+const getCategoryKey = (step: any): string => {
+  if (!step) return "total";
+  if (step.type === "orientacion_inicial") return "orientacion";
+  if (step.type === "fijacion_instruction") return "fijacion";
+  if (step.type === "atencion_choice") return "atencion";
+  
+  const name = step.seccion?.nombre_seccion?.toLowerCase() || step.categoria?.nombre_categoria?.toLowerCase() || "";
+  if (name.includes("orient") || name.includes("tiempo") || name.includes("lugar") || name.includes("espaci")) {
+    return "orientacion";
+  }
+  if (name.includes("fijac") || name.includes("registr") || name.includes("aprend")) {
+    return "fijacion";
+  }
+  if (name.includes("atenc") || name.includes("calcul") || name.includes("cálcul")) {
+    return "atencion";
+  }
+  if (name.includes("memor") || name.includes("evoc") || name.includes("recuer")) {
+    return "memoria";
+  }
+  return "lenguaje";
+};
 
 interface UserAnswer {
   value: string;
@@ -28,9 +50,80 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
   const answersRef = useRef<Record<number, UserAnswer>>({});
   const [selectedAtencionOpcionId, setSelectedAtencionOpcionId] = useState<number | null>(null);
   
+  const [formOrientacion, setFormOrientacion] = useState(() => {
+    const d = new Date();
+    const currentYear = d.getFullYear().toString();
+    const currentDate = d.getDate().toString();
+    const months = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"];
+    const currentMonth = months[d.getMonth()];
+    const days = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
+    const currentDay = days[d.getDay()];
+    const month = d.getMonth();
+    let currentSeason = "";
+    if (month >= 11 || month <= 1) {
+      currentSeason = "Verano";
+    } else if (month >= 2 && month <= 4) {
+      currentSeason = "Otoño";
+    } else if (month >= 5 && month <= 7) {
+      currentSeason = "Invierno";
+    } else {
+      currentSeason = "Primavera";
+    }
+    return {
+      anio: currentYear,
+      diaMes: currentDate,
+      mes: currentMonth,
+      diaSemana: currentDay,
+      estacion: currentSeason,
+      pais: "Perú",
+      departamento: "",
+      ciudad: "",
+      lugar: "",
+      piso: ""
+    };
+  });
+  
   // Status states
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Time tracking states
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const categoryTimesRef = useRef<Record<string, number>>({
+    orientacion: 0,
+    fijacion: 0,
+    atencion: 0,
+    memoria: 0,
+    lenguaje: 0
+  });
+  const currentCategoryRef = useRef<string>("orientacion");
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setElapsedSeconds(prev => {
+        const nextSec = prev + 1;
+        const activeCat = currentCategoryRef.current;
+        categoryTimesRef.current[activeCat] = (categoryTimesRef.current[activeCat] || 0) + 1;
+        return nextSec;
+      });
+    }, 1000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (currentStep) {
+      currentCategoryRef.current = getCategoryKey(currentStep);
+    }
+  }, [currentStep]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   // Special Interactive States
   const [holdProgress, setHoldProgress] = useState(0);
@@ -52,10 +145,34 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
 
   const buildSteps = () => {
     const list: any[] = [];
+    let tempSec: any = null;
+    let tempOpc: any = null;
+    let tempItems: any[] = [];
+    let espSec: any = null;
+    let espOpc: any = null;
+    let espItems: any[] = [];
 
     categorias.forEach((cat) => {
       cat.secciones.forEach((sec) => {
-        const isAtencion = sec.nombre_seccion.toLowerCase().includes("atención") || sec.nombre_seccion.toLowerCase().includes("calculo");
+        const nameLower = sec.nombre_seccion.toLowerCase();
+        const isTemporal = nameLower.includes("temporal") || nameLower.includes("tiempo");
+        const isEspacial = nameLower.includes("espacial") || nameLower.includes("lugar") || nameLower.includes("espacio");
+
+        if (isTemporal) {
+          tempSec = sec;
+          tempOpc = sec.opciones.find(o => o.es_default) || sec.opciones[0];
+          tempItems = tempOpc ? tempOpc.items : [];
+          return;
+        }
+
+        if (isEspacial) {
+          espSec = sec;
+          espOpc = sec.opciones.find(o => o.es_default) || sec.opciones[0];
+          espItems = espOpc ? espOpc.items : [];
+          return;
+        }
+
+        const isAtencion = nameLower.includes("atención") || nameLower.includes("calculo");
         
         if (isAtencion) {
           // If no option has been selected yet, insert a Choice step
@@ -92,7 +209,7 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
         if (!opc) return;
 
         // Custom step for Fijación (Instruction screen first)
-        const isFijacion = sec.nombre_seccion.toLowerCase().includes("fijación") || sec.nombre_seccion.toLowerCase().includes("registro");
+        const isFijacion = nameLower.includes("fijación") || nameLower.includes("registro");
         if (isFijacion) {
           list.push({
             type: "fijacion_instruction",
@@ -117,6 +234,19 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
         });
       });
     });
+
+    if (tempSec || espSec) {
+      list.unshift({
+        type: "orientacion_inicial",
+        temporalSeccion: tempSec,
+        temporalOpcion: tempOpc,
+        temporalItems: tempItems,
+        espacialSeccion: espSec,
+        espacialOpcion: espOpc,
+        espacialItems: espItems,
+        texto_pregunta: "Preguntas de Orientación Inicial"
+      });
+    }
 
     setSteps(list);
   };
@@ -425,6 +555,120 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
   const handleNextStep = async () => {
     setError(null);
 
+    if (currentStep.type === "orientacion_inicial") {
+      const { anio, diaMes, mes, diaSemana, estacion, pais, departamento, ciudad, lugar, piso } = formOrientacion;
+      if (!anio || !diaMes || !mes || !diaSemana || !estacion || !pais || !departamento || !ciudad || !lugar || !piso) {
+        setError("Por favor, responda todas las preguntas antes de continuar.");
+        return;
+      }
+
+      setSaving(true);
+      try {
+        const tempSec = currentStep.temporalSeccion;
+        const tempOpc = currentStep.temporalOpcion;
+        const tempItems = currentStep.temporalItems;
+
+        const gradeAndSaveItems = (items: ItemMMSE[], valuesMap: Record<string, string>) => {
+          items.forEach((item) => {
+            const name = item.texto_item.toLowerCase();
+            let value = "";
+            if (name.includes("año") || name.includes("ano")) value = valuesMap.anio;
+            else if (name.includes("mes")) value = valuesMap.mes;
+            else if (name.includes("fecha") || name.includes("día del mes") || name.includes("dia del mes")) value = valuesMap.diaMes;
+            else if (name.includes("día de la semana") || name.includes("dia de la semana")) value = valuesMap.diaSemana;
+            else if (name.includes("estación") || name.includes("estacion")) value = valuesMap.estacion;
+            else if (name.includes("país") || name.includes("pais")) value = valuesMap.pais;
+            else if (name.includes("departamento") || name.includes("provincia") || name.includes("estado")) value = valuesMap.departamento;
+            else if (name.includes("ciudad") || name.includes("municipio")) value = valuesMap.ciudad;
+            else if (name.includes("lugar") || name.includes("establecimiento") || name.includes("institución") || name.includes("institucion")) value = valuesMap.lugar;
+            else if (name.includes("piso") || name.includes("área") || name.includes("area") || name.includes("sala")) value = valuesMap.piso;
+
+            const graded = autoGrade(item, value);
+            const ans = {
+              value: value,
+              correcto: graded.correcto,
+              puntaje: graded.puntaje
+            };
+            answersRef.current[item.id_item] = ans;
+          });
+        };
+
+        const values = { anio, diaMes, mes, diaSemana, estacion, pais, departamento, ciudad, lugar, piso };
+        
+        if (tempSec && tempOpc && tempItems.length > 0) {
+          gradeAndSaveItems(tempItems, values);
+          
+          const secPayload: SeccionPayload = {
+            id_evaluacion: idEvaluacion,
+            id_seccion: tempSec.id_seccion,
+            id_opcion_aplicada: tempOpc.id_opcion,
+            orden_aplicacion: 1,
+            aplicada: true,
+            omitida: false,
+          };
+          const secRes = await mmseEvaluacionService.guardarSeccion(secPayload);
+          if (secRes.success && secRes.data) {
+            const idEvalSeccion = secRes.data.id_eval_seccion;
+            for (const item of tempItems) {
+              const ans = answersRef.current[item.id_item];
+              const respPayload: RespuestaItemPayload = {
+                id_eval_seccion: idEvalSeccion,
+                id_opcion: tempOpc.id_opcion,
+                id_item: item.id_item,
+                respuesta_texto: ans.value,
+                correcto: ans.correcto,
+                puntaje: ans.puntaje,
+              };
+              await mmseEvaluacionService.guardarRespuesta(respPayload);
+            }
+          }
+        }
+
+        const espSec = currentStep.espacialSeccion;
+        const espOpc = currentStep.espacialOpcion;
+        const espItems = currentStep.espacialItems;
+
+        if (espSec && espOpc && espItems.length > 0) {
+          gradeAndSaveItems(espItems, values);
+
+          const secPayload: SeccionPayload = {
+            id_evaluacion: idEvaluacion,
+            id_seccion: espSec.id_seccion,
+            id_opcion_aplicada: espOpc.id_opcion,
+            orden_aplicacion: 2,
+            aplicada: true,
+            omitida: false,
+          };
+          const secRes = await mmseEvaluacionService.guardarSeccion(secPayload);
+          if (secRes.success && secRes.data) {
+            const idEvalSeccion = secRes.data.id_eval_seccion;
+            for (const item of espItems) {
+              const ans = answersRef.current[item.id_item];
+              const respPayload: RespuestaItemPayload = {
+                id_eval_seccion: idEvalSeccion,
+                id_opcion: espOpc.id_opcion,
+                id_item: item.id_item,
+                respuesta_texto: ans.value,
+                correcto: ans.correcto,
+                puntaje: ans.puntaje,
+              };
+              await mmseEvaluacionService.guardarRespuesta(respPayload);
+            }
+          }
+        }
+
+        setAnswers({ ...answersRef.current });
+
+      } catch (err: any) {
+        setError(err.message || "Error al guardar respuestas de orientación. Intente de nuevo.");
+        setSaving(false);
+        return;
+      }
+      setSaving(false);
+      setCurrentStepIdx(currentStepIdx + 1);
+      return;
+    }
+
     // If it's the choice of Attention option
     if (currentStep.type === "atencion_choice") {
       if (selectedAtencionOpcionId === null) {
@@ -559,7 +803,11 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
       setCurrentStepIdx(currentStepIdx + 1);
     } else {
       // Finished all steps
-      onFinalizar();
+      const tiempos = {
+        total: elapsedSeconds,
+        ...categoryTimesRef.current
+      };
+      onFinalizar(tiempos);
     }
   };
 
@@ -578,6 +826,146 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
 
   // Render question custom elements
   const renderInputArea = () => {
+    if (currentStep.type === "orientacion_inicial") {
+      return (
+        <div className="w-full space-y-6 text-left animate-in fade-in slide-in-from-bottom-5 duration-400">
+          <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-5 space-y-4 shadow-inner">
+            <h3 className="text-sm font-black text-blue-900 flex items-center gap-1.5 uppercase tracking-wide">
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              1. Orientación Temporal (Fecha y Día)
+            </h3>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="flex flex-col">
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Año</label>
+                <input
+                  type="number"
+                  value={formOrientacion.anio}
+                  onChange={(e) => setFormOrientacion(prev => ({ ...prev, anio: e.target.value }))}
+                  className="px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white font-semibold text-sm transition-colors shadow-sm"
+                  placeholder="Año"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Día del Mes</label>
+                <input
+                  type="number"
+                  value={formOrientacion.diaMes}
+                  onChange={(e) => setFormOrientacion(prev => ({ ...prev, diaMes: e.target.value }))}
+                  className="px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white font-semibold text-sm transition-colors shadow-sm"
+                  placeholder="Día"
+                />
+              </div>
+
+              <div className="flex flex-col col-span-2 sm:col-span-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Mes</label>
+                <select
+                  value={formOrientacion.mes}
+                  onChange={(e) => setFormOrientacion(prev => ({ ...prev, mes: e.target.value }))}
+                  className="px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white font-semibold text-sm transition-colors shadow-sm"
+                >
+                  {["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"].map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col col-span-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Día de Semana</label>
+                <select
+                  value={formOrientacion.diaSemana}
+                  onChange={(e) => setFormOrientacion(prev => ({ ...prev, diaSemana: e.target.value }))}
+                  className="px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white font-semibold text-sm transition-colors shadow-sm"
+                >
+                  {["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"].map(d => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col col-span-1">
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Estación</label>
+                <select
+                  value={formOrientacion.estacion}
+                  onChange={(e) => setFormOrientacion(prev => ({ ...prev, estacion: e.target.value }))}
+                  className="px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white font-semibold text-sm transition-colors shadow-sm"
+                >
+                  {["Primavera", "Verano", "Otoño", "Invierno"].map(s => (
+                    <option key={s} value={s}>{s}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-slate-50/50 rounded-2xl border border-slate-100 p-5 space-y-4 shadow-inner">
+            <h3 className="text-sm font-black text-blue-900 flex items-center gap-1.5 uppercase tracking-wide">
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              2. Orientación Espacial (Ubicación)
+            </h3>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col">
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">País</label>
+                <input
+                  type="text"
+                  value={formOrientacion.pais}
+                  onChange={(e) => setFormOrientacion(prev => ({ ...prev, pais: e.target.value }))}
+                  className="px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white font-semibold text-sm transition-colors shadow-sm"
+                  placeholder="Ej. Perú"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Dpto / Estado</label>
+                <input
+                  type="text"
+                  value={formOrientacion.departamento}
+                  onChange={(e) => setFormOrientacion(prev => ({ ...prev, departamento: e.target.value }))}
+                  className="px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white font-semibold text-sm transition-colors shadow-sm"
+                  placeholder="Ej. Lambayeque"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Ciudad</label>
+                <input
+                  type="text"
+                  value={formOrientacion.ciudad}
+                  onChange={(e) => setFormOrientacion(prev => ({ ...prev, ciudad: e.target.value }))}
+                  className="px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white font-semibold text-sm transition-colors shadow-sm"
+                  placeholder="Ej. Chiclayo"
+                />
+              </div>
+
+              <div className="flex flex-col">
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Establecimiento / Lugar</label>
+                <input
+                  type="text"
+                  value={formOrientacion.lugar}
+                  onChange={(e) => setFormOrientacion(prev => ({ ...prev, lugar: e.target.value }))}
+                  className="px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white font-semibold text-sm transition-colors shadow-sm"
+                  placeholder="Ej. Casa, Hospital"
+                />
+              </div>
+
+              <div className="flex flex-col col-span-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase mb-1">Piso / Sala</label>
+                <input
+                  type="text"
+                  value={formOrientacion.piso}
+                  onChange={(e) => setFormOrientacion(prev => ({ ...prev, piso: e.target.value }))}
+                  className="px-3 py-2 border border-slate-200 rounded-xl outline-none focus:border-blue-600 bg-white font-semibold text-sm transition-colors shadow-sm"
+                  placeholder="Ej. 1er piso, Sala de estar"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     if (currentStep.type === "atencion_choice") {
       return (
         <div className="grid grid-cols-1 gap-4 mt-4 max-w-md mx-auto">
@@ -1002,6 +1390,10 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
           <span className="uppercase tracking-wider flex items-center gap-1">
             <Sparkles className="w-3.5 h-3.5 text-blue-500 animate-pulse" />
             {currentStep.categoria?.nombre_categoria || "Prueba cognitiva"}
+          </span>
+          <span className="font-mono text-slate-500 bg-slate-100/80 px-2.5 py-0.5 rounded-lg flex items-center gap-1 shadow-sm border border-slate-200/50">
+            <Clock className="w-3.5 h-3.5 text-indigo-500" />
+            {formatTime(elapsedSeconds)}
           </span>
           <span className="font-bold text-blue-600">{Math.round(progressPercent)}% completado</span>
         </div>

@@ -19,6 +19,7 @@ def obtener_resultados_paciente_prueba(id_paciente: int, id_prueba: int = None):
                     ec.fecha_evaluacion,
                     ec.estado_evaluacion,
                     ec.puntaje_total,
+                    ec.duracion_segundos,
                     p.nombres, p.apellidos,
                     pc.id_prueba, pc.nombre_prueba, pc.puntaje_maximo AS puntaje_maximo_prueba,
                     av.id_analisis, av.url_imagen, av.puntaje_ia, ec.diagnostico_ia, ec.observaciones, av.detalles_ia
@@ -71,6 +72,30 @@ def obtener_resultado_categorias_mmse(id_evaluacion: int):
     except Exception as e:
         print(f"Error obteniendo categorías MMSE para evaluación {id_evaluacion}: {e}")
         return []
+    finally:
+        if conexion:
+            conexion.close()
+
+
+def obtener_tiempos_evaluacion(id_evaluacion: int):
+    """
+    Obtiene los tiempos por etapa registrados para una evaluación cognitiva.
+    Retorna un diccionario de {nombre_etapa: duracion_segundos}.
+    """
+    conexion = None
+    try:
+        conexion = db.obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                SELECT nombre_etapa, duracion_segundos
+                FROM evaluacion_tiempo
+                WHERE id_evaluacion = %s
+            """, (id_evaluacion,))
+            rows = cursor.fetchall()
+            return {r["nombre_etapa"]: r["duracion_segundos"] for r in rows}
+    except Exception as e:
+        print(f"Error obteniendo tiempos para evaluación {id_evaluacion}: {e}")
+        return {}
     finally:
         if conexion:
             conexion.close()

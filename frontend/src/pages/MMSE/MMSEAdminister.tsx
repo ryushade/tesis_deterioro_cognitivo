@@ -55,7 +55,11 @@ export default function MMSEAdminister() {
     if (res.evaluacion && res.evaluacion.estado_evaluacion === 2) {
       setIdEvaluacion(res.evaluacion.id_evaluacion);
       // Fetch final results
-      const finRes = await mmseEvaluacionService.finalizarEvaluacion(res.evaluacion.id_evaluacion);
+      const finRes = await mmseEvaluacionService.finalizarEvaluacion(
+        res.evaluacion.id_evaluacion,
+        res.evaluacion.tiempos || undefined,
+        res.evaluacion.duracion_segundos || undefined
+      );
       if (finRes.success && finRes.data) {
         setResultado(finRes.data);
         setStep("finalizado");
@@ -80,10 +84,11 @@ export default function MMSEAdminister() {
     setStep("evaluacion");
   };
 
-  const handleFinalizar = async () => {
+  const handleFinalizar = async (tiempos?: Record<string, number>) => {
     if (!idEvaluacion) return;
     setStep("loading");
-    const res = await mmseEvaluacionService.finalizarEvaluacion(idEvaluacion);
+    const totalSeconds = tiempos?.total;
+    const res = await mmseEvaluacionService.finalizarEvaluacion(idEvaluacion, tiempos, totalSeconds);
     if (!res.success || !res.data) {
       setErrorMsg(res.message || "Error al finalizar evaluación");
       setStep("error");
@@ -154,6 +159,7 @@ export default function MMSEAdminister() {
             puntajeTotal={resultado.puntaje_total}
             categorias={resultado.categorias}
             nombrePaciente={nombrePaciente}
+            tiempos={resultado.tiempos}
           />
         )}
       </div>

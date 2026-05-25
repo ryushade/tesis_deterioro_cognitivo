@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { CheckCircle2, XCircle, ChevronRight, ChevronLeft, AlertTriangle, Loader2 } from "lucide-react";
+import { useState, useEffect, useCallback, useRef } from "react";
+import { CheckCircle2, XCircle, ChevronRight, ChevronLeft, AlertTriangle, Loader2, Clock } from "lucide-react";
 import type { CategoriaMMSE, SeccionMMSE, OpcionMMSE, ItemMMSE } from "@/services/mmseEvaluacionService";
 import { mmseEvaluacionService } from "@/services/mmseEvaluacionService";
 import type { SeccionPayload, RespuestaItemPayload } from "@/services/mmseEvaluacionService";
@@ -20,8 +20,26 @@ interface SeccionState {
 interface Props {
   categorias: CategoriaMMSE[];
   idEvaluacion: number;
-  onFinalizar: () => void;
+  onFinalizar: (tiempos?: Record<string, number>) => void;
 }
+
+const getCategoryKey = (catName?: string): string => {
+  if (!catName) return "orientacion";
+  const name = catName.toLowerCase();
+  if (name.includes("orient") || name.includes("tiempo") || name.includes("lugar") || name.includes("espaci")) {
+    return "orientacion";
+  }
+  if (name.includes("fijac") || name.includes("registr") || name.includes("aprend")) {
+    return "fijacion";
+  }
+  if (name.includes("atenc") || name.includes("calcul") || name.includes("cálcul")) {
+    return "atencion";
+  }
+  if (name.includes("memor") || name.includes("evoc") || name.includes("recuer")) {
+    return "memoria";
+  }
+  return "lenguaje";
+};
 
 export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar }: Props) {
   // Flatten sections with category info
@@ -36,6 +54,44 @@ export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar }
   const [seccionStates, setSeccionStates] = useState<Record<number, SeccionState>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Time tracking states
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const categoryTimesRef = useRef<Record<string, number>>({
+    orientacion: 0,
+    fijacion: 0,
+    atencion: 0,
+    memoria: 0,
+    lenguaje: 0
+  });
+  const currentCategoryRef = useRef<string>("orientacion");
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    intervalRef.current = setInterval(() => {
+      setElapsedSeconds(prev => {
+        const nextSec = prev + 1;
+        const activeCat = currentCategoryRef.current;
+        categoryTimesRef.current[activeCat] = (categoryTimesRef.current[activeCat] || 0) + 1;
+        return nextSec;
+      });
+    }, 1000);
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (current && current.categoria) {
+      currentCategoryRef.current = getCategoryKey(current.categoria.nombre_categoria);
+    }
+  }, [current]);
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
 
   const current = secciones[currentIdx];
   if (!current) return null;
@@ -157,7 +213,13 @@ export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar }
 
   const handleFinish = async () => {
     const res = await guardarSeccionActual();
-    if (res !== null) onFinalizar();
+    if (res !== null) {
+      const tiempos = {
+        total: elapsedSeconds,
+        ...categoryTimesRef.current
+      };
+      onFinalizar(tiempos);
+    }
   };
 
   const isLastSection = currentIdx === secciones.length - 1;
@@ -219,6 +281,14 @@ export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar }
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
             <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#64748b' }}>
               Sección {currentIdx + 1} de {secciones.length}
+            </span>
+            <span style={{
+              fontFamily: 'monospace', fontSize: '0.85rem', fontWeight: 700,
+              color: '#475569', background: '#f1f5f9', padding: '2px 8px', borderRadius: '6px',
+              display: 'flex', alignItems: 'center', gap: '4px', border: '1px solid #e2e8f0'
+            }}>
+              <Clock size={12} style={{ color: '#6366f1' }} />
+              {formatTime(elapsedSeconds)}
             </span>
             <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#3b82f6' }}>
               {Math.round(progress)}%
