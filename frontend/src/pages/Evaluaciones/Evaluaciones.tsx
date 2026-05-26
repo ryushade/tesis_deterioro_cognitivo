@@ -3,8 +3,10 @@ import { toast } from 'react-hot-toast';
 import { Plus } from 'lucide-react';
 
 import { AppSidebar } from '../../components/app-sidebar';
-import { SidebarProvider, SidebarInset } from '../../components/ui/sidebar';
+import { SidebarProvider, SidebarInset, SidebarTrigger } from '../../components/ui/sidebar';
 import { Button } from '../../components/ui/button';
+import { Separator } from '../../components/ui/separator';
+import { DynamicBreadcrumb } from '../../components/layout/DynamicBreadcrumb';
 import { authService } from '../../services/auth';
 
 import { useGetPruebas, pruebasService } from '../../services/pruebaServices';
@@ -130,6 +132,11 @@ function Evaluaciones() {
       <SidebarProvider>
         <AppSidebar user={sidebarUser} onLogout={handleLogout} />
         <SidebarInset>
+          <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+            <SidebarTrigger className="-ml-1" />
+            <Separator orientation="vertical" className="mr-2 h-4" />
+            <DynamicBreadcrumb />
+          </header>
           <div className="flex-1 p-8">
             <div className="bg-red-50 border border-red-200 rounded-md p-4">
               <h3 className="text-red-800 font-medium">Error al cargar pruebas cognitivas</h3>
@@ -148,6 +155,11 @@ function Evaluaciones() {
     <SidebarProvider>
       <AppSidebar user={sidebarUser} onLogout={handleLogout} />
       <SidebarInset>
+        <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+          <SidebarTrigger className="-ml-1" />
+          <Separator orientation="vertical" className="mr-2 h-4" />
+          <DynamicBreadcrumb />
+        </header>
         <div className="flex-1 p-4">
           <div className="space-y-6">
             {/* Header */}
