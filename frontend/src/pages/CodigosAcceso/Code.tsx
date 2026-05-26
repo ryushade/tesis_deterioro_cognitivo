@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import type { CodigoAcceso } from '@/types/codigosAcceso';
 import { codigosAccesoService } from '@/services/codigosAccesoService';
+import { CodigosSearch, type CodigoFilters } from './ComponentsCodigo/CodigosSearch';
 
 function CodigosAcceso() {
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,16 +31,21 @@ function CodigosAcceso() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState<CodigoFilters>({
+    estado: '',
+    tipoEvaluacion: ''
+  });
 
   const [selectedCodigo, setSelectedCodigo] = useState<CodigoAcceso | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
-  const fetchCodigos = async (page = currentPage, limit = itemsPerPage) => {
+  const fetchCodigos = async (page = currentPage, limit = itemsPerPage, search = searchTerm) => {
     try {
       setLoading(true);
       setError(null);
-      const res = await codigosAccesoService.getAll({ page, limit });
+      const res = await codigosAccesoService.getAll({ page, limit, search });
       if (res.success) {
         setCodigosAcceso(res.data || []);
         setTotal(res.metadata?.total || 0);
@@ -55,8 +61,24 @@ function CodigosAcceso() {
   };
 
   useEffect(() => {
-    fetchCodigos(currentPage, itemsPerPage);
-  }, [currentPage, itemsPerPage]);
+    fetchCodigos(currentPage, itemsPerPage, searchTerm);
+  }, [currentPage, itemsPerPage, searchTerm]);
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
+    setCurrentPage(1);
+  };
+
+  const filteredCodigos = codigosAcceso.filter((codigo) => {
+    if (filters.estado !== '') {
+      const activeFilterNum = parseInt(filters.estado);
+      if (codigo.estado !== activeFilterNum) return false;
+    }
+    if (filters.tipoEvaluacion !== '') {
+      if (codigo.tipo_evaluacion !== filters.tipoEvaluacion) return false;
+    }
+    return true;
+  });
 
   const metadata = { total_pages: totalPages, total: total };
   
@@ -115,12 +137,18 @@ function CodigosAcceso() {
           
         </div>
 
+        <CodigosSearch
+          onSearch={handleSearch}
+          onFilterChange={(newFilters) => setFilters(newFilters)}
+          className="mb-4"
+        />
+
         <TablaCodigo
-          codigos={codigosAcceso}
+          codigos={filteredCodigos}
           loading={loading}
           error={error}
-          searchTerm=""
-          onSearch={() => {}}
+          searchTerm={searchTerm}
+          onSearch={handleSearch}
           onView={(codigo) => {
             setSelectedCodigo(codigo);
             setIsViewModalOpen(true);

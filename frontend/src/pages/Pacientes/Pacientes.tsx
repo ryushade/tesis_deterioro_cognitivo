@@ -13,6 +13,7 @@ import ConfirmationModal from '@/components/ui/ConfirmationModal';
 import { pacientesService, type Paciente } from '@/services/pacienteServices';
 import toast, { Toaster } from 'react-hot-toast';
 import PaginacionPacientes from './ComponentsPacientes/PaginacionPacientes';
+import BarraSearch from './ComponentsPacientes/BarraSearch';
 import {
   Select,
   SelectContent,
@@ -20,6 +21,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+
+interface SearchFilters {
+  estadoCognitivo: string;
+  edadMin: number;
+  edadMax: number;
+  estadoPaciente: string;
+}
 
 function Pacientes() {
   // Estados para los modales
@@ -34,9 +42,41 @@ function Pacientes() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(5);
+  const [filters, setFilters] = useState<SearchFilters>({
+    estadoCognitivo: '',
+    edadMin: 65,
+    edadMax: 100,
+    estadoPaciente: ''
+  });
   
   // Hook para obtener pacientes
   const { pacientes, metadata, loading, error, refetch } = useGetPacientes();
+
+  const calculateEdad = (fecha_nacimiento: string | null) => {
+    if (!fecha_nacimiento) return 0;
+    const today = new Date();
+    const birthDate = new Date(fecha_nacimiento);
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+    return age;
+  };
+
+  const filteredPacientes = pacientes.filter((paciente) => {
+    if (filters.estadoPaciente !== '') {
+      const activeFilterNum = parseInt(filters.estadoPaciente);
+      if (paciente.estado !== activeFilterNum) return false;
+    }
+    const edad = paciente.edad ?? calculateEdad(paciente.fecha_nacimiento);
+    if (edad < filters.edadMin || edad > filters.edadMax) return false;
+    if (filters.estadoCognitivo !== '') {
+      const pacAny = paciente as any;
+      if (pacAny.estado_cognitivo && pacAny.estado_cognitivo !== filters.estadoCognitivo) return false;
+    }
+    return true;
+  });
 
   // Get user data from localStorage
   const currentUser = authService.getUserFromStorage();
@@ -151,9 +191,16 @@ function Pacientes() {
 
         
 
+        {/* Barra de búsqueda y filtros */}
+        <BarraSearch
+          onSearch={handleSearch}
+          onFilterChange={(newFilters) => setFilters(newFilters)}
+          className="mb-4"
+        />
+
         {/* Tabla de pacientes */}
         <TablaPacientesSimple
-          pacientes={pacientes}
+          pacientes={filteredPacientes}
           loading={loading}
           error={error}
           searchTerm={searchTerm}

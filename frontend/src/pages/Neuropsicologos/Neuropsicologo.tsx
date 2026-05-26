@@ -11,6 +11,7 @@ import ViewNeuropsicologo from "./ComponentsNeuropsicologos/ViewNeuropsicologoMo
 import toast, { Toaster } from 'react-hot-toast'
 import PaginacionPacientes from '../Pacientes/ComponentsPacientes/PaginacionPacientes';
 import ConfirmationModal from './ComponentsNeuropsicologos/ConfirmationModal'
+import { NeuropsicologosSearch, type NeuroFilter } from './ComponentsNeuropsicologos/NeuropsicologosSearch'
 import {
   Select,
   SelectContent,
@@ -29,8 +30,20 @@ function Neuropsicologos() {
   const [searchTerm, setSearchTerm] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(5)
+  const [filters, setFilters] = useState<NeuroFilter>({
+    estado: ''
+  });
 
   const { neuropsicologos, metadata, loading, error, refetch } = useGetNeuropsicologos()
+
+  const filteredNeuropsicologos = neuropsicologos.filter((neuro) => {
+    if (filters.estado !== '') {
+      const activeFilterNum = parseInt(filters.estado);
+      const neuroEstado = neuro.estado_usuario ?? neuro.estado ?? 0;
+      if (Number(neuroEstado) !== activeFilterNum) return false;
+    }
+    return true;
+  });
 
   const currentUser = authService.getUserFromStorage()
   const sidebarUser = { name: currentUser?.username || "Usuario", email: currentUser?.role?.name || "Rol no definido" }
@@ -75,8 +88,14 @@ function Neuropsicologos() {
           </Button>
         </div>
 
+        <NeuropsicologosSearch
+          onSearch={handleSearch}
+          onFilterChange={(newFilters) => setFilters(newFilters)}
+          className="mb-4"
+        />
+
         <TablaNeuropsicologos
-          items={neuropsicologos}
+          items={filteredNeuropsicologos}
           loading={loading}
           error={error}
           searchTerm={searchTerm}

@@ -2,28 +2,34 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
-interface BarraSearchProps {
+// Kept for backwards compat — no longer used internally
+export interface PruebaFilters {
+  estado: string;
+  puntajeMin: number | '';
+  puntajeMax: number | '';
+}
+
+interface PruebasSearchProps {
   onSearch: (searchTerm: string) => void;
   /** @deprecated filters removed — kept so parent doesn't need to change */
-  onFilterChange?: (filters: Record<string, unknown>) => void;
+  onFilterChange?: (filters: PruebaFilters) => void;
   placeholder?: string;
   className?: string;
 }
 
-const BarraSearch: React.FC<BarraSearchProps> = ({
+export const PruebasSearch: React.FC<PruebasSearchProps> = ({
   onSearch,
-  placeholder = 'Buscar pacientes...',
+  placeholder = 'Buscar pruebas por nombre...',
   className = '',
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  // Store callback in a ref so it never causes the effect to re-run
   const onSearchRef = useRef(onSearch);
   useEffect(() => { onSearchRef.current = onSearch; });
 
   useEffect(() => {
     const id = setTimeout(() => onSearchRef.current(searchTerm), 300);
     return () => clearTimeout(id);
-  }, [searchTerm]); // ← only re-runs when the user actually types
+  }, [searchTerm]);
 
   return (
     <div className={`relative max-w-sm ${className}`}>
@@ -46,5 +52,3 @@ const BarraSearch: React.FC<BarraSearchProps> = ({
     </div>
   );
 };
-
-export default BarraSearch;

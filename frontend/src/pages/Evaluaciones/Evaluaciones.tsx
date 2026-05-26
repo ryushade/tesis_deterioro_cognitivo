@@ -10,6 +10,7 @@ import { DynamicBreadcrumb } from '../../components/layout/DynamicBreadcrumb';
 import { authService } from '../../services/auth';
 
 import { useGetPruebas, pruebasService } from '../../services/pruebaServices';
+import { PruebasSearch, type PruebaFilters } from './ComponentsEvaluaciones/PruebasSearch';
 import type { Prueba } from '../../services/pruebaServices';
 
 import PaginacionEvaluacion from './ComponentsEvaluaciones/PaginacionEvaluacion';
@@ -31,9 +32,15 @@ function Evaluaciones() {
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedPrueba, setSelectedPrueba] = useState<Prueba | null>(null);
 
-  // Paginación
+  // Paginación y búsqueda
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filters, setFilters] = useState<PruebaFilters>({
+    estado: '',
+    puntajeMin: '',
+    puntajeMax: ''
+  });
 
   // Datos
   const [pruebas, setPruebas] = useState<Prueba[]>([]);
@@ -50,11 +57,11 @@ function Evaluaciones() {
   };
 
   // Fetch
-  const fetchPruebas = async (page = currentPage, limit = itemsPerPage) => {
+  const fetchPruebas = async (page = currentPage, limit = itemsPerPage, search = searchTerm) => {
     try {
       setLoading(true);
       setError(null);
-      const res = await pruebasService.getAll(page, limit);
+      const res = await pruebasService.getAll(page, limit, search);
       if (res.success) {
         setPruebas(res.data || []);
         setTotal(res.metadata?.total || 0);
@@ -70,9 +77,26 @@ function Evaluaciones() {
   };
 
   useEffect(() => {
-    fetchPruebas(currentPage, itemsPerPage);
+    fetchPruebas(currentPage, itemsPerPage, searchTerm);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentPage, itemsPerPage]);
+  }, [currentPage, itemsPerPage, searchTerm]);
+
+  // Client-side filtering logic
+  const filteredPruebas = pruebas.filter((prueba) => {
+    if (filters.estado !== '') {
+      const activeFilterNum = parseInt(filters.estado);
+      if (prueba.estado !== activeFilterNum) return false;
+    }
+    if (filters.puntajeMin !== '') {
+      const puntaje = prueba.puntaje_maximo ?? 0;
+      if (puntaje < filters.puntajeMin) return false;
+    }
+    if (filters.puntajeMax !== '') {
+      const puntaje = prueba.puntaje_maximo ?? 0;
+      if (puntaje > filters.puntajeMax) return false;
+    }
+    return true;
+  });
 
   // Handlers
   const handleLogout = async () => {
@@ -170,7 +194,7 @@ function Evaluaciones() {
                     Gestión de pruebas neuropsicológicas
                   </h1>
                   <p className="text-lg font-medium text-blue-700/80 leading-relaxed">
-                    Gestiona el catálogo de pruebas neuropsicológicas.
+                    Administra y visualiza el catálogo de pruebas neuropsicológicas.
                   </p>
                 </div>
               </div>
@@ -184,9 +208,19 @@ function Evaluaciones() {
               </Button>
             </div>
 
+            {/* Buscador y filtros avanzados */}
+            <PruebasSearch
+              onSearch={(term) => {
+                setSearchTerm(term);
+                setCurrentPage(1);
+              }}
+              onFilterChange={(newFilters) => setFilters(newFilters)}
+              className="mb-4"
+            />
+
             {/* Tabla de Pruebas */}
             <PruebasCognitivasTable
-              pruebas={pruebas}
+              pruebas={filteredPruebas}
               loading={loading}
               onView={handleViewPrueba}
               onEdit={handleEditPrueba}

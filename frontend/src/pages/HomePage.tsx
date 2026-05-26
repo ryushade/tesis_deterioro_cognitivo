@@ -123,7 +123,7 @@ export function HomePage() {
           style={{ scrollbarGutter: 'stable' }}
         >
           <div className="indicator-top" />
-          <div className="flex flex-col gap-2 p-4 pt-6 md:p-8">
+          <div className="flex flex-col gap-2 p-4 pt-6 md:p-4">
 
             {/* Page header */}
             <div className="flex flex-col gap-1">
@@ -220,7 +220,7 @@ export function HomePage() {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
 
                   {/* Area chart — spans 4 */}
-                  <Card className="lg:col-span-4">
+                  <Card className="lg:col-span-4 flex flex-col">
                     <CardHeader className="flex flex-row items-start justify-between">
                       <div className="grid gap-0.5">
                         <CardTitle>Histórico de evaluaciones</CardTitle>
@@ -233,15 +233,15 @@ export function HomePage() {
                         Mensual
                       </span>
                     </CardHeader>
-                    <CardContent className="pl-2">
+                    <CardContent className="pl-2 flex-1 flex flex-col">
                       {evaluacionesData.length === 0 ? (
-                        <div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed">
+                        <div className="flex flex-1 min-h-[220px] items-center justify-center rounded-lg border border-dashed">
                           <p className="text-sm text-muted-foreground">
                             No hay suficientes datos registrados
                           </p>
                         </div>
                       ) : (
-                        <ChartContainer config={evalChartConfig} className="h-[220px] w-full">
+                        <ChartContainer config={evalChartConfig} className="flex-1 aspect-auto min-h-[220px] w-full">
                           <AreaChart
                             data={evaluacionesData}
                             margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
@@ -282,16 +282,16 @@ export function HomePage() {
                   </Card>
 
                   {/* Donut chart — spans 3 */}
-                  <Card className="lg:col-span-3 cq-wrapper">
+                  <Card className="lg:col-span-3 cq-wrapper flex flex-col">
                     <CardHeader>
                       <CardTitle>Tipos de evaluaciones</CardTitle>
                       <CardDescription>
                         Proporción por tipo de instrumento cognitivo
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="flex flex-col gap-4">
+                    <CardContent className="flex-1 flex flex-col gap-4 justify-center">
                       {evaluacionesTipoData.length === 0 ? (
-                        <div className="flex h-[190px] items-center justify-center rounded-lg border border-dashed">
+                        <div className="flex flex-1 min-h-[190px] items-center justify-center rounded-lg border border-dashed">
                           <p className="text-sm text-muted-foreground">Sin datos de pruebas</p>
                         </div>
                       ) : (
@@ -353,22 +353,22 @@ export function HomePage() {
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
 
                   {/* Bar chart — spans 4 */}
-                  <Card className="lg:col-span-4">
+                  <Card className="lg:col-span-4 flex flex-col">
                     <CardHeader>
                       <CardTitle>Rangos de edad de pacientes</CardTitle>
                       <CardDescription>
                         Número de pacientes distribuidos según rango etario actual
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="pl-2">
+                    <CardContent className="pl-2 flex-1 flex flex-col">
                       {pacientesEdadData.length === 0 ? (
-                        <div className="flex h-[220px] items-center justify-center rounded-lg border border-dashed">
+                        <div className="flex flex-1 min-h-[220px] items-center justify-center rounded-lg border border-dashed">
                           <p className="text-sm text-muted-foreground">
                             No hay pacientes con edad registrada
                           </p>
                         </div>
                       ) : (
-                        <ChartContainer config={ageChartConfig} className="h-[220px] w-full">
+                        <ChartContainer config={ageChartConfig} className="flex-1 aspect-auto min-h-[220px] w-full">
                           <BarChart
                             data={pacientesEdadData}
                             margin={{ top: 10, right: 10, left: -25, bottom: 0 }}
@@ -527,7 +527,7 @@ function DashboardSkeleton() {
 
       {/* Charts row skeleton */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
+        <Card className="lg:col-span-4 flex flex-col">
           <CardHeader className="flex flex-row items-start justify-between">
             <div className="grid gap-1.5">
               <div className="h-4 w-44 rounded bg-muted" />
@@ -535,17 +535,17 @@ function DashboardSkeleton() {
             </div>
             <div className="h-7 w-20 rounded-lg bg-muted" />
           </CardHeader>
-          <CardContent className="pl-2">
-            <div className="h-[220px] w-full rounded-lg bg-muted" />
+          <CardContent className="pl-2 flex-1 flex flex-col">
+            <div className="h-[220px] w-full rounded-lg bg-muted flex-1" />
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-3">
+        <Card className="lg:col-span-3 flex flex-col">
           <CardHeader>
             <div className="h-4 w-36 rounded bg-muted" />
             <div className="h-3 w-52 rounded bg-muted" />
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
+          <CardContent className="flex-1 flex flex-col gap-4 justify-center">
             <div className="mx-auto h-[130px] w-[130px] rounded-full bg-muted" />
             <div className="flex flex-col gap-2">
               {[1, 2, 3].map((i) => (
@@ -562,13 +562,13 @@ function DashboardSkeleton() {
 
       {/* Bottom row skeleton */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="lg:col-span-4">
+        <Card className="lg:col-span-4 flex flex-col">
           <CardHeader>
             <div className="h-4 w-48 rounded bg-muted" />
             <div className="h-3 w-72 rounded bg-muted" />
           </CardHeader>
-          <CardContent className="pl-2">
-            <div className="h-[220px] w-full rounded-lg bg-muted" />
+          <CardContent className="pl-2 flex-1 flex flex-col">
+            <div className="h-[220px] w-full rounded-lg bg-muted flex-1" />
           </CardContent>
         </Card>
 
