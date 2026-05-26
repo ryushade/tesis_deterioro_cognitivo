@@ -14,13 +14,17 @@ interface Props {
   tiempoLimite?: number;
 }
 
-const getCategoryKey = (step: any): string => {
 interface UserAnswer {
   value: string;
   correcto: boolean;
   puntaje: 0 | 1;
   base64Image?: string;
 }
+
+const getCategoryKey = (step: any): string => {
+  return step?.categoria?.nombre_categoria ?? "";
+};
+
 
 export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFinalizar, tiempoLimite }: Props) {
   // Step list mapping
@@ -1362,6 +1366,10 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
   const remainingSeconds = tiempoLimite ? tiempoLimite - elapsedSeconds : null;
   const isTimeCritical = remainingSeconds !== null && remainingSeconds <= 60;
   const displaySeconds = tiempoLimite ? Math.max(0, tiempoLimite - elapsedSeconds) : elapsedSeconds;
+  
+  const progressPercent = steps.length > 0 ? (currentStepIdx / steps.length) * 100 : 0;
+  const isFirstStep = currentStepIdx === 0;
+  const isLastStep = currentStepIdx === steps.length - 1;
 
   // Background and UI structures matching Web Application development guidelines (Wowing Aesthetics)
   return (

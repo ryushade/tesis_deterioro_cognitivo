@@ -245,3 +245,57 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Container Query & Scroll Affordance classes according to local Skill guidelines */
+@layer components {
+  /* Scroll shadows to indicate overflow scrollability */
+  .scroll-shadows-container {
+    background:
+      linear-gradient(white 30%, rgba(255, 255, 255, 0)),
+      linear-gradient(rgba(255, 255, 255, 0), white 70%) 0 100%,
+      radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0)),
+      radial-gradient(farthest-side at 50% 100%, rgba(0, 0, 0, 0.05), rgba(0, 0, 0, 0)) 0 100%;
+    background-size: 100% 40px, 100% 40px, 100% 14px, 100% 14px;
+    background-attachment: local, local, scroll, scroll;
+    background-repeat: no-repeat;
+  }
+
+  /* Define container query contexts */
+  .cq-wrapper {
+    container-type: inline-size;
+  }
+
+  /* Default stacked layout for KPI cards in extremely narrow containers */
+  .cq-kpi-card-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  /* Side-by-side layout for KPI cards in wide containers */
+  @container (min-width: 250px) {
+    .cq-kpi-card-layout {
+      flex-direction: row;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+  }
+
+  /* Default stacked layout for donut chart card */
+  .cq-donut-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  /* Side-by-side layout for donut chart in wide containers */
+  @container (min-width: 480px) {
+    .cq-donut-layout {
+      display: grid;
+      grid-template-columns: 1.2fr 1fr;
+      align-items: center;
+      gap: 1.5rem;
+    }
+  }
+}
