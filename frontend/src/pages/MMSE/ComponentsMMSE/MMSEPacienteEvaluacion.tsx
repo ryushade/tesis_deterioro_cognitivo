@@ -15,27 +15,6 @@ interface Props {
 }
 
 const getCategoryKey = (step: any): string => {
-  if (!step) return "total";
-  if (step.type === "orientacion_inicial") return "orientacion";
-  if (step.type === "fijacion_instruction") return "fijacion";
-  if (step.type === "atencion_choice") return "atencion";
-  
-  const name = step.seccion?.nombre_seccion?.toLowerCase() || step.categoria?.nombre_categoria?.toLowerCase() || "";
-  if (name.includes("orient") || name.includes("tiempo") || name.includes("lugar") || name.includes("espaci")) {
-    return "orientacion";
-  }
-  if (name.includes("fijac") || name.includes("registr") || name.includes("aprend")) {
-    return "fijacion";
-  }
-  if (name.includes("atenc") || name.includes("calcul") || name.includes("cálcul")) {
-    return "atencion";
-  }
-  if (name.includes("memor") || name.includes("evoc") || name.includes("recuer")) {
-    return "memoria";
-  }
-  return "lenguaje";
-};
-
 interface UserAnswer {
   value: string;
   correcto: boolean;
@@ -90,14 +69,7 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
 
   // Time tracking states
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const categoryTimesRef = useRef<Record<string, number>>({
-    orientacion: 0,
-    fijacion: 0,
-    atencion: 0,
-    memoria: 0,
-    lenguaje: 0
-  });
-  const currentCategoryRef = useRef<string>("orientacion");
+
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -110,15 +82,12 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
           clearInterval(intervalRef.current!);
           setTimeout(() => {
             const tiempos = {
-              total: nextSec,
-              ...categoryTimesRef.current
+              total: prev
             };
             onFinalizar(tiempos);
           }, 0);
         }
 
-        const activeCat = currentCategoryRef.current;
-        categoryTimesRef.current[activeCat] = (categoryTimesRef.current[activeCat] || 0) + 1;
         return nextSec;
       });
     }, 1000);
@@ -272,7 +241,7 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
 
   useEffect(() => {
     if (currentStep) {
-      currentCategoryRef.current = getCategoryKey(currentStep);
+      // Tracking total time natively now
     }
   }, [currentStep]);
 
@@ -820,8 +789,7 @@ export default function MMSEPacienteEvaluacion({ categorias, idEvaluacion, onFin
     } else {
       // Finished all steps
       const tiempos = {
-        total: elapsedSeconds,
-        ...categoryTimesRef.current
+        total: elapsedSeconds
       };
       onFinalizar(tiempos);
     }

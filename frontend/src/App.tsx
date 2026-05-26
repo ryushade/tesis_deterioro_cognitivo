@@ -91,7 +91,7 @@ function App() {
               <Route
                 path="/dashboard"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredRoles={["Administrador", "Neuropsicologo"]}>
                     <HomePage />
                   </ProtectedRoute>
                 }
@@ -108,7 +108,7 @@ function App() {
               <Route
                 path="/pruebas-cognitivas"
                 element={
-                  <ProtectedRoute>
+                  <ProtectedRoute requiredRoles={["Administrador", "Neuropsicologo"]}>
                     <Evaluaciones />
                   </ProtectedRoute>
                 }

@@ -75,27 +75,3 @@ def obtener_resultado_categorias_mmse(id_evaluacion: int):
     finally:
         if conexion:
             conexion.close()
-
-
-def obtener_tiempos_evaluacion(id_evaluacion: int):
-    """
-    Obtiene los tiempos por etapa registrados para una evaluación cognitiva.
-    Retorna un diccionario de {nombre_etapa: duracion_segundos}.
-    """
-    conexion = None
-    try:
-        conexion = db.obtener_conexion()
-        with conexion.cursor() as cursor:
-            cursor.execute("""
-                SELECT nombre_etapa, duracion_segundos
-                FROM evaluacion_tiempo
-                WHERE id_evaluacion = %s
-            """, (id_evaluacion,))
-            rows = cursor.fetchall()
-            return {r["nombre_etapa"]: r["duracion_segundos"] for r in rows}
-    except Exception as e:
-        print(f"Error obteniendo tiempos para evaluación {id_evaluacion}: {e}")
-        return {}
-    finally:
-        if conexion:
-            conexion.close()

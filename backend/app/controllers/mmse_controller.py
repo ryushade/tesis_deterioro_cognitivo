@@ -422,14 +422,14 @@ def guardar_respuesta_item(data):
 def finalizar_evaluacion(id_evaluacion, tiempos=None, duracion_segundos=None):
     """
     Calcula puntaje por categoría y total, actualiza evaluacion_cognitiva,
-    guarda tiempos desglosados en evaluacion_tiempo y marca la evaluación como finalizada (estado=2).
+    guarda el tiempo total y marca la evaluación como finalizada (estado=2).
     """
     if isinstance(tiempos, dict):
-        pass
+        total_duration = tiempos.get("total")
     elif duracion_segundos is not None:
-        tiempos = {"total": duracion_segundos}
+        total_duration = duracion_segundos
     else:
-        tiempos = None
+        total_duration = None
 
     conn = None
     try:
@@ -468,30 +468,13 @@ def finalizar_evaluacion(id_evaluacion, tiempos=None, duracion_segundos=None):
             total_row = cur.fetchone()
             puntaje_total = total_row["puntaje_total"] if total_row else 0
 
-            # Guardar tiempos desglosados e individualizados si existen
-            if tiempos:
-                total_duration = tiempos.get("total")
-                if total_duration is not None:
-                    cur.execute("""
-                        UPDATE evaluacion_cognitiva
-                        SET puntaje_total = %s, estado_evaluacion = 2, duracion_segundos = %s
-                        WHERE id_evaluacion = %s
-                    """, (puntaje_total, total_duration, id_evaluacion))
-                else:
-                    cur.execute("""
-                        UPDATE evaluacion_cognitiva
-                        SET puntaje_total = %s, estado_evaluacion = 2
-                        WHERE id_evaluacion = %s
-                    """, (puntaje_total, id_evaluacion))
-
-                for nombre_etapa, segundos in tiempos.items():
-                    if segundos is not None:
-                        cur.execute("""
-                            INSERT INTO evaluacion_tiempo (id_evaluacion, nombre_etapa, duracion_segundos)
-                            VALUES (%s, %s, %s)
-                            ON CONFLICT (id_evaluacion, nombre_etapa)
-                            DO UPDATE SET duracion_segundos = EXCLUDED.duracion_segundos
-                        """, (id_evaluacion, nombre_etapa, segundos))
+            # Guardar el tiempo total si existe
+            if total_duration is not None:
+                cur.execute("""
+                    UPDATE evaluacion_cognitiva
+                    SET puntaje_total = %s, estado_evaluacion = 2, duracion_segundos = %s
+                    WHERE id_evaluacion = %s
+                """, (puntaje_total, total_duration, id_evaluacion))
             else:
                 cur.execute("""
                     UPDATE evaluacion_cognitiva

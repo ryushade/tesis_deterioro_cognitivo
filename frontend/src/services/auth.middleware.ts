@@ -56,7 +56,9 @@ export class AuthorizationService {
    */
   static isPatient(): boolean {
     const user = authService.getCurrentUserSync();
-    return user?.role?.name === 'Paciente';
+    const isPatientType = localStorage.getItem('userType') === 'paciente';
+    const isPacienteUsername = user?.username?.startsWith('paciente_') || false;
+    return user?.role?.name === 'Paciente' || isPatientType || isPacienteUsername;
   }
 
   /**
@@ -117,7 +119,17 @@ export class AuthorizationService {
    */
   static getDefaultRoute(): string {
     if (this.isPatient()) {
-      return '/pruebas'; // Los pacientes van directamente a las pruebas
+      const idCodigo = localStorage.getItem('idCodigo');
+      const tipoEvaluacion = localStorage.getItem('tipoEvaluacion');
+      if (idCodigo && tipoEvaluacion) {
+        const pruebaNormalizada = tipoEvaluacion.toLowerCase();
+        if (pruebaNormalizada.includes("reloj") || pruebaNormalizada.includes("cdt")) {
+          return `/evaluaciones/cdt/${idCodigo}`;
+        } else if (pruebaNormalizada.includes("mmse") || pruebaNormalizada.includes("mini-mental") || pruebaNormalizada.includes("mini mental")) {
+          return `/evaluaciones/mmse/${idCodigo}`;
+        }
+      }
+      return '/login';
     } else if (this.canManagePatients()) {
       return '/dashboard'; // Neuropsicólogos y admin van al dashboard
     } else {

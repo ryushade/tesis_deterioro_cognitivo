@@ -24,23 +24,6 @@ interface Props {
   tiempoLimite?: number;
 }
 
-const getCategoryKey = (catName?: string): string => {
-  if (!catName) return "orientacion";
-  const name = catName.toLowerCase();
-  if (name.includes("orient") || name.includes("tiempo") || name.includes("lugar") || name.includes("espaci")) {
-    return "orientacion";
-  }
-  if (name.includes("fijac") || name.includes("registr") || name.includes("aprend")) {
-    return "fijacion";
-  }
-  if (name.includes("atenc") || name.includes("calcul") || name.includes("cálcul")) {
-    return "atencion";
-  }
-  if (name.includes("memor") || name.includes("evoc") || name.includes("recuer")) {
-    return "memoria";
-  }
-  return "lenguaje";
-};
 
 export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar, tiempoLimite }: Props) {
   // Flatten sections with category info
@@ -58,14 +41,6 @@ export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar, 
 
   // Time tracking states
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const categoryTimesRef = useRef<Record<string, number>>({
-    orientacion: 0,
-    fijacion: 0,
-    atencion: 0,
-    memoria: 0,
-    lenguaje: 0
-  });
-  const currentCategoryRef = useRef<string>("orientacion");
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -78,15 +53,12 @@ export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar, 
           clearInterval(intervalRef.current!);
           setTimeout(() => {
             const tiempos = {
-              total: nextSec,
-              ...categoryTimesRef.current
+              total: prev
             };
             onFinalizar(tiempos);
           }, 0);
         }
 
-        const activeCat = currentCategoryRef.current;
-        categoryTimesRef.current[activeCat] = (categoryTimesRef.current[activeCat] || 0) + 1;
         return nextSec;
       });
     }, 1000);
@@ -110,7 +82,7 @@ export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar, 
 
   useEffect(() => {
     if (current && current.categoria) {
-      currentCategoryRef.current = getCategoryKey(current.categoria.nombre_categoria);
+      // Tracking total time natively now
     }
   }, [current]);
 
@@ -235,8 +207,7 @@ export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar, 
     const res = await guardarSeccionActual();
     if (res !== null) {
       const tiempos = {
-        total: elapsedSeconds,
-        ...categoryTimesRef.current
+        total: elapsedSeconds
       };
       onFinalizar(tiempos);
     }

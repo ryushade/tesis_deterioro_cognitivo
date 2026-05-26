@@ -26,6 +26,11 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     const permissionCheck = AuthorizationService.checkPermission(requiredRoles);
     
     if (!permissionCheck.hasPermission) {
+      if (AuthorizationService.isPatient()) {
+        const defaultRoute = AuthorizationService.getDefaultRoute();
+        return <Navigate to={defaultRoute} replace />;
+      }
+      
       // You could create a custom 403 page instead of redirecting to login
       return (
         <div className="flex items-center justify-center min-h-screen bg-gray-100">
