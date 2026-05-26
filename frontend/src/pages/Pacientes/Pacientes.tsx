@@ -50,7 +50,7 @@ function Pacientes() {
   });
   
   // Hook para obtener pacientes
-  const { pacientes, metadata, loading, error, refetch } = useGetPacientes();
+  const { pacientes, metadata, loading, error, refetch } = useGetPacientes(1, 5, '');
 
   const calculateEdad = (fecha_nacimiento: string | null) => {
     if (!fecha_nacimiento) return 0;
@@ -64,6 +64,7 @@ function Pacientes() {
     return age;
   };
 
+  // 1. Filtramos los pacientes recibidos
   const filteredPacientes = pacientes.filter((paciente) => {
     if (filters.estadoPaciente !== '') {
       const activeFilterNum = parseInt(filters.estadoPaciente);
@@ -77,6 +78,12 @@ function Pacientes() {
     }
     return true;
   });
+
+  // 2. Cortamos el array para que solo se muestren 5 registros por defecto
+  const paginatedPacientes = filteredPacientes.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   // Get user data from localStorage
   const currentUser = authService.getUserFromStorage();
@@ -171,13 +178,13 @@ function Pacientes() {
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center gap-3">
            <div className="mb-2">
-        <h1 className="font-black text-5xl text-blue-900 tracking-tight mb-3">
-          Gestión de pacientes
-        </h1>
-        <p className="text-lg font-medium text-blue-700/80 leading-relaxed">
-          Administra y visualiza la información de todos los pacientes registrados en el sistema.
-        </p>
-      </div>
+            <h1 className="font-black text-5xl text-blue-900 tracking-tight mb-3">
+              Gestión de pacientes
+            </h1>
+            <p className="text-lg font-medium text-blue-700/80 leading-relaxed">
+              Administra y visualiza la información de todos los pacientes registrados en el sistema.
+            </p>
+          </div>
           </div>
           
           <Button
@@ -189,24 +196,25 @@ function Pacientes() {
           </Button>
         </div>
 
-        
-
         {/* Barra de búsqueda y filtros */}
         <BarraSearch
           onSearch={handleSearch}
-          onFilterChange={(newFilters) => setFilters(newFilters)}
+          onFilterChange={(newFilters) => {
+            setFilters(newFilters);
+            setCurrentPage(1); // Regresamos a la pag 1 cuando cambia el filtro
+          }}
           className="mb-4"
         />
 
         {/* Tabla de pacientes */}
         <TablaPacientesSimple
-          pacientes={filteredPacientes}
+          pacientes={paginatedPacientes} 
           loading={loading}
           error={error}
           searchTerm={searchTerm}
           onSearch={handleSearch}
           currentPage={currentPage}
-          totalPages={(metadata as any)?.total_pages ?? (metadata as any)?.totalPages ?? 1}
+          totalPages={(metadata as any)?.total_pages ?? (metadata as any)?.totalPages ?? (Math.ceil(filteredPacientes.length / itemsPerPage) || 1)}
           onPageChange={handlePageChange}
           onAsignarPrueba={handleAsignarPrueba}
           onView={handleViewPaciente}
@@ -214,15 +222,13 @@ function Pacientes() {
           onDelete={handleDeletePaciente}
         />
 
-       
-
         {/* Paginación a la izquierda y texto centrado */}
         <div className="mt-2 flex w-full items-center justify-between gap-2">
           {/* Izquierda: paginación */}
           <div className="flex items-center">
             <PaginacionPacientes
               currentPage={currentPage}
-              totalPages={(metadata as any)?.total_pages ?? (metadata as any)?.totalPages ?? 1}
+              totalPages={(metadata as any)?.total_pages ?? (metadata as any)?.totalPages ?? (Math.ceil(filteredPacientes.length / itemsPerPage) || 1)}
               onPageChange={handlePageChange}
             />
           </div>
@@ -230,11 +236,10 @@ function Pacientes() {
           {/* Centro: texto */}
           <div className="flex-1 flex items-center justify-center">
             <p className="text-sm text-gray-600">
-              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, (metadata as any)?.total ?? (metadata as any)?.totalItems ?? pacientes.length)} de {(metadata as any)?.total ?? (metadata as any)?.totalItems ?? pacientes.length} registros
+              Mostrando {filteredPacientes.length === 0 ? 0 : ((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, (metadata as any)?.total ?? (metadata as any)?.totalItems ?? filteredPacientes.length)} de {(metadata as any)?.total ?? (metadata as any)?.totalItems ?? filteredPacientes.length} registros
             </p>
           </div>
             
-          
           {/* Derecha: espacio para balancear */}
           <div className="flex items-center gap-3 text-sm text-gray-700">
             <span className="whitespace-nowrap">Filas por página:</span>
