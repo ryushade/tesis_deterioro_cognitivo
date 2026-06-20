@@ -16,7 +16,7 @@ def test_evaluar_oracion():
         return
         
     print("GEMINI_API_KEY detectada. Probando llamada real a Gemini...")
-    frase = "El hospital y la sala de psicología son muy acogedoras."
+    frase = "El centro de salud tiene muchos pacientes."
     res = mmse_service.evaluar_oracion(frase)
     print("\nResultado:")
     print("Correcto:", res.get("correcto"))

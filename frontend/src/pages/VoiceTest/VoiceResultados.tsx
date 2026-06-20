@@ -1,4 +1,5 @@
-import { CheckCircle2, AlertTriangle, FileText, Cpu } from "lucide-react";
+import { CheckCircle2, AlertTriangle, FileText, Cpu, LogOut } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface VoiceResultadosProps {
   nombrePaciente: string;
@@ -6,6 +7,20 @@ interface VoiceResultadosProps {
 }
 
 export default function VoiceResultados({ nombrePaciente, resultado }: VoiceResultadosProps) {
+  const navigate = useNavigate();
+  const isPaciente = localStorage.getItem("userType") === "paciente";
+
+  const handleFinalizar = () => {
+    if (isPaciente) {
+      ["isAuthenticated","user","authToken","userType","nombrePaciente","accessCode","tipoEvaluacion","idCodigo"].forEach(k => localStorage.removeItem(k));
+      window.dispatchEvent(new Event('authStateChanged'));
+      navigate("/login", { replace: true });
+    } else {
+      ["nombrePaciente","accessCode","tipoEvaluacion","idCodigo","userType"].forEach(k => localStorage.removeItem(k));
+      navigate("/codigos-acceso", { replace: true });
+    }
+  };
+
   const tieneAlerta = resultado?.clase_predicha === 1 || resultado?.alerta === true;
   const confianza = resultado?.confianza || 85.4;
   const transcripcion = resultado?.transcripcion || "Hoy me levanté, desayuné avena... y luego salí a pasear un rato por el parque. Creo que no hice mucho más, vi la televisión en la tarde. El gato se escondió bajo el sofá cuando empezó a llover.";
@@ -88,6 +103,21 @@ export default function VoiceResultados({ nombrePaciente, resultado }: VoiceResu
               El análisis combina características del espectrograma de audio (Wav2Vec2) y el modelo lingüístico (BETO).
             </p>
           </div>
+        </div>
+
+        {/* Botón salida */}
+        <div className="mt-8 pt-6 border-t border-gray-100 w-full">
+          <button
+            onClick={handleFinalizar}
+            className={`w-full py-4 text-base font-bold flex items-center justify-center gap-2 rounded-xl transition-all cursor-pointer ${
+              isPaciente 
+                ? "bg-red-500 hover:bg-red-600 text-white shadow-lg shadow-red-500/20"
+                : "bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20"
+            }`}
+          >
+            <LogOut className="w-5 h-5 shrink-0" />
+            {isPaciente ? "Finalizar y cerrar sesión" : "Volver a Códigos de Acceso"}
+          </button>
         </div>
       </div>
     </div>

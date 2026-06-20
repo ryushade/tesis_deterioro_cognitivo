@@ -46,6 +46,17 @@ def asignar_y_generar_codigo(id_paciente, id_prueba, codigo_texto):
             if cursor.fetchone():
                 return {'error': 'El paciente ya cuenta con una evaluación activa. Debe culminar o cancelar la prueba actual antes de asignarle otra distinta.'}
 
+            # 0.5 Verificación médica: Una misma prueba solo 1 vez por día
+            cursor.execute("""
+                SELECT ap.id_asignacion
+                FROM asignacion_prueba ap
+                WHERE ap.id_paciente = %s 
+                  AND ap.id_prueba = %s
+                  AND DATE(ap.fecha_asignacion) = CURRENT_DATE
+            """, (id_paciente, id_prueba))
+            if cursor.fetchone():
+                return {'error': 'Por protocolo clínico, el paciente solo puede realizar la misma prueba 1 vez por día. Intente nuevamente mañana.'}
+
             # 1. Registrar asignación asociando la prueba al paciente
             cursor.execute("""
                 INSERT INTO asignacion_prueba (id_paciente, id_prueba) 
@@ -137,6 +148,14 @@ def eliminar_codigo(id_asignacion):
     try:
         conexion = db.obtener_conexion()
         with conexion.cursor() as cursor:
+            # Verificar si el código está completado (estado_codigo = 2)
+            cursor.execute("SELECT estado_codigo FROM codigo_acceso WHERE id_asignacion = %s", (id_asignacion,))
+            res = cursor.fetchone()
+            if res:
+                estado = res['estado_codigo'] if isinstance(res, dict) else res[0]
+                if int(estado) == 2:
+                    return False  # No se puede eliminar una prueba completada
+
             # Primero eliminamos de codigo_acceso si existe
             cursor.execute("""
                 DELETE FROM codigo_acceso WHERE id_asignacion = %s

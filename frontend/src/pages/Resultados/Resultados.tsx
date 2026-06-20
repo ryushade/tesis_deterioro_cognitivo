@@ -141,7 +141,12 @@ function Resultados() {
         </TabsContent>
 
         <TabsContent value="resu_global">
-          <ResultadosGlobales />
+          <ResultadosGlobales 
+            idPaciente={selectedPacienteId ? parseInt(selectedPacienteId) : undefined}
+            resultados={resultados}
+            loading={loadingResultados}
+            error={errorResultados}
+          />
         </TabsContent>
       </Tabs>
     </DashboardLayout>

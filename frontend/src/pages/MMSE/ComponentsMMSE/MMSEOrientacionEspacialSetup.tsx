@@ -36,6 +36,21 @@ const daysOfWeekList = [
 
 const seasonsList = ["Primavera", "Verano", "Otoño", "Invierno"];
 
+const obtenerEstacionPeru = (date: Date): string => {
+  const month = date.getMonth(); // 0 = Enero, 11 = Diciembre
+  const day = date.getDate();
+  
+  if ((month === 11 && day >= 21) || month === 0 || month === 1 || (month === 2 && day <= 20)) {
+    return "Verano";
+  }
+  if ((month === 2 && day >= 21) || month === 3 || month === 4 || (month === 5 && day <= 20)) {
+    return "Otoño";
+  }
+  if ((month === 5 && day >= 21) || month === 6 || month === 7 || (month === 8 && day <= 22)) {
+    return "Invierno";
+  }
+  return "Primavera"; // 23 de septiembre al 20 de diciembre
+};
 
 export default function MMSEOrientacionEspacialSetup({ nombrePaciente, onContinuar, onVolver }: Props) {
   const [activeTab, setActiveTab] = useState<"temporal" | "espacial">("temporal");
@@ -51,29 +66,6 @@ export default function MMSEOrientacionEspacialSetup({ nombrePaciente, onContinu
     lugar: "",
     piso: "",
   });
-
-  // Prepopulate temporal fields on mount with current system date
-  useEffect(() => {
-    const now = new Date();
-    const estSeason = (monthIdx: number): string => {
-      // Southern Hemisphere estimated seasons
-      if (monthIdx === 11 || monthIdx === 0 || monthIdx === 1) return "Verano";
-      if (monthIdx === 2 || monthIdx === 3 || monthIdx === 4) return "Otoño";
-      if (monthIdx === 5 || monthIdx === 6 || monthIdx === 7) return "Invierno";
-      return "Primavera";
-    };
-
-    const dayName = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"][now.getDay()];
-
-    setData(prev => ({
-      ...prev,
-      anio: now.getFullYear().toString(),
-      diaMes: now.getDate().toString(),
-      mes: monthsList[now.getMonth()],
-      diaSemana: dayName,
-      estacion: estSeason(now.getMonth())
-    }));
-  }, []);
 
   const handleInputChange = (field: keyof OrientacionEspacialData, value: string) => {
     setData(prev => ({ ...prev, [field]: value }));
@@ -95,18 +87,20 @@ export default function MMSEOrientacionEspacialSetup({ nombrePaciente, onContinu
 
   const handleNext = () => {
     if (activeTab === "temporal" && isTemporalValid) {
-      // Validar si los datos temporales ingresados coinciden con los del PC
+      // Validar si los datos temporales ingresados coinciden con los del PC y la estación en Perú
       const now = new Date();
       const currentYear = now.getFullYear().toString();
       const currentDiaMes = now.getDate().toString();
       const currentMes = monthsList[now.getMonth()];
       const currentDiaSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"][now.getDay()];
+      const currentSeason = obtenerEstacionPeru(now);
 
       const hasMismatch =
         data.anio.trim() !== currentYear ||
         data.diaMes.trim() !== currentDiaMes ||
         data.mes !== currentMes ||
-        data.diaSemana !== currentDiaSemana;
+        data.diaSemana !== currentDiaSemana ||
+        data.estacion !== currentSeason;
 
       if (hasMismatch) {
         const proceed = window.confirm(
@@ -191,12 +185,14 @@ export default function MMSEOrientacionEspacialSetup({ nombrePaciente, onContinu
               const currentDiaMes = now.getDate().toString();
               const currentMes = monthsList[now.getMonth()];
               const currentDiaSemana = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"][now.getDay()];
+              const currentSeason = obtenerEstacionPeru(now);
 
               const hasMismatch =
                 (data.anio && data.anio.trim() !== currentYear) ||
                 (data.diaMes && data.diaMes.trim() !== currentDiaMes) ||
                 (data.mes && data.mes !== currentMes) ||
-                (data.diaSemana && data.diaSemana !== currentDiaSemana);
+                (data.diaSemana && data.diaSemana !== currentDiaSemana) ||
+                (data.estacion && data.estacion !== currentSeason);
 
               if (hasMismatch) {
                 return (

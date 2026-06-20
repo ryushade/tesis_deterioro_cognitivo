@@ -176,8 +176,9 @@ export default function TablaCodigo({
                         variant="ghost"
                         size="sm"
                         onClick={() => setCodigoToDelete(codigo)}
-                        className="text-red-600 hover:text-red-800"
-                        title="Revocar código"
+                        className={`text-red-600 ${codigo.estado === 2 ? 'opacity-40 cursor-not-allowed hover:text-red-600' : 'hover:text-red-800'}`}
+                        title={codigo.estado === 2 ? "No se puede eliminar una prueba completada" : "Revocar código"}
+                        disabled={codigo.estado === 2}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

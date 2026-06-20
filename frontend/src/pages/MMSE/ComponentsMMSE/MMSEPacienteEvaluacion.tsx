@@ -863,7 +863,7 @@ export default function MMSEPacienteEvaluacion({
         // Automatically transition to the next step
         setTimeout(() => {
           handleNextStep();
-        }, 800);
+        }, 3500);
       }
     }, 1000);
   };
@@ -951,9 +951,26 @@ export default function MMSEPacienteEvaluacion({
   // --- SAVE ANSWERS TO DATABASE ---
   const saveItemAnswer = (value: string) => {
     if (currentStep.type === "item") {
-      const graded = autoGrade(currentStep.item, value);
+      let val = value;
+      const name = currentStep.item.texto_item.toLowerCase();
+      
+      if (name.includes("escritura")) {
+        // Bloquear números y símbolos (sólo letras, espacios y puntuación básica)
+        val = val.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.,;:¿?¡!'-]/g, "");
+      } else if (name.includes("deletreo") || name.includes("posición") || name.includes("posicion")) {
+        // Bloquear todo excepto una letra para el deletreo inverso
+        val = val.replace(/[^a-zA-ZñÑ]/g, "").slice(0, 1);
+      } else if (name.includes("nombramiento")) {
+        // Bloquear números y símbolos para nombramiento de objetos
+        val = val.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s-]/g, "");
+      } else if (name.includes("cálculo") || name.includes("calculo")) {
+        // Bloquear todo excepto números
+        val = val.replace(/[^0-9]/g, "");
+      }
+
+      const graded = autoGrade(currentStep.item, val);
       const newAnswer = {
-        value: value,
+        value: val,
         correcto: graded.correcto,
         puntaje: graded.puntaje,
         base64Image: graded.base64Image
@@ -967,9 +984,20 @@ export default function MMSEPacienteEvaluacion({
   };
 
   const saveItemAnswerForId = (idItem: number, item: ItemMMSE, value: string) => {
-    const graded = autoGrade(item, value);
+    let val = value;
+    const name = item.texto_item.toLowerCase();
+
+    if (name.includes("cálculo") || name.includes("calculo")) {
+      // Bloquear todo excepto números para restas
+      val = val.replace(/[^0-9]/g, "");
+    } else if (name.includes("palabra") || name.includes("recuerdo")) {
+      // Bloquear números y símbolos para el recuerdo diferido
+      val = val.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s]/g, "");
+    }
+
+    const graded = autoGrade(item, val);
     const newAnswer = {
-      value: value,
+      value: val,
       correcto: graded.correcto,
       puntaje: graded.puntaje
     };
@@ -1780,14 +1808,22 @@ export default function MMSEPacienteEvaluacion({
       const ringProgress = (eyeTestCountdown / 5) * 100;
       return (
         <div className="flex flex-col items-center mt-6 space-y-6 w-full animate-in fade-in duration-300">
-          <p className="text-xl font-black text-slate-800 uppercase tracking-wider text-center">
-            CIERRE LOS OJOS AHORA
+          <p className={`font-black uppercase tracking-wider text-center transition-all duration-300 ${
+            eyeTestCountdown === 0 
+              ? "text-4xl text-emerald-600 animate-bounce" 
+              : "text-3xl text-slate-800"
+          }`}>
+            {eyeTestCountdown === 0 ? "ABRA LOS OJOS AHORA" : "CIERRE LOS OJOS AHORA"}
           </p>
-          <p className="text-xs text-slate-400 font-bold max-w-xs text-center leading-relaxed">
-            {isEyeTestCounting 
-              ? "Escuchará un tono cuando se cumpla el tiempo. Mantenga los ojos cerrados." 
-              : "Presione Iniciar, cierre los ojos inmediatamente y manténgalos cerrados hasta escuchar el tono final."}
-          </p>
+          <div className="rounded-2xl bg-slate-50 border border-slate-150 p-5 max-w-md w-full shadow-sm">
+            <p className="text-base text-slate-700 font-bold text-center leading-relaxed">
+              {eyeTestCountdown === 0
+                ? "¡Prueba completada con éxito! Ya puede abrir los ojos."
+                : isEyeTestCounting 
+                  ? "Escuchará un tono cuando se cumpla el tiempo. Mantenga los ojos cerrados." 
+                  : "Presione Iniciar, cierre los ojos inmediatamente y manténgalos cerrados hasta escuchar el tono final."}
+            </p>
+          </div>
           
           <div className="relative flex items-center justify-center mt-4">
             {/* Countdown progress ring */}
@@ -1825,6 +1861,11 @@ export default function MMSEPacienteEvaluacion({
               <div className="absolute w-28 h-28 rounded-full bg-slate-50 border border-slate-200 flex flex-col items-center justify-center select-none shadow-inner animate-pulse">
                 <span className="text-4xl font-black text-indigo-600">{eyeTestCountdown}</span>
                 <span className="text-[9px] font-extrabold uppercase tracking-widest text-indigo-400 mt-1">Segundos</span>
+              </div>
+            ) : eyeTestCountdown === 0 ? (
+              <div className="absolute w-28 h-28 rounded-full bg-emerald-50 border border-emerald-250 flex flex-col items-center justify-center select-none shadow-inner animate-in zoom-in duration-300">
+                <Check className="w-12 h-12 text-emerald-600 animate-bounce" />
+                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-600 mt-1">¡Listo!</span>
               </div>
             ) : (
               <button

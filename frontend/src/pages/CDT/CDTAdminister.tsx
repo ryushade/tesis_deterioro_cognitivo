@@ -38,6 +38,18 @@ export default function CDTAdminister() {
     };
   }, []);
 
+  const handleBack = () => {
+    const userType = localStorage.getItem("userType");
+    if (userType === "paciente") {
+      ["isAuthenticated", "user", "authToken", "userType", "nombrePaciente", "accessCode", "tipoEvaluacion", "idCodigo"].forEach(k => localStorage.removeItem(k));
+      window.dispatchEvent(new Event('authStateChanged'));
+      navigate("/login", { replace: true });
+    } else {
+      ["nombrePaciente","accessCode","tipoEvaluacion","idCodigo","userType"].forEach(k => localStorage.removeItem(k));
+      navigate("/codigos-acceso", { replace: true });
+    }
+  };
+
   const handleNextInstruction = () => setStep(2);
   
   const handleFileUpload = async (file: File) => {
@@ -79,7 +91,7 @@ export default function CDTAdminister() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="min-h-screen flex items-center justify-center p-4">
-        {step === 1 && <InstruccionesCDT nombrePaciente={pacienteNombre} onNext={handleNextInstruction} onBack={() => navigate(-1)} />}
+        {step === 1 && <InstruccionesCDT nombrePaciente={pacienteNombre} onNext={handleNextInstruction} onBack={handleBack} />}
         
         {step === 2 && (
           <div className="w-full relative">

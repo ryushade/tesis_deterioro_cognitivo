@@ -3,9 +3,10 @@ import ReactDOM from 'react-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { X, ChevronDown, ChevronUp, Brain } from 'lucide-react';
+import { X, ChevronDown, ChevronUp, Brain, Printer } from 'lucide-react';
 import { resultadosService, type EvaluacionResultado, type CategoriaMMSEResultado } from '@/services/resultadosService';
 import { getMediaUrl } from '@/services/api'
+import { exportarInformePDF } from '@/utils/printReport';
 
 interface ViewPacienteModalProps {
   open: boolean;
@@ -324,6 +325,27 @@ const ViewPacienteModal: React.FC<ViewPacienteModalProps> = ({ open, onClose, pa
                       {/* Accordion Content */}
                       {isExpanded && (
                         <div className="px-5 pb-5 pt-1 border-t border-slate-100 bg-slate-50/30">
+                          <div className="flex justify-end pt-2 pb-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                exportarInformePDF({
+                                  ...ev,
+                                  paciente_nombres: paciente.nombres,
+                                  paciente_apellidos: paciente.apellidos,
+                                  detalles_ia_jsonb: {
+                                    ...ev.detalles_ia_jsonb,
+                                    escolaridad: formatEscolaridad(paciente.escolaridad)
+                                  }
+                                });
+                              }}
+                              className="flex items-center gap-1.5 px-2.5 py-1 text-[11px] font-bold rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-sm transition-all"
+                              title="Exportar a PDF"
+                            >
+                              <Printer className="w-3 h-3 text-slate-500" />
+                              <span>Exportar PDF</span>
+                            </button>
+                          </div>
 
                           {/* MMSE Category Progress Bars */}
                           {isMMSE && ev.categorias_mmse && ev.categorias_mmse.length > 0 && (

@@ -130,7 +130,7 @@ export function HomePage() {
               <h1 className="font-black text-5xl text-blue-900 tracking-tight mb-3">
                 Dashboard de investigación
               </h1>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-lg font-medium text-blue-700/80 leading-relaxed mb-2">
                 Análisis de pruebas cognitivas y métricas clínicas de deterioro mental
               </p>
             </div>

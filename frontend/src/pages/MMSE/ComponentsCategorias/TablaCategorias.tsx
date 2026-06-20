@@ -56,7 +56,7 @@ export default function TablaCategorias({
                 Estado 
               </th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
+                Consultar
               </th>
 
             </tr>
@@ -110,24 +110,16 @@ export default function TablaCategorias({
                     </span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center">
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => onView(categoria)}
-                        className="text-gray-600 hover:text-gray-800"
+                        className="text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-bold text-xs bg-indigo-50 hover:bg-indigo-100/70 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
                       >
-                        <Eye className="h-4 w-4" />
+                        <Eye className="h-3.5 w-3.5" />
+                        <span>Ver estructura</span>
                       </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onEdit(categoria)}
-                        className="text-gray-600 hover:text-gray-800"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      
                     </div>
                   </td>
                 </tr>

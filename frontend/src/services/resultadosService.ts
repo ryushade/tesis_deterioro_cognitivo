@@ -36,11 +36,22 @@ export interface EvaluacionResultado {
   detalles_ia_jsonb?: any;
   categorias_mmse?: CategoriaMMSEResultado[];
   respuestas_detalle?: ItemMMSEResultadoDetalle[];
+  duracion_segundos?: number;
 }
 
 export interface ResultadosResponse {
   success: boolean;
   data: EvaluacionResultado[];
+  message?: string;
+}
+
+export interface SugerenciaIAResponse {
+  success: boolean;
+  data?: {
+    clasificacion: 'Normal' | 'Deterioro Cognitivo Leve' | 'Deterioro Cognitivo Moderado' | 'Deterioro Cognitivo Severo' | 'Deterioro Cognitivo Grave';
+    riesgo_pct: number;
+    analisis: string;
+  };
   message?: string;
 }
 
@@ -56,5 +67,16 @@ export const resultadosService = {
       
     const { data } = await apiClient.get<ResultadosResponse>(url);
     return data;
+  },
+
+  /**
+   * Obtiene la sugerencia diagnóstica generada por la IA para un paciente.
+   */
+  async getSugerenciaIA(idPaciente: number, regenerar = false): Promise<SugerenciaIAResponse> {
+    const url = `/auth/sugerencia-ia/${idPaciente}${regenerar ? '?regenerar=true' : ''}`;
+    const { data } = await apiClient.get<SugerenciaIAResponse>(url);
+    return data;
   }
 };
+
+

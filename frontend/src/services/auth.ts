@@ -17,6 +17,7 @@ export interface PatientLoginRequest {
 export interface LoginRequest {
   username: string;
   password: string;
+  expectedRole?: string;
 }
 
 export interface LoginResponse {
@@ -52,9 +53,33 @@ class AuthService {
   // Login user
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     try {
-      const response = await apiClient.post<LoginResponse & { token?: string }>('/auth/login', credentials);
+      const { expectedRole, ...apiCredentials } = credentials;
+      const response = await apiClient.post<LoginResponse & { token?: string }>('/auth/login', apiCredentials);
       
       if (response.data.success && response.data.user && response.data.token) {
+        
+        if (expectedRole) {
+          const userRole = response.data.user.role?.name?.toLowerCase() || '';
+          const expected = expectedRole.toLowerCase();
+          
+          const isUserNeuro = userRole.includes('neuropsic');
+          const isUserAdmin = userRole.includes('admin');
+          
+          if (expected === 'administrador' && !isUserAdmin) {
+            return {
+              success: false,
+              message: 'Este usuario no tiene permisos de administrador.'
+            };
+          }
+          
+          if (expected === 'neuropsicologo' && !isUserNeuro) {
+            return {
+              success: false,
+              message: 'Este usuario no tiene permisos de neuropsicólogo.'
+            };
+          }
+        }
+
         this.currentUser = response.data.user;
         localStorage.setItem('isAuthenticated', 'true');
         localStorage.setItem('user', JSON.stringify(response.data.user));
@@ -153,15 +178,12 @@ class AuthService {
   getCurrentUserSync(): User | null {
     try {
       const userStr = localStorage.getItem('user');
-      console.log('getCurrentUserSync - localStorage user:', userStr);
       
       if (userStr) {
         const user = JSON.parse(userStr);
-        console.log('getCurrentUserSync - Parsed user:', user);
         return user;
       }
       
-      console.log('getCurrentUserSync - Using cached user:', this.currentUser);
       return this.currentUser;
     } catch (error) {
       console.error('getCurrentUserSync - Error:', error);

@@ -36,7 +36,19 @@ export default function VoiceTestAdminister() {
   }, []);
 
   const handleNextInstruction = () => setStep(2);
-  const handleBackToDashboard = () => navigate(-1);
+  
+  const handleBackToDashboard = () => {
+    const userType = localStorage.getItem("userType");
+    if (userType === "paciente") {
+      ["isAuthenticated", "user", "authToken", "userType", "nombrePaciente", "accessCode", "tipoEvaluacion", "idCodigo"].forEach(k => localStorage.removeItem(k));
+      window.dispatchEvent(new Event('authStateChanged'));
+      navigate("/login", { replace: true });
+    } else {
+      ["nombrePaciente","accessCode","tipoEvaluacion","idCodigo","userType"].forEach(k => localStorage.removeItem(k));
+      navigate("/codigos-acceso", { replace: true });
+    }
+  };
+
   const handleBackToInstructions = () => setStep(1);
 
   const handleAudioFinished = async (audioBlob: Blob) => {

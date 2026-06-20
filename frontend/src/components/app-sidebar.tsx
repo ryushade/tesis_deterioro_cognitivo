@@ -36,9 +36,6 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
   // Debug: Log current user info
   React.useEffect(() => {
     const currentUser = AuthorizationService.hasRole(['Administrador', 'Neuropsicologo', 'Paciente']);
-    console.log('AppSidebar - User prop:', user);
-    console.log('AppSidebar - Has any role:', currentUser);
-    console.log('AppSidebar - User from auth service:', AuthorizationService.isNeuropsicologo());
   }, [user]);
 
   // Navigation data for cognitive deterioration thesis
@@ -118,12 +115,10 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       if (!item.roles || item.roles.length === 0) return true; // Show items without role restrictions
       
       const hasRole = AuthorizationService.hasRole(item.roles);
-      console.log(`Item "${item.title}" - Required roles: ${item.roles.join(', ')} - Has access: ${hasRole}`);
       
       return hasRole;
     });
     
-    console.log('Filtered navigation items:', filtered.map(item => item.title));
     return filtered;
   }, [user]); // Re-compute when user changes
 

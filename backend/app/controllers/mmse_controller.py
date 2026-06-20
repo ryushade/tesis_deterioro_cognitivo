@@ -373,6 +373,20 @@ def guardar_respuesta_item(data):
         finally:
             conn_check.close()
 
+        # Traducir placeholders de interfaz técnica a descripciones legibles
+        if respuesta_texto == "audio_recorded":
+            respuesta_texto = "🎤 [Audio Grabado]"
+        elif respuesta_texto == "completed":
+            lower_texto = (texto_item or "").lower()
+            if "cierre" in lower_texto or "ojos" in lower_texto:
+                respuesta_texto = "✓ Cerró los ojos"
+            elif "dibujo" in lower_texto or "figura" in lower_texto or "copia" in lower_texto:
+                respuesta_texto = "🎨 Dibujo realizado"
+            elif "tres" in lower_texto or "etapas" in lower_texto or "pasos" in lower_texto or "ejecución" in lower_texto or "ejecucion" in lower_texto:
+                respuesta_texto = "✓ Acción ejecutada (Tres pasos)"
+            else:
+                respuesta_texto = "✓ Completado"
+
         # Si el ítem es de tipo 'escritura' y no está omitido, evaluar con la IA
         if (tipo_respuesta == "escritura" or "escritura" in (texto_item or "").lower()) and not omitido and respuesta_texto:
             try:
@@ -392,8 +406,16 @@ def guardar_respuesta_item(data):
                 correcto = eval_res.get("correcto", correcto)
                 puntaje = 1 if correcto else 0
                 observacion = eval_res.get("analisis", observacion)
+                
+                # Guardar la transcripción de voz si está disponible para mejorar la UX
+                transcripcion = eval_res.get("transcripcion")
+                if transcripcion:
+                    respuesta_texto = f"🎤 \"{transcripcion}\""
+                else:
+                    respuesta_texto = "🎤 [Audio Grabado]"
             except Exception as ia_err:
                 print(f"Error ejecutando IA para repetición de voz: {ia_err}")
+                respuesta_texto = "🎤 [Audio Grabado]"
 
         # Validaciones - Asegurar tipos consistentes
         if correcto is not None:

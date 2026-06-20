@@ -39,7 +39,11 @@ export default function LoginPage() {
     setError('');
 
     try {
-      const response = await authService.login({ username, password });
+      const response = await authService.login({ 
+        username, 
+        password,
+        expectedRole: activeTab
+      });
       
       if (response.success) {
         // Dispatch event to notify App component

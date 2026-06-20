@@ -63,7 +63,7 @@ export default function EditCodigoModal({ open, onClose, onSuccess, codigo }: Pr
       toast.success('Código actualizado exitosamente');
       onSuccess();
     } catch (err: any) {
-      const msg = err?.message || 'Error al actualizar el código';
+      const msg = err?.response?.data?.message || err?.message || 'Error al actualizar el código';
       setError(msg);
       toast.error(msg);
     } finally {

@@ -1,10 +1,11 @@
 import React from 'react';
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, AlertTriangle, CheckCircle2, ImageOff, Brain } from "lucide-react";
+import { Clock, AlertTriangle, CheckCircle2, ImageOff, Brain, Printer } from "lucide-react";
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer } from "recharts";
 import type { EvaluacionResultado } from '@/services/resultadosService';
 import { getMediaUrl } from '@/services/api';
+import { exportarInformePDF } from '@/utils/printReport';
 
 interface Props {
   resultados: EvaluacionResultado[];
@@ -27,6 +28,7 @@ const clasificacionMMSE: Record<string, string> = {
   "Deterioro leve": "bg-amber-100 text-amber-800 border-amber-200",
   "Deterioro moderado": "bg-orange-100 text-orange-800 border-orange-200",
   "Deterioro severo": "bg-red-100 text-red-800 border-red-200",
+  "Deterioro grave": "bg-red-100 text-red-800 border-red-200",
 };
 
 function getClasificacionMMSE(puntaje: number) {
@@ -39,11 +41,6 @@ function getClasificacionMMSE(puntaje: number) {
 function formatDate(d: string) {
   if (!d) return '—';
   return new Date(d).toLocaleString('es-PE', { dateStyle: 'medium', timeStyle: 'short' });
-}
-
-function formatDateShort(d: string) {
-  if (!d) return '—';
-  return new Date(d).toLocaleDateString('es-PE', { dateStyle: 'medium' });
 }
 
 // ======== CDT Card ========
@@ -104,9 +101,19 @@ function CardCDT({ ev }: { ev: EvaluacionResultado }) {
               </div>
               <p className="text-xs text-slate-400 mt-0.5">{formatDate(ev.fecha_evaluacion)}</p>
             </div>
-            <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${colores.badge}`}>
-              {clasificacion}
-            </span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => exportarInformePDF(ev)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-sm transition-all"
+                title="Exportar a PDF"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>PDF</span>
+              </button>
+              <span className={`px-3 py-1 text-xs font-semibold rounded-full border ${colores.badge}`}>
+                {clasificacion}
+              </span>
+            </div>
           </div>
 
           <div>
@@ -151,7 +158,7 @@ function CardMMSE({ ev }: { ev: EvaluacionResultado }) {
   const [verDetalle, setVerDetalle] = React.useState(false);
   const puntaje = ev.puntaje_total ?? 0;
   const puntajeMax = ev.puntaje_maximo_prueba ?? 30;
-  const clasificacion = getClasificacionMMSE(puntaje);
+  const clasificacion = ev.clasificacion_ia || getClasificacionMMSE(puntaje);
   const categorias = ev.categorias_mmse || [];
   const duracionMinutos = ev.duracion_segundos ? Math.round(ev.duracion_segundos / 60) : null;
 
@@ -170,9 +177,19 @@ function CardMMSE({ ev }: { ev: EvaluacionResultado }) {
             <h3 className="text-lg font-bold text-foreground">MMSE (Mini-Mental State Examination)</h3>
             <p className="text-xs text-muted-foreground mt-0.5">Realizada el {formatDate(ev.fecha_evaluacion)}</p>
           </div>
-          <Badge variant="outline" className={`${clasificacionMMSE[clasificacion]} border-none px-3 py-1 font-bold text-xs uppercase`}>
-            {clasificacion}
-          </Badge>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => exportarInformePDF(ev)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-sm transition-all"
+              title="Exportar a PDF"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>PDF</span>
+            </button>
+            <Badge variant="outline" className={`${clasificacionMMSE[clasificacion]} border-none px-3 py-1 font-bold text-xs uppercase`}>
+              {clasificacion}
+            </Badge>
+          </div>
         </div>
       </div>
 
@@ -395,8 +412,20 @@ export default function ResultadosIndividuales({ resultados, loading, error, mos
         // Placeholder para futuras pruebas
         return (
           <Card key={ev.id_evaluacion} className="p-5 border rounded-2xl shadow-sm text-slate-500 text-sm">
-            <div className="font-semibold text-slate-700">{ev.nombre_prueba}</div>
-            <div className="text-xs mt-1">{formatDate(ev.fecha_evaluacion)}</div>
+            <div className="flex justify-between items-start">
+              <div>
+                <div className="font-semibold text-slate-700">{ev.nombre_prueba}</div>
+                <div className="text-xs mt-1">{formatDate(ev.fecha_evaluacion)}</div>
+              </div>
+              <button
+                onClick={() => exportarInformePDF(ev)}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 shadow-sm transition-all"
+                title="Exportar a PDF"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>PDF</span>
+              </button>
+            </div>
             <p className="mt-2 text-slate-400 italic">Visualización detallada próximamente para este tipo de prueba.</p>
           </Card>
         );

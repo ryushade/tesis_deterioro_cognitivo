@@ -129,9 +129,6 @@ function CategoriasMMSE() {
                             </p>
                         </div>
                     </div>
-                    <Button onClick={handleAdd} className="flex items-center gap-2 bg-gradient-to-r from-blue-500 to-indigo-500">
-                        <Plus className="h-4 w-4" /> Configurar estructura
-                    </Button>
                 </div>
 
                 <TablaCategorias

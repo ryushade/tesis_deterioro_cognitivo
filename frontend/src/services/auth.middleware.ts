@@ -19,16 +19,11 @@ export class AuthorizationService {
   static hasRole(allowedRoles: string[]): boolean {
     try {
       const user = authService.getCurrentUserSync();
-      console.log('AuthorizationService.hasRole - User from sync:', user);
-      console.log('AuthorizationService.hasRole - Allowed roles:', allowedRoles);
-      
       if (!user || !user.role) {
-        console.log('AuthorizationService.hasRole - No user or role found');
         return false;
       }
       
       const hasRole = allowedRoles.includes(user.role.name);
-      console.log(`AuthorizationService.hasRole - User role: ${user.role.name}, Has role: ${hasRole}`);
       
       return hasRole;
     } catch (error) {

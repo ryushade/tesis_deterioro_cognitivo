@@ -66,12 +66,7 @@ function App() {
     );
   }
 
-  // Debug: Check authentication state
-  console.log('Auth state:', { 
-    isAuthenticated, 
-    token: !!localStorage.getItem('authToken'),
-    isAuthStored: localStorage.getItem('isAuthenticated') === 'true'
-  });
+
 
   return (
     <QueryClientProvider client={queryClient}>

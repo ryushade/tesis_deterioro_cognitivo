@@ -51,9 +51,14 @@ export default function MMSEResultados({ puntajeTotal, categorias, nombrePacient
   const sortedCategorias = [...categorias].sort((a, b) => getCategoryOrder(a) - getCategoryOrder(b));
 
   const handleFinalizar = () => {
-    ["isAuthenticated","user","authToken","userType","nombrePaciente","accessCode","tipoEvaluacion","idCodigo"].forEach(k => localStorage.removeItem(k));
-    window.dispatchEvent(new Event('authStateChanged'));
-    navigate("/login", { replace: true });
+    if (isPaciente) {
+      ["isAuthenticated","user","authToken","userType","nombrePaciente","accessCode","tipoEvaluacion","idCodigo"].forEach(k => localStorage.removeItem(k));
+      window.dispatchEvent(new Event('authStateChanged'));
+      navigate("/login", { replace: true });
+    } else {
+      ["nombrePaciente","accessCode","tipoEvaluacion","idCodigo","userType"].forEach(k => localStorage.removeItem(k));
+      navigate("/codigos-acceso", { replace: true });
+    }
   };
 
   return (
@@ -214,34 +219,32 @@ export default function MMSEResultados({ puntajeTotal, categorias, nombrePacient
           </div>
         </div>
         
-        {isPaciente && (
-          <div style={{ marginTop: '1.5rem' }}>
-            <button
-              onClick={handleFinalizar}
-              style={{
-                width: '100%',
-                padding: '1rem',
-                borderRadius: '0.75rem',
-                border: 'none',
-                background: '#ef4444',
-                color: '#fff',
-                fontSize: '0.95rem',
-                fontWeight: 700,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '0.5rem',
-                boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)',
-                transition: 'background 0.2s ease',
-              }}
-              onMouseOver={(e) => e.currentTarget.style.background = '#dc2626'}
-              onMouseOut={(e) => e.currentTarget.style.background = '#ef4444'}
-            >
-              <LogOut size={16} /> Finalizar y cerrar sesión
-            </button>
-          </div>
-        )}
+        <div style={{ marginTop: '1.5rem' }}>
+          <button
+            onClick={handleFinalizar}
+            style={{
+              width: '100%',
+              padding: '1rem',
+              borderRadius: '0.75rem',
+              border: 'none',
+              background: isPaciente ? '#ef4444' : '#3b82f6',
+              color: '#fff',
+              fontSize: '0.95rem',
+              fontWeight: 700,
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '0.5rem',
+              boxShadow: isPaciente ? '0 4px 12px rgba(239, 68, 68, 0.2)' : '0 4px 12px rgba(59, 130, 246, 0.2)',
+              transition: 'background 0.2s ease',
+            }}
+            onMouseOver={(e) => e.currentTarget.style.background = isPaciente ? '#dc2626' : '#2563eb'}
+            onMouseOut={(e) => e.currentTarget.style.background = isPaciente ? '#ef4444' : '#3b82f6'}
+          >
+            <LogOut size={16} /> {isPaciente ? "Finalizar y cerrar sesión" : "Volver a Códigos de Acceso"}
+          </button>
+        </div>
       </div>
 
       <style>{`

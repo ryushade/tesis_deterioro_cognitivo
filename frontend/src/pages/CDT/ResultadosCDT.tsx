@@ -19,10 +19,17 @@ export default function ResultadosCDT({ nombrePaciente, resultado }: { nombrePac
   const conAlerta = resultado?.alerta ?? puntaje < 4;
   const colores = getColorPuntaje(puntaje);
 
+  const isPaciente = localStorage.getItem("userType") === "paciente";
+
   const handleFinalizar = () => {
-    ["isAuthenticated","user","authToken","userType","nombrePaciente","accessCode","tipoEvaluacion","idCodigo"].forEach(k => localStorage.removeItem(k));
-    window.dispatchEvent(new Event('authStateChanged'));
-    navigate("/login", { replace: true });
+    if (isPaciente) {
+      ["isAuthenticated", "user", "authToken", "userType", "nombrePaciente", "accessCode", "tipoEvaluacion", "idCodigo"].forEach(k => localStorage.removeItem(k));
+      window.dispatchEvent(new Event('authStateChanged'));
+      navigate("/login", { replace: true });
+    } else {
+      ["nombrePaciente", "accessCode", "tipoEvaluacion", "idCodigo", "userType"].forEach(k => localStorage.removeItem(k));
+      navigate("/codigos-acceso", { replace: true });
+    }
   };
 
   return (
@@ -80,7 +87,7 @@ export default function ResultadosCDT({ nombrePaciente, resultado }: { nombrePac
             </div>
             {/* Escala de referencia */}
             <div className="flex justify-between text-[10px] text-slate-300 mt-1 px-0.5">
-              {[0,1,2,3,4,5].map(n => (
+              {[0, 1, 2, 3, 4, 5].map(n => (
                 <span key={n} className={n === puntaje ? `${colores.text} font-bold text-xs` : ''}>{n}</span>
               ))}
             </div>
@@ -106,7 +113,7 @@ export default function ResultadosCDT({ nombrePaciente, resultado }: { nombrePac
 
         {/* Metodología */}
         <div className="mt-5 bg-slate-50 text-slate-400 text-[12px] text-center p-3 rounded-xl border border-slate-100">
-          Evaluación automática basada en criterios NHATS. 
+          Evaluación automática basada en criterios NHATS.
           El resultado ha sido registrado y está disponible para el neuropsicólogo.
         </div>
 
@@ -114,10 +121,13 @@ export default function ResultadosCDT({ nombrePaciente, resultado }: { nombrePac
         <div className="mt-5">
           <Button
             onClick={handleFinalizar}
-            variant="destructive"
-            className="w-full border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800 rounded-xl py-6 text-base font-semibold flex items-center justify-center gap-2"
+            variant={isPaciente ? "destructive" : "default"}
+            className={`w-full rounded-xl py-6 text-base font-semibold flex items-center justify-center gap-2 ${isPaciente
+                ? "border-slate-200 text-slate-600 hover:bg-slate-50 hover:text-slate-800"
+                : "bg-blue-600 hover:bg-blue-700 text-white"
+              }`}
           >
-            Finalizar y cerrar sesión
+            {isPaciente ? "Finalizar y cerrar sesión" : "Volver a códigos de acceso"}
           </Button>
         </div>
 
