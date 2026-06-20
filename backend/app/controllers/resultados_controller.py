@@ -116,3 +116,53 @@ def obtener_tiempos_evaluacion(id_evaluacion: int):
     finally:
         if conexion:
             conexion.close()
+
+
+def obtener_detalles_respuestas_mmse(id_evaluacion: int):
+    """
+    Obtiene el listado detallado de respuestas de cada ítem de una evaluación MMSE.
+    Retorna lista de diccionarios con texto_item, nombre_categoria, respuesta_texto, correcto, puntaje, observacion.
+    """
+    conexion = None
+    try:
+        conexion = db.obtener_conexion()
+        with conexion.cursor() as cursor:
+            cursor.execute("""
+                SELECT 
+                    i.id_item,
+                    i.texto_item,
+                    c.nombre_categoria,
+                    ri.respuesta_texto,
+                    ri.correcto,
+                    ri.puntaje,
+                    ri.observacion
+                FROM evaluacion_mmse_respuesta_item ri
+                JOIN evaluacion_mmse_seccion es ON ri.id_eval_seccion = es.id_eval_seccion
+                JOIN item_mmse i ON ri.id_item = i.id_item
+                JOIN opcion_seccion_mmse o ON i.id_opcion = o.id_opcion
+                JOIN seccion_mmse s ON o.id_seccion = s.id_seccion
+                JOIN categoria_mmse c ON s.id_categoria = c.id_categoria
+                WHERE es.id_evaluacion = %s
+                ORDER BY c.id_categoria, s.orden, i.orden
+            """, (id_evaluacion,))
+            filas = cursor.fetchall()
+            
+            detalles = []
+            for r in filas:
+                detalles.append({
+                    'id_item': r.get('id_item') if isinstance(r, dict) else r[0],
+                    'texto_item': r.get('texto_item') if isinstance(r, dict) else r[1],
+                    'nombre_categoria': r.get('nombre_categoria') if isinstance(r, dict) else r[2],
+                    'respuesta_texto': r.get('respuesta_texto') if isinstance(r, dict) else r[3],
+                    'correcto': bool(r.get('correcto') if isinstance(r, dict) else r[4]),
+                    'puntaje': int(r.get('puntaje') if isinstance(r, dict) else r[5]),
+                    'observacion': r.get('observacion') if isinstance(r, dict) else r[6]
+                })
+            return detalles
+    except Exception as e:
+        print(f"Error obteniendo detalles respuestas MMSE para evaluacion {id_evaluacion}: {e}")
+        return []
+    finally:
+        if conexion:
+            conexion.close()
+

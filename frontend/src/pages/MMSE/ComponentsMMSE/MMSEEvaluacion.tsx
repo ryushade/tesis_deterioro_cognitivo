@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { CheckCircle2, XCircle, ChevronRight, ChevronLeft, AlertTriangle, Loader2, Clock } from "lucide-react";
-import type { CategoriaMMSE, SeccionMMSE, OpcionMMSE, ItemMMSE } from "@/services/mmseEvaluacionService";
+import type { CategoriaMMSE, SeccionMMSE, OpcionMMSE, ItemMMSE, RespuestaGuardadaSeccion } from "@/services/mmseEvaluacionService";
 import { mmseEvaluacionService } from "@/services/mmseEvaluacionService";
 import type { SeccionPayload, RespuestaItemPayload } from "@/services/mmseEvaluacionService";
 
@@ -22,25 +22,86 @@ interface Props {
   idEvaluacion: number;
   onFinalizar: (tiempos?: Record<string, number>) => void;
   tiempoLimite?: number;
+  respuestasGuardadas?: RespuestaGuardadaSeccion[];
+  duracionAcumulada?: number;
 }
 
 
-export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar, tiempoLimite }: Props) {
+export default function MMSEEvaluacion({ 
+  categorias, 
+  idEvaluacion, 
+  onFinalizar, 
+  tiempoLimite,
+  respuestasGuardadas,
+  duracionAcumulada
+}: Props) {
   // Flatten sections with category info
   const secciones: { seccion: SeccionMMSE; categoria: CategoriaMMSE; globalIndex: number }[] = [];
-  categorias.forEach((cat) => {
-    cat.secciones.forEach((sec) => {
+  
+  // Sort categories clinically to match standard MMSE flow:
+  // 1. Orientación (temporal / espacial)
+  // 2. Fijación (Registro de palabras)
+  // 3. Atención y cálculo (Restas seriadas)
+  // 4. Memoria (Recuerdo diferido)
+  // 5. Lenguaje y Praxis (Nombramiento, Repetición, 3 pasos, Lectura, Escritura, Dibujo)
+  const getCategoryOrder = (cat: CategoriaMMSE): number => {
+    const id = cat.id_categoria;
+    const name = cat.nombre_categoria.toLowerCase();
+    
+    if (id === 1 || name.includes("orientac")) return 1;
+    if (id === 5 || name.includes("fijac") || name.includes("registro")) return 2;
+    if (id === 2 || name.includes("atenc") || name.includes("calculo")) return 3;
+    if (id === 4 || name.includes("memor") || name.includes("recuerdo")) return 4;
+    if (id === 3 || name.includes("lenguaje") || name.includes("praxis")) return 5;
+    return 100;
+  };
+
+  const sortedCategorias = [...categorias].sort((a, b) => getCategoryOrder(a) - getCategoryOrder(b));
+
+  sortedCategorias.forEach((cat) => {
+    const sortedSecciones = [...cat.secciones].sort((a, b) => a.orden - b.orden);
+    sortedSecciones.forEach((sec) => {
       secciones.push({ seccion: sec, categoria: cat, globalIndex: secciones.length });
     });
   });
 
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [seccionStates, setSeccionStates] = useState<Record<number, SeccionState>>({});
+  // Pre-load saved answers
+  const initialSeccionStates = (() => {
+    const states: Record<number, SeccionState> = {};
+    if (respuestasGuardadas) {
+      respuestasGuardadas.forEach((rg) => {
+        const itemsState: Record<number, ItemState> = {};
+        rg.items.forEach((ri) => {
+          itemsState[ri.id_item] = {
+            correcto: ri.correcto,
+            respuesta_texto: ri.respuesta_texto || "",
+            puntaje: ri.puntaje,
+          };
+        });
+        states[rg.id_seccion] = {
+          id_eval_seccion: null,
+          opcionSeleccionada: rg.id_opcion_aplicada,
+          items: itemsState,
+          guardada: true,
+        };
+      });
+    }
+    return states;
+  })();
+
+  const initialIdx = (() => {
+    if (!respuestasGuardadas || respuestasGuardadas.length === 0) return 0;
+    const firstUnsavedIdx = secciones.findIndex(s => !initialSeccionStates[s.seccion.id_seccion]?.guardada);
+    return firstUnsavedIdx !== -1 ? firstUnsavedIdx : secciones.length - 1;
+  })();
+
+  const [currentIdx, setCurrentIdx] = useState(initialIdx);
+  const [seccionStates, setSeccionStates] = useState<Record<number, SeccionState>>(initialSeccionStates);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Time tracking states
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [elapsedSeconds, setElapsedSeconds] = useState(duracionAcumulada || 0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -231,7 +292,7 @@ export default function MMSEEvaluacion({ categorias, idEvaluacion, onFinalizar, 
           <h3 style={{ fontSize: '0.85rem', fontWeight: 700, color: '#475569', marginBottom: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Categorías
           </h3>
-          {categorias.map(cat => {
+          {sortedCategorias.map(cat => {
             const score = getPuntajeCategoria(cat);
             const isActive = cat.id_categoria === categoria.id_categoria;
             return (

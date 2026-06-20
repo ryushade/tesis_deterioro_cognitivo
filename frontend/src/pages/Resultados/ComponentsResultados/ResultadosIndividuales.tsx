@@ -148,10 +148,12 @@ function CardCDT({ ev }: { ev: EvaluacionResultado }) {
 
 // ======== MMSE Card (with recharts RadarChart) ========
 function CardMMSE({ ev }: { ev: EvaluacionResultado }) {
+  const [verDetalle, setVerDetalle] = React.useState(false);
   const puntaje = ev.puntaje_total ?? 0;
   const puntajeMax = ev.puntaje_maximo_prueba ?? 30;
   const clasificacion = getClasificacionMMSE(puntaje);
   const categorias = ev.categorias_mmse || [];
+  const duracionMinutos = ev.duracion_segundos ? Math.round(ev.duracion_segundos / 60) : null;
 
   // Prepare radar data: normalize each category to percentage
   const radarData = categorias.map(cat => ({
@@ -161,14 +163,14 @@ function CardMMSE({ ev }: { ev: EvaluacionResultado }) {
   }));
 
   return (
-    <Card>
+    <Card className="overflow-hidden border border-slate-200 shadow-sm rounded-2xl">
       <div className="p-5 pb-3">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold text-foreground">MMSE (Mini-Mental)</h3>
-            <p className="text-sm text-muted-foreground">Realizada el {formatDateShort(ev.fecha_evaluacion)}</p>
+            <h3 className="text-lg font-bold text-foreground">MMSE (Mini-Mental State Examination)</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">Realizada el {formatDate(ev.fecha_evaluacion)}</p>
           </div>
-          <Badge variant="outline" className={clasificacionMMSE[clasificacion]}>
+          <Badge variant="outline" className={`${clasificacionMMSE[clasificacion]} border-none px-3 py-1 font-bold text-xs uppercase`}>
             {clasificacion}
           </Badge>
         </div>
@@ -177,65 +179,167 @@ function CardMMSE({ ev }: { ev: EvaluacionResultado }) {
       <div className="px-5 pb-5">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Left: Info */}
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Score cards */}
             <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-lg border bg-muted/40 p-3 text-center">
-                <p className="text-xs text-muted-foreground mb-1">Puntuación</p>
-                <p className="text-xl font-bold text-foreground">
-                  {puntaje}<span className="text-sm font-normal text-muted-foreground">/{puntajeMax}</span>
+              <div className="rounded-xl border bg-slate-50/50 p-3 text-center">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Puntuación</p>
+                <p className="text-2xl font-black text-slate-800">
+                  {puntaje}<span className="text-sm font-medium text-muted-foreground">/{puntajeMax}</span>
                 </p>
               </div>
-              <div className="rounded-lg border bg-muted/40 p-3 text-center">
-                <p className="text-xs text-muted-foreground mb-1">Tiempo</p>
-                <p className="text-xl font-bold text-foreground flex items-center justify-center gap-1">
-                  <Clock className="w-4 h-4 text-muted-foreground" />11
-                </p>
-                <p className="text-[10px] text-muted-foreground">min</p>
+              <div className="rounded-xl border bg-slate-50/50 p-3 text-center">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1">Tiempo</p>
+                {duracionMinutos !== null ? (
+                  <p className="text-2xl font-black text-slate-800 flex items-center justify-center gap-1">
+                    <Clock className="w-4 h-4 text-indigo-600" />{duracionMinutos}
+                    <span className="text-xs font-semibold text-slate-400">min</span>
+                  </p>
+                ) : (
+                  <p className="text-sm font-bold text-slate-400 mt-2">—</p>
+                )}
               </div>
-              <div className="rounded-lg border bg-muted/40 p-3 text-center">
-                <p className="text-xs text-muted-foreground mb-1">Esperado</p>
-                <p className="text-sm font-medium text-muted-foreground mt-1">10–15 min</p>
+              <div className="rounded-xl border bg-slate-50/50 p-3 text-center flex flex-col justify-center">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-0.5">Esperado</p>
+                <p className="text-xs font-bold text-slate-600 mt-1">10–15 min</p>
               </div>
             </div>
 
-            {/* Category breakdown with Progress bars */}
-            {categorias.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium text-foreground">Desglose por dominio</p>
-                {categorias.map(cat => {
-                  const pct = cat.puntaje_maximo > 0 ? Math.round((cat.puntaje_obtenido / cat.puntaje_maximo) * 100) : 0;
-                  return (
-                    <div key={cat.id_categoria} className="space-y-1">
-                      <div className="flex justify-between text-xs">
-                        <span className="text-muted-foreground">{cat.nombre_categoria}</span>
-                        <span className="font-medium text-foreground">{pct}%</span>
-                      </div>
-                      <div className="w-full bg-slate-100 rounded-full h-2">
-                        <div className="bg-blue-500 h-2 rounded-full transition-all duration-700" style={{ width: `${pct}%` }} />
-                      </div>
-                    </div>
-                  );
-                })}
+            {/* Category breakdown table as requested by the user */}
+            <div className="space-y-2">
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Puntaje por Categoría</p>
+              <div className="border border-slate-100 rounded-xl overflow-hidden bg-white shadow-sm p-3">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-slate-200 text-[10px] font-extrabold uppercase tracking-wider text-slate-400">
+                      <th className="py-2">Categoría</th>
+                      <th className="py-2 text-center">Obtenido</th>
+                      <th className="py-2 text-center">Máximo</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {categorias.map(cat => (
+                      <tr key={cat.id_categoria} className="border-b border-slate-100 last:border-b-0 text-xs">
+                        <td className="py-2.5 font-bold text-slate-700">{cat.nombre_categoria}</td>
+                        <td className="py-2.5 text-center font-black text-slate-800 text-sm">{cat.puntaje_obtenido}</td>
+                        <td className="py-2.5 text-center font-bold text-slate-400">{cat.puntaje_maximo}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Right: Radar chart using recharts */}
-          {radarData.length >= 3 && (
-            <div className="flex items-center justify-center">
+          {radarData.length >= 3 ? (
+            <div className="flex items-center justify-center bg-slate-50/30 border border-slate-100 rounded-2xl p-2">
               <ResponsiveContainer width="100%" height={250}>
                 <RadarChart data={radarData}>
-                  <PolarGrid stroke="hsl(var(--border))" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                  <PolarGrid stroke="#e2e8f0" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fontSize: 10, fill: "#475569", fontWeight: 700 }} />
                   <PolarRadiusAxis angle={90} domain={[0, 100]} tick={false} axisLine={false} />
-                  <Radar name="Puntuación" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.2} strokeWidth={2} />
+                  <Radar name="Puntuación" dataKey="value" stroke="#4f46e5" fill="#4f46e5" fillOpacity={0.15} strokeWidth={2.5} />
                 </RadarChart>
               </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center h-48 border border-dashed rounded-2xl text-xs text-slate-450 italic">
+              Gráfico de radar no disponible
             </div>
           )}
         </div>
       </div>
+
+      {/* Detailed breakdown of answers and IA analysis */}
+      {ev.respuestas_detalle && ev.respuestas_detalle.length > 0 && (
+        <div className="border-t border-slate-150 p-5 bg-slate-50/50">
+          <button
+            onClick={() => setVerDetalle(!verDetalle)}
+            className="flex items-center justify-between w-full text-xs font-extrabold text-indigo-600 hover:text-indigo-800 transition-colors uppercase tracking-wider"
+          >
+            <span>{verDetalle ? "Ocultar" : "Ver"} análisis detallado de respuestas e IA</span>
+            <span className="text-sm">{verDetalle ? "▲" : "▼"}</span>
+          </button>
+
+          {verDetalle && (
+            <div className="mt-4 space-y-4 animate-in fade-in duration-300">
+              {/* Failed Items Alert */}
+              {ev.respuestas_detalle.some(r => !r.correcto) ? (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-xl text-xs text-red-800 space-y-1.5 shadow-sm">
+                  <span className="font-extrabold flex items-center gap-1.5 uppercase tracking-wide">
+                    <AlertTriangle size={15} className="text-red-600 animate-pulse" /> Reactivos con fallos detectados:
+                  </span>
+                  <ul className="list-disc list-inside space-y-1 pl-1">
+                    {ev.respuestas_detalle.filter(r => !r.correcto).map(r => (
+                      <li key={r.id_item} className="leading-relaxed">
+                        <strong className="text-slate-800">{r.nombre_categoria}:</strong> {r.texto_item} 
+                        {r.respuesta_texto && (
+                          <span className="font-semibold text-red-700 bg-red-100/50 px-1.5 py-0.5 rounded ml-1.5">
+                            Ingresó: "{r.respuesta_texto}"
+                          </span>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : (
+                <div className="p-3 bg-emerald-50 border border-emerald-250 rounded-xl text-xs text-emerald-800 flex items-center gap-2">
+                  <CheckCircle2 size={16} className="text-emerald-600" />
+                  <span className="font-bold">¡El paciente no registró fallos en ningún reactivo de la prueba!</span>
+                </div>
+              )}
+
+              {/* All Items Detail */}
+              <div className="space-y-2 mt-4">
+                <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Detalle completo de respuestas evaluadas</h4>
+                <div className="divide-y divide-slate-100 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                  {ev.respuestas_detalle.map(r => (
+                    <div key={r.id_item} className="p-3.5 flex flex-col sm:flex-row sm:items-start justify-between gap-3 text-xs">
+                      <div className="space-y-1.5 flex-1 text-left">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="bg-slate-100 text-slate-600 font-extrabold px-2 py-0.5 rounded text-[9px] uppercase tracking-wider">
+                            {r.nombre_categoria}
+                          </span>
+                          <span className={`font-extrabold px-2 py-0.5 rounded text-[9px] uppercase tracking-wider ${
+                            r.correcto ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700"
+                          }`}>
+                            {r.correcto ? "Correcto" : "Incorrecto / Fallido"}
+                          </span>
+                        </div>
+                        <p className="font-extrabold text-slate-800 text-sm mt-1 leading-relaxed">{r.texto_item}</p>
+                        
+                        {r.respuesta_texto && (
+                          <div className="text-slate-650 bg-slate-50/80 p-2 rounded-lg border border-slate-100 font-semibold mt-1">
+                            <span className="font-bold text-slate-400 block text-[9px] uppercase tracking-wider">Respuesta ingresada:</span>
+                            <span className="text-xs text-slate-700 font-bold font-mono">{r.respuesta_texto}</span>
+                          </div>
+                        )}
+                        
+                        {r.observacion && (
+                          <div className="text-indigo-850 bg-indigo-50/50 p-2.5 rounded-lg border border-indigo-100 flex items-start gap-2 mt-2">
+                            <Brain className="w-4 h-4 text-indigo-600 flex-shrink-0 mt-0.5 animate-pulse" />
+                            <div>
+                              <span className="font-bold text-indigo-750 block text-[9px] uppercase tracking-wider">Detalles de análisis (IA):</span>
+                              <p className="leading-relaxed mt-0.5 text-xs font-semibold">{r.observacion}</p>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-1 min-w-[70px] border-t sm:border-t-0 border-slate-100 pt-2 sm:pt-0">
+                        <span className="text-slate-400 font-bold uppercase text-[9px] tracking-wider">Puntaje</span>
+                        <span className={`text-base font-black ${r.correcto ? "text-emerald-600" : "text-red-500"}`}>
+                          {r.puntaje} / 1
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </Card>
   );
 }

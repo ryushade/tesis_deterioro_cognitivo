@@ -149,17 +149,29 @@ function App() {
 
               <Route
                 path="/evaluaciones/cdt/:id_codigo"
-                element={<CDTAdminister />}
+                element={
+                  <ProtectedRoute>
+                    <CDTAdminister />
+                  </ProtectedRoute>
+                }
               />
               
               <Route
                 path="/evaluaciones/voz/:id_codigo"
-                element={<VoiceTestAdminister />}
+                element={
+                  <ProtectedRoute>
+                    <VoiceTestAdminister />
+                  </ProtectedRoute>
+                }
               />
 
               <Route
                 path="/evaluaciones/mmse/:id_codigo"
-                element={<MMSEAdminister />}
+                element={
+                  <ProtectedRoute>
+                    <MMSEAdminister />
+                  </ProtectedRoute>
+                }
               />
             
               <Route

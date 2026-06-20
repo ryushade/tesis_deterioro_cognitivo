@@ -2,6 +2,7 @@ import * as React from "react"
 import {
   Brain,
   Users,
+  TestTube,
   BarChart3,
   Settings,
   FileText,
@@ -91,16 +92,16 @@ export function AppSidebar({ user, onLogout, ...props }: AppSidebarProps) {
       icon: Users,
       roles: ['Administrador'], // Solo administradores
     },
-     {
-      title: "Permisos",
-      url: "/configuracion/permisos",
-      icon: Users,
-      roles: ['Administrador'],
-    },
+    //  {
+    //   title: "Permisos",
+    //   url: "/configuracion/permisos",
+    //   icon: Users,
+    //   roles: ['Administrador'],
+    // },
     {
       title: "MMSE",
       url: "/configuracion/mmse",
-      icon: Users,
+      icon: TestTube,
       roles: ['Administrador', 'Neuropsicologo'],
     },
 

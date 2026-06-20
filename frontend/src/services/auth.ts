@@ -11,6 +11,7 @@ export interface User {
 
 export interface PatientLoginRequest {
   access_code: string;
+  pc_time?: string;
 }
 
 export interface LoginRequest {

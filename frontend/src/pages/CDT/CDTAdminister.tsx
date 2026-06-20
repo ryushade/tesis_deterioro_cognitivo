@@ -22,6 +22,20 @@ export default function CDTAdminister() {
     if (nombre) {
       setPacienteNombre(nombre);
     }
+
+    const handlePopState = () => {
+      const userType = localStorage.getItem("userType");
+      if (userType === "paciente") {
+        ["isAuthenticated", "user", "authToken", "userType", "nombrePaciente", "accessCode", "tipoEvaluacion", "idCodigo"].forEach(k => localStorage.removeItem(k));
+        window.dispatchEvent(new Event('authStateChanged'));
+        window.location.href = "/login";
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, []);
 
   const handleNextInstruction = () => setStep(2);

@@ -4,7 +4,10 @@ from dotenv import load_dotenv
 from psycopg2.extras import RealDictCursor
 
 
-load_dotenv()
+# Cargar variables de entorno desde el archivo .env en la raíz del backend de forma robusta
+basedir = os.path.abspath(os.path.dirname(__file__))
+dotenv_path = os.path.join(basedir, "..", ".env")
+load_dotenv(dotenv_path)
 
 
 def obtener_conexion():

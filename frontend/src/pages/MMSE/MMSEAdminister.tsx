@@ -7,8 +7,10 @@ import MMSEInstrucciones from "./ComponentsMMSE/MMSEInstrucciones";
 import MMSEEvaluacion from "./ComponentsMMSE/MMSEEvaluacion";
 import MMSEPacienteEvaluacion from "./ComponentsMMSE/MMSEPacienteEvaluacion";
 import MMSEResultados from "./ComponentsMMSE/MMSEResultados";
+import MMSEOrientacionEspacialSetup from "./ComponentsMMSE/MMSEOrientacionEspacialSetup";
+import type { OrientacionEspacialData } from "./ComponentsMMSE/MMSEOrientacionEspacialSetup";
 
-type Step = "loading" | "instrucciones" | "evaluacion" | "finalizado" | "error";
+type Step = "loading" | "instrucciones" | "orientacion_espacial" | "evaluacion" | "finalizado" | "error";
 
 export default function MMSEAdminister() {
   const { id_codigo } = useParams();
@@ -23,6 +25,9 @@ export default function MMSEAdminister() {
   const [resultado, setResultado] = useState<ResultadoFinal | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>("");
   const [nombrePaciente, setNombrePaciente] = useState("Paciente");
+  const [orientacionData, setOrientacionData] = useState<OrientacionEspacialData | null>(null);
+  const [respuestasGuardadas, setRespuestasGuardadas] = useState<any[]>([]);
+  const [duracionAcumulada, setDuracionAcumulada] = useState<number>(0);
 
   useEffect(() => {
     if (!idAsignacion || isNaN(idAsignacion)) {
@@ -35,6 +40,20 @@ export default function MMSEAdminister() {
     if (nombre) setNombrePaciente(nombre);
 
     loadEstructura();
+
+    const handlePopState = () => {
+      const userType = localStorage.getItem("userType");
+      if (userType === "paciente") {
+        ["isAuthenticated", "user", "authToken", "userType", "nombrePaciente", "accessCode", "tipoEvaluacion", "idCodigo"].forEach(k => localStorage.removeItem(k));
+        window.dispatchEvent(new Event('authStateChanged'));
+        window.location.href = "/login";
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+    };
   }, []);
 
   const loadEstructura = async () => {
@@ -69,10 +88,45 @@ export default function MMSEAdminister() {
       return;
     }
 
+    if (res.evaluacion && res.evaluacion.estado_evaluacion === 1) {
+      setIdEvaluacion(res.evaluacion.id_evaluacion);
+      setRespuestasGuardadas(res.evaluacion.respuestas || []);
+      setDuracionAcumulada(res.evaluacion.duracion_segundos || 0);
+    }
+
     setStep("instrucciones");
   };
 
   const handleIniciar = async () => {
+    if (isPaciente) {
+      if (respuestasGuardadas.length > 0) {
+        setStep("evaluacion");
+        return;
+      }
+      // For patients, show spatial orientation setup FIRST
+      setStep("orientacion_espacial");
+      return;
+    }
+    
+    if (idEvaluacion) {
+      setStep("evaluacion");
+      return;
+    }
+
+    // For evaluators, go directly to evaluation
+    const res = await mmseEvaluacionService.iniciarEvaluacion(idAsignacion);
+    if (!res.success || !res.data) {
+      setErrorMsg(res.message || "Error al iniciar evaluación");
+      setStep("error");
+      return;
+    }
+    setIdEvaluacion(res.data.id_evaluacion);
+    if (res.data.nombre_paciente) setNombrePaciente(res.data.nombre_paciente);
+    setStep("evaluacion");
+  };
+
+  const handleOrientacionComplete = async (data: OrientacionEspacialData) => {
+    setOrientacionData(data);
     const res = await mmseEvaluacionService.iniciarEvaluacion(idAsignacion);
     if (!res.success || !res.data) {
       setErrorMsg(res.message || "Error al iniciar evaluación");
@@ -135,6 +189,15 @@ export default function MMSEAdminister() {
             puntajeMaximo={estructura.puntaje_maximo}
             totalCategorias={estructura.categorias.length}
             onIniciar={handleIniciar}
+            hasProgress={!!idEvaluacion}
+          />
+        )}
+
+        {step === "orientacion_espacial" && (
+          <MMSEOrientacionEspacialSetup
+            nombrePaciente={nombrePaciente}
+            onContinuar={handleOrientacionComplete}
+            onVolver={() => setStep("instrucciones")}
           />
         )}
 
@@ -145,6 +208,9 @@ export default function MMSEAdminister() {
               idEvaluacion={idEvaluacion}
               onFinalizar={handleFinalizar}
               tiempoLimite={estructura.tiempo_limite_segundos}
+              orientacionEspacial={orientacionData || undefined}
+              respuestasGuardadas={respuestasGuardadas}
+              duracionAcumulada={duracionAcumulada}
             />
           ) : (
             <MMSEEvaluacion
@@ -152,6 +218,8 @@ export default function MMSEAdminister() {
               idEvaluacion={idEvaluacion}
               onFinalizar={handleFinalizar}
               tiempoLimite={estructura.tiempo_limite_segundos}
+              respuestasGuardadas={respuestasGuardadas}
+              duracionAcumulada={duracionAcumulada}
             />
           )
         )}

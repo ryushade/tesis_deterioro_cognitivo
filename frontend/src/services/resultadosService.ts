@@ -7,6 +7,16 @@ export interface CategoriaMMSEResultado {
   puntaje_obtenido: number;
 }
 
+export interface ItemMMSEResultadoDetalle {
+  id_item: number;
+  texto_item: string;
+  nombre_categoria: string;
+  respuesta_texto: string;
+  correcto: boolean;
+  puntaje: number;
+  observacion?: string;
+}
+
 export interface EvaluacionResultado {
   id_evaluacion: number;
   id_asignacion: number;
@@ -25,6 +35,7 @@ export interface EvaluacionResultado {
   observaciones_ia?: string;
   detalles_ia_jsonb?: any;
   categorias_mmse?: CategoriaMMSEResultado[];
+  respuestas_detalle?: ItemMMSEResultadoDetalle[];
 }
 
 export interface ResultadosResponse {

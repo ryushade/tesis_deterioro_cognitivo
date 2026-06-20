@@ -82,7 +82,10 @@ export default function LoginPage() {
     }
 
     try {
-      const response = await authService.patientLogin({ access_code: formattedCode });
+      const response = await authService.patientLogin({ 
+        access_code: formattedCode,
+        pc_time: new Date().toISOString()
+      });
       if (response.success) {
         window.dispatchEvent(new CustomEvent("loginSuccess"));
         
@@ -266,7 +269,12 @@ export default function LoginPage() {
                   onChange={setAccessCode}
                   pattern={REGEXP_ONLY_DIGITS_AND_CHARS}
                   containerClassName="justify-center"
-                  
+                  onPaste={(e) => {
+                    const pasted = e.clipboardData.getData("text");
+                    const cleaned = pasted.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
+                    setAccessCode(cleaned.slice(0, 7));
+                    e.preventDefault();
+                  }}
                 >
                   <InputOTPGroup>
                     <InputOTPSlot index={0} />

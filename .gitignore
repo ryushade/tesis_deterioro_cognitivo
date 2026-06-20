@@ -23073,3 +23073,8 @@ backend/app/services/voz_dataset
 backend/app/services/voz_dataset_extraido
 backend/uploads/pacientes/relojes
 backend/ia_audio/datasets
+backend/.env
+backend/.env
+
+# Cache de modelos HuggingFace (archivos pesados, no versionar)
+backend/scratch/hf_cache/

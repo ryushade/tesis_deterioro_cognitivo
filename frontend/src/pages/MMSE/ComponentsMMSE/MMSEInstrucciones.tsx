@@ -6,6 +6,7 @@ interface Props {
   puntajeMaximo: number;
   totalCategorias: number;
   onIniciar: () => void;
+  hasProgress?: boolean;
 }
 
 export default function MMSEInstrucciones({
@@ -13,7 +14,8 @@ export default function MMSEInstrucciones({
   nombrePrueba,
   puntajeMaximo,
   totalCategorias,
-  onIniciar
+  onIniciar,
+  hasProgress = false
 }: Props) {
   return (
     <div className="w-full max-w-2xl mx-auto animate-fadeIn">
@@ -209,8 +211,8 @@ export default function MMSEInstrucciones({
             e.currentTarget.style.boxShadow = '0 4px 15px rgba(59,130,246,0.35)';
           }}
         >
-          Iniciar Evaluación
-          <ArrowRight size={20} />
+          {hasProgress ? "Continuar evaluación" : "Iniciar evaluación"}
+          <ArrowRight size={18} />
         </button>
       </div>
 

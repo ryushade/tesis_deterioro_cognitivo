@@ -69,6 +69,7 @@ function CodigosAcceso() {
     setCurrentPage(1);
   };
 
+  // 1. Filtramos los códigos obtenidos
   const filteredCodigos = codigosAcceso.filter((codigo) => {
     if (filters.estado !== '') {
       const activeFilterNum = parseInt(filters.estado);
@@ -79,6 +80,12 @@ function CodigosAcceso() {
     }
     return true;
   });
+
+  // 2. NUEVO: Cortamos el array filtrado para la paginación visual
+  const paginatedCodigos = filteredCodigos.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const metadata = { total_pages: totalPages, total: total };
   
@@ -133,18 +140,19 @@ function CodigosAcceso() {
               </p>
             </div>
           </div>
-          
-          
         </div>
 
         <CodigosSearch
           onSearch={handleSearch}
-          onFilterChange={(newFilters) => setFilters(newFilters)}
+          onFilterChange={(newFilters) => {
+            setFilters(newFilters);
+            setCurrentPage(1); // Importante: volver a la pag 1 al filtrar
+          }}
           className="mb-4"
         />
 
         <TablaCodigo
-          codigos={filteredCodigos}
+          codigos={paginatedCodigos} // <-- Cambio clave: pasamos el array cortado
           loading={loading}
           error={error}
           searchTerm={searchTerm}
@@ -199,7 +207,7 @@ function CodigosAcceso() {
           <div className="flex items-center">
             <PaginacionCodigo
               currentPage={currentPage}
-              totalPages={(metadata as any)?.total_pages ?? (metadata as any)?.totalPages ?? 1}
+              totalPages={metadata.total_pages > 1 ? metadata.total_pages : (Math.ceil(filteredCodigos.length / itemsPerPage) || 1)}
               onPageChange={handlePageChange}
             />
           </div>
@@ -207,11 +215,10 @@ function CodigosAcceso() {
           {/* Centro: texto */}
           <div className="flex-1 flex items-center justify-center">
             <p className="text-sm text-gray-600">
-              Mostrando {((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, (metadata as any)?.total ?? (metadata as any)?.totalItems ?? codigosAcceso.length)} de {(metadata as any)?.total ?? (metadata as any)?.totalItems ?? codigosAcceso.length} registros
+              Mostrando {filteredCodigos.length === 0 ? 0 : ((currentPage - 1) * itemsPerPage) + 1} a {Math.min(currentPage * itemsPerPage, metadata.total > 0 ? metadata.total : filteredCodigos.length)} de {metadata.total > 0 ? metadata.total : filteredCodigos.length} registros
             </p>
           </div>
             
-          
           {/* Derecha: espacio para balancear */}
           <div className="flex items-center gap-3 text-sm text-gray-700">
             <span className="whitespace-nowrap">Filas por página:</span>

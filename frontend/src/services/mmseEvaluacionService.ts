@@ -56,12 +56,39 @@ export interface AsignacionInfo {
   nombre_prueba: string;
 }
 
+export interface RespuestaGuardadaItem {
+  id_item: number;
+  respuesta_texto: string | null;
+  respuesta_json?: Record<string, unknown> | null;
+  correcto: boolean | null;
+  puntaje: 0 | 1;
+  omitido?: boolean;
+  motivo_omision?: string | null;
+  requiere_revision?: boolean;
+  archivo_evidencia?: string | null;
+  observacion?: string | null;
+}
+
+export interface RespuestaGuardadaSeccion {
+  id_seccion: number;
+  id_opcion_aplicada: number;
+  orden_aplicacion: number;
+  aplicada: boolean;
+  omitida: boolean;
+  motivo_omision?: string | null;
+  intentos_aprendizaje?: number | null;
+  aprendio_estimulos?: boolean | null;
+  observacion?: string | null;
+  items: RespuestaGuardadaItem[];
+}
+
 export interface EvaluacionInfo {
   id_evaluacion: number;
   estado_evaluacion: number;
   puntaje_total: number | null;
   duracion_segundos?: number | null;
   tiempos?: Record<string, number>;
+  respuestas?: RespuestaGuardadaSeccion[];
 }
 
 // ========== Interfaces de respuesta ==========

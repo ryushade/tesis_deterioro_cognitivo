@@ -82,13 +82,22 @@ export default function ViewCodigo({ open, onClose, codigo }: ViewCodigoProps) {
 
         {/* Left Side: QR Code & Direct Entry Actions */}
         <div className="w-full md:w-64 bg-slate-50 p-6 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-200">
-          <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm flex items-center justify-center">
-            <img 
-              src={qrUrl} 
-              alt="Código QR de acceso" 
-              className="w-36 h-36 object-contain"
-            />
-          </div>
+          {codigo.estado === 2 ? (
+            <div className="flex flex-col items-center justify-center py-6">
+              <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center text-green-600 mb-3 shadow-inner">
+                <Check className="h-10 w-10" strokeWidth={3} />
+              </div>
+              <span className="text-sm font-black text-green-700 uppercase tracking-wider">Prueba Completada</span>
+            </div>
+          ) : (
+            <div className="bg-white p-2.5 rounded-lg border border-slate-200 shadow-sm flex items-center justify-center">
+              <img 
+                src={qrUrl} 
+                alt="Código QR de acceso" 
+                className="w-36 h-36 object-contain"
+              />
+            </div>
+          )}
 
           <div className="mt-4 text-center w-full">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Código de acceso</span>
@@ -110,13 +119,15 @@ export default function ViewCodigo({ open, onClose, codigo }: ViewCodigoProps) {
 
           {/* Direct Entry Button */}
           <div className="mt-6 w-full space-y-2">
-            <Button 
-              className="w-full bg-indigo-600 hover:bg-indigo-750 text-white font-semibold text-xs h-9 rounded-lg flex items-center justify-center gap-1.5 shadow-sm transition-all"
-              onClick={() => window.open(evaluationUrl, '_blank')}
-            >
-              <ExternalLink className="h-3.5 w-3.5" />
-              Iniciar prueba ahora
-            </Button>
+            {codigo.estado !== 2 && (
+              <Button 
+                className="w-full bg-indigo-600 hover:bg-indigo-750 text-white font-semibold text-xs h-9 rounded-lg flex items-center justify-center gap-1.5 shadow-sm transition-all"
+                onClick={() => window.open(evaluationUrl, '_blank')}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Iniciar prueba ahora
+              </Button>
+            )}
             <Button 
               variant="outline"
               className="w-full border-slate-200 text-slate-700 font-semibold text-xs h-9 rounded-lg flex items-center justify-center gap-1.5 bg-white hover:bg-slate-55"

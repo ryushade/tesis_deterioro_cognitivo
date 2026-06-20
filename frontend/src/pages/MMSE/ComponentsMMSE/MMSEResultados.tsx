@@ -30,6 +30,26 @@ export default function MMSEResultados({ puntajeTotal, categorias, nombrePacient
   const clasificacion = getClasificacion(puntajeTotal);
   const porcentaje = Math.round((puntajeTotal / 30) * 100);
 
+  // Sort categories clinically to match standard MMSE flow:
+  // 1. Orientación (temporal / espacial)
+  // 2. Fijación (Registro de palabras)
+  // 3. Atención y cálculo (Restas seriadas)
+  // 4. Memoria (Recuerdo diferido)
+  // 5. Lenguaje y Praxis (Nombramiento, Repetición, 3 pasos, Lectura, Escritura, Dibujo)
+  const getCategoryOrder = (cat: ResultadoCategoria): number => {
+    const id = cat.id_categoria;
+    const name = cat.nombre_categoria.toLowerCase();
+    
+    if (id === 1 || name.includes("orientac")) return 1;
+    if (id === 5 || name.includes("fijac") || name.includes("registro")) return 2;
+    if (id === 2 || name.includes("atenc") || name.includes("calculo")) return 3;
+    if (id === 4 || name.includes("memor") || name.includes("recuerdo")) return 4;
+    if (id === 3 || name.includes("lenguaje") || name.includes("praxis")) return 5;
+    return 100;
+  };
+
+  const sortedCategorias = [...categorias].sort((a, b) => getCategoryOrder(a) - getCategoryOrder(b));
+
   const handleFinalizar = () => {
     ["isAuthenticated","user","authToken","userType","nombrePaciente","accessCode","tipoEvaluacion","idCodigo"].forEach(k => localStorage.removeItem(k));
     window.dispatchEvent(new Event('authStateChanged'));
@@ -103,7 +123,7 @@ export default function MMSEResultados({ puntajeTotal, categorias, nombrePacient
             <span style={{ textAlign: 'center' }}>Obtenido</span>
             <span style={{ textAlign: 'center' }}>Máximo</span>
           </div>
-          {categorias.map((cat) => {
+          {sortedCategorias.map((cat) => {
             const pct = cat.puntaje_maximo > 0 ? (cat.puntaje_obtenido / cat.puntaje_maximo) * 100 : 0;
             return (
               <div key={cat.id_categoria} style={{

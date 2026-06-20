@@ -357,7 +357,56 @@ def guardar_respuesta_item(data):
         archivo_evidencia = data.get("archivo_evidencia")
         observacion = data.get("observacion")
 
-        # Validaciones
+        # Obtener el tipo de respuesta del ítem desde la base de datos
+        tipo_respuesta = None
+        texto_item = ""
+        conn_check = db.obtener_conexion()
+        try:
+            with conn_check.cursor() as cur:
+                cur.execute("SELECT tipo_respuesta, texto_item FROM item_mmse WHERE id_item = %s", (id_item,))
+                item_row = cur.fetchone()
+                if item_row:
+                    tipo_respuesta = item_row["tipo_respuesta"] if isinstance(item_row, dict) else item_row[0]
+                    texto_item = item_row["texto_item"] if isinstance(item_row, dict) else item_row[1]
+        except Exception as e:
+            print(f"Error consultando tipo_respuesta: {e}")
+        finally:
+            conn_check.close()
+
+        # Si el ítem es de tipo 'escritura' y no está omitido, evaluar con la IA
+        if (tipo_respuesta == "escritura" or "escritura" in (texto_item or "").lower()) and not omitido and respuesta_texto:
+            try:
+                from app.services import mmse_service
+                eval_res = mmse_service.evaluar_oracion(respuesta_texto)
+                correcto = eval_res.get("correcto", correcto)
+                puntaje = 1 if correcto else 0
+                observacion = eval_res.get("analisis", observacion)
+            except Exception as ia_err:
+                print(f"Error ejecutando IA para escritura: {ia_err}")
+
+        # Si el ítem es de tipo 'repetición' y no está omitido y tiene archivo_evidencia (audio grabado)
+        if ("repetición" in (texto_item or "").lower() or "repeticion" in (texto_item or "").lower()) and not omitido and archivo_evidencia:
+            try:
+                from app.services import mmse_service
+                eval_res = mmse_service.evaluar_audio_repeticion(archivo_evidencia)
+                correcto = eval_res.get("correcto", correcto)
+                puntaje = 1 if correcto else 0
+                observacion = eval_res.get("analisis", observacion)
+            except Exception as ia_err:
+                print(f"Error ejecutando IA para repetición de voz: {ia_err}")
+
+        # Validaciones - Asegurar tipos consistentes
+        if correcto is not None:
+            if isinstance(correcto, str):
+                correcto = correcto.lower() in ("true", "1", "yes", "correct", "correcto")
+            else:
+                correcto = bool(correcto)
+        
+        try:
+            puntaje = int(puntaje)
+        except (ValueError, TypeError):
+            puntaje = 0
+
         if puntaje not in (0, 1):
             return {"error": "El puntaje debe ser 0 o 1"}
 
@@ -524,6 +573,91 @@ def finalizar_evaluacion(id_evaluacion, tiempos=None, duracion_segundos=None):
         if conn:
             conn.rollback()
         return {"error": str(e)}
+    finally:
+        if conn:
+            conn.close()
+
+
+def obtener_respuestas_evaluacion(id_evaluacion):
+    """
+    Obtiene todas las respuestas guardadas (secciones e ítems) para una evaluación.
+    """
+    conn = None
+    try:
+        conn = db.obtener_conexion()
+        with conn.cursor() as cur:
+            cur.execute("""
+                SELECT 
+                    es.id_seccion,
+                    es.id_opcion_aplicada,
+                    es.orden_aplicacion,
+                    es.aplicada,
+                    es.omitida,
+                    es.motivo_omision AS seccion_motivo_omision,
+                    es.intentos_aprendizaje,
+                    es.aprendio_estimulos,
+                    es.observacion AS seccion_observacion,
+                    
+                    ri.id_item,
+                    ri.respuesta_texto,
+                    ri.respuesta_json,
+                    ri.correcto,
+                    ri.puntaje,
+                    ri.omitido AS item_omitido,
+                    ri.motivo_omision AS item_motivo_omision,
+                    ri.requiere_revision,
+                    ri.archivo_evidencia,
+                    ri.observacion AS item_observacion
+                FROM public.evaluacion_mmse_seccion es
+                LEFT JOIN public.evaluacion_mmse_respuesta_item ri 
+                    ON es.id_eval_seccion = ri.id_eval_seccion
+                WHERE es.id_evaluacion = %s
+                ORDER BY es.orden_aplicacion, ri.id_item;
+            """, (id_evaluacion,))
+            rows = cur.fetchall()
+            
+            respuestas_map = {}
+            for row in rows:
+                sec_id = row["id_seccion"]
+                if sec_id not in respuestas_map:
+                    respuestas_map[sec_id] = {
+                        "id_seccion": sec_id,
+                        "id_opcion_aplicada": row["id_opcion_aplicada"],
+                        "orden_aplicacion": row["orden_aplicacion"],
+                        "aplicada": row["aplicada"],
+                        "omitida": row["omitida"],
+                        "motivo_omision": row["seccion_motivo_omision"],
+                        "intentos_aprendizaje": row["intentos_aprendizaje"],
+                        "aprendio_estimulos": row["aprendio_estimulos"],
+                        "observacion": row["seccion_observacion"],
+                        "items": []
+                    }
+                
+                if row["id_item"] is not None:
+                    resp_json = row["respuesta_json"]
+                    if isinstance(resp_json, str):
+                        try:
+                            resp_json = json.loads(resp_json)
+                        except Exception:
+                            pass
+
+                    respuestas_map[sec_id]["items"].append({
+                        "id_item": row["id_item"],
+                        "respuesta_texto": row["respuesta_texto"],
+                        "respuesta_json": resp_json,
+                        "correcto": row["correcto"],
+                        "puntaje": row["puntaje"],
+                        "omitido": row["item_omitido"],
+                        "motivo_omision": row["item_motivo_omision"],
+                        "requiere_revision": row["requiere_revision"],
+                        "archivo_evidencia": row["archivo_evidencia"],
+                        "observacion": row["item_observacion"]
+                    })
+            
+            return list(respuestas_map.values())
+    except Exception as e:
+        print(f"Error obteniendo respuestas guardadas de MMSE: {e}")
+        return []
     finally:
         if conn:
             conn.close()
