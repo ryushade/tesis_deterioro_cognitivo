@@ -42,7 +42,7 @@ export default function AddCategoriaModal({ open, onClose, onSuccess }: AddCateg
     setLoading(true);
     try {
       const response = await categoriaServices.create({
-        id_prueba: 2, // ID para MMSE
+        // El backend resuelve el id_prueba del MMSE por nombre; no se hardcodea.
         nombre_categoria: formData.nombre_categoria,
         puntaje_maximo: parseInt(formData.puntaje_maximo),
         estado: parseInt(formData.estado),

@@ -30,6 +30,59 @@ def obtener_codigo_prueba():
         if conexion:
             conexion.close()
 
+def resolver_id_prueba(tipo_evaluacion):
+    """Resuelve el id_prueba a partir de un valor flexible.
+
+    - Si es un entero (o string numérico) se asume que ya es un id_prueba válido.
+    - Si es un nombre/alias ('CDT', 'MMSE', 'VOZ', o un nombre parcial) se busca
+      dinámicamente en prueba_catalogo por coincidencia de nombre, evitando
+      hardcodear ids que difieren del catálogo real de la BD.
+
+    Devuelve el id_prueba (int) o None si no se puede resolver.
+    """
+    if tipo_evaluacion is None:
+        return None
+
+    # Caso directo: ya viene el id numérico
+    if isinstance(tipo_evaluacion, int):
+        return tipo_evaluacion
+    texto = str(tipo_evaluacion).strip()
+    if texto.isdigit():
+        return int(texto)
+
+    # Mapeo de alias a patrones LIKE para buscar en el catálogo real
+    clave = texto.lower()
+    if clave in ('cdt', 'reloj'):
+        patrones = ['%reloj%']
+    elif clave in ('mmse', 'minimental', 'mini-mental'):
+        patrones = ['%mmse%', '%mini%']
+    elif clave in ('voz', 'svf', 'fluidez'):
+        patrones = ['%fluidez%', '%voz%']
+    else:
+        # Coincidencia genérica por el propio texto recibido
+        patrones = ['%{}%'.format(clave)]
+
+    conexion = None
+    try:
+        conexion = db.obtener_conexion()
+        with conexion.cursor() as cursor:
+            for patron in patrones:
+                cursor.execute(
+                    "SELECT id_prueba FROM prueba_catalogo WHERE LOWER(nombre_prueba) LIKE %s ORDER BY id_prueba LIMIT 1",
+                    (patron,)
+                )
+                res = cursor.fetchone()
+                if res:
+                    return res['id_prueba'] if isinstance(res, dict) else res[0]
+        return None
+    except Exception as e:
+        print("Error resolviendo id_prueba:", e)
+        return None
+    finally:
+        if conexion:
+            conexion.close()
+
+
 def asignar_y_generar_codigo(id_paciente, id_prueba, codigo_texto):
     conexion = None
     try:

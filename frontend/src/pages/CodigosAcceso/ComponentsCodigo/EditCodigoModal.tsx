@@ -30,16 +30,24 @@ export default function EditCodigoModal({ open, onClose, onSuccess, codigo }: Pr
       const tipoStr = String(codigo.tipo_evaluacion || codigo.nombre_prueba).toLowerCase();
       // Buscamos cuál es la prueba real en base al nombre devuelto por el backend
       const matchedPrueba = pruebas.find(p => p.nombre_prueba.toLowerCase() === tipoStr);
-      
+
       if (matchedPrueba) {
         setTipoEvaluacion(matchedPrueba.id_prueba.toString());
       } else {
-        // Fallback aproximado si no es coincidencia exacta
-        if (tipoStr.includes('fluidez') || tipoStr.includes('voz')) setTipoEvaluacion('3');
-        else if (tipoStr.includes('mmse')) setTipoEvaluacion('2');
-        else setTipoEvaluacion('1');
+        // Fallback por coincidencia parcial contra el catálogo real (sin ids hardcodeados)
+        const partial = pruebas.find(p => {
+          const nombre = p.nombre_prueba.toLowerCase();
+          if (tipoStr.includes('fluidez') || tipoStr.includes('voz'))
+            return nombre.includes('fluidez') || nombre.includes('voz');
+          if (tipoStr.includes('mmse') || tipoStr.includes('mini'))
+            return nombre.includes('mmse') || nombre.includes('mini');
+          if (tipoStr.includes('reloj') || tipoStr.includes('cdt'))
+            return nombre.includes('reloj');
+          return nombre.includes(tipoStr) || tipoStr.includes(nombre);
+        });
+        setTipoEvaluacion(partial ? partial.id_prueba.toString() : pruebas[0].id_prueba.toString());
       }
-      
+
       setError(null);
     }
   }, [codigo, open, pruebas]);

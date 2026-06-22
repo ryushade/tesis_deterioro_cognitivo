@@ -2,6 +2,7 @@ import api from './api';
 
 export interface Categoria {
   id_categoria: number;
+  id_prueba?: number;
   nombre_categoria: string;
   puntaje_maximo: number;
   estado: number;
@@ -40,15 +41,6 @@ export interface MMSEEstructura {
   }[];
 }
 
-// In-memory mock data for frontend-only CRUD testing
-let mockCategorias: Categoria[] = [
-  { id_categoria: 1, id_prueba: 2, nombre_categoria: 'Orientación', puntaje_maximo: 10, estado: 1 },
-  { id_categoria: 2, id_prueba: 2, nombre_categoria: 'Fijación', puntaje_maximo: 3, estado: 1 },
-  { id_categoria: 3, id_prueba: 2, nombre_categoria: 'Atención y Cálculo', puntaje_maximo: 5, estado: 1 },
-  { id_categoria: 4, id_prueba: 2, nombre_categoria: 'Memoria', puntaje_maximo: 3, estado: 1 },
-  { id_categoria: 5, id_prueba: 2, nombre_categoria: 'Lenguaje y Praxis', puntaje_maximo: 9, estado: 1 },
-];
-
 export const categoriaServices = {
   // Obtener todas las categorias
   getAll: async (): Promise<{ success: boolean; data?: Categoria[]; message?: string }> => {
@@ -70,69 +62,63 @@ export const categoriaServices = {
     }
   },
 
-  // Crear categoría
+  // Crear categoría (solo Administrador)
   create: async (data: Omit<Categoria, 'id_categoria'>): Promise<{ success: boolean; message?: string }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newId = mockCategorias.length > 0 ? Math.max(...mockCategorias.map(c => c.id_categoria)) + 1 : 1;
-        mockCategorias.push({ ...data, id_categoria: newId });
-        resolve({ success: true, message: 'Categoría creada exitosamente' });
-      }, 500);
-    });
-
-    /*
-    // REAL API CALL
     try {
-      const response = await api.post('/categorias', data);
-      return response.data;
+      await api.post('/mmse/categorias', data);
+      return { success: true, message: 'Categoría creada exitosamente' };
     } catch (error: any) {
       return { success: false, message: error.response?.data?.message || 'Error al crear categoría' };
     }
-    */
   },
 
-  // Actualizar categoría
+  // Actualizar categoría (solo Administrador)
   update: async (id: number, data: Partial<Categoria>): Promise<{ success: boolean; message?: string }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const index = mockCategorias.findIndex(c => c.id_categoria === id);
-        if (index !== -1) {
-          mockCategorias[index] = { ...mockCategorias[index], ...data };
-          resolve({ success: true, message: 'Categoría actualizada exitosamente' });
-        } else {
-          resolve({ success: false, message: 'Categoría no encontrada' });
-        }
-      }, 500);
-    });
-
-    /*
-    // REAL API CALL
     try {
-      const response = await api.put(`/categorias/${id}`, data);
-      return response.data;
+      await api.put(`/mmse/categorias/${id}`, data);
+      return { success: true, message: 'Categoría actualizada exitosamente' };
     } catch (error: any) {
       return { success: false, message: error.response?.data?.message || 'Error al actualizar categoría' };
     }
-    */
   },
 
-  // Eliminar categoría
+  // Eliminar categoría (soft-delete, solo Administrador)
   delete: async (id: number): Promise<{ success: boolean; message?: string }> => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        mockCategorias = mockCategorias.filter(c => c.id_categoria !== id);
-        resolve({ success: true, message: 'Categoría eliminada exitosamente' });
-      }, 500);
-    });
-
-    /*
-    // REAL API CALL
     try {
-      const response = await api.delete(`/categorias/${id}`);
-      return response.data;
+      await api.delete(`/mmse/categorias/${id}`);
+      return { success: true, message: 'Categoría eliminada exitosamente' };
     } catch (error: any) {
       return { success: false, message: error.response?.data?.message || 'Error al eliminar categoría' };
     }
-    */
-  }
+  },
+
+  // Validar coherencia de puntajes de la estructura (no bloqueante)
+  validarEstructura: async (): Promise<{ success: boolean; data?: { coherente: boolean; total_prueba: number; suma_categorias: number; advertencias: string[] }; message?: string }> => {
+    try {
+      const response = await api.get('/mmse/validar-estructura');
+      return response.data;
+    } catch (error: any) {
+      return { success: false, message: error.response?.data?.message || 'Error al validar estructura' };
+    }
+  },
+};
+
+// ---- CRUD de secciones / opciones / ítems (solo Administrador) ----
+// Disponible para el editor detallado de la estructura (siguiente incremento de UI).
+export const seccionServices = {
+  create: (data: Record<string, unknown>) => api.post('/mmse/secciones', data).then(r => r.data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/mmse/secciones/${id}`, data).then(r => r.data),
+  delete: (id: number) => api.delete(`/mmse/secciones/${id}`).then(r => r.data),
+};
+
+export const opcionServices = {
+  create: (data: Record<string, unknown>) => api.post('/mmse/opciones', data).then(r => r.data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/mmse/opciones/${id}`, data).then(r => r.data),
+  delete: (id: number) => api.delete(`/mmse/opciones/${id}`).then(r => r.data),
+};
+
+export const itemServices = {
+  create: (data: Record<string, unknown>) => api.post('/mmse/items', data).then(r => r.data),
+  update: (id: number, data: Record<string, unknown>) => api.put(`/mmse/items/${id}`, data).then(r => r.data),
+  delete: (id: number) => api.delete(`/mmse/items/${id}`).then(r => r.data),
 };
